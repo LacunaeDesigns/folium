@@ -86,7 +86,7 @@ export function defaultContent(type: CardType): CardContent {
     case 'shape':
       return { kind: 'shape', shape: 'rect', fill: 'blue', text: '' }
     case 'ink':
-      return { kind: 'ink', strokes: [] }
+      return { kind: 'ink', strokes: [], natW: 200, natH: 120 }
   }
 }
 

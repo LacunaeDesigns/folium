@@ -122,3 +122,160 @@
   font-weight: 600;
   min-width: 44px;
 }
+
+/* ---------- lines ---------- */
+.lines-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.line-hit {
+  stroke: transparent;
+  stroke-width: 14;
+  fill: none;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.line-vis {
+  stroke: var(--ink-soft);
+  stroke-width: 2;
+  fill: none;
+  pointer-events: none;
+}
+.line-g.selected .line-vis {
+  stroke: var(--selection);
+}
+.line-vis.pending {
+  stroke: var(--accent);
+  stroke-dasharray: 6 5;
+}
+.line-label {
+  font-size: 12px;
+  font-family: var(--font-ui);
+  fill: var(--ink-soft);
+  paint-order: stroke;
+  stroke: var(--bg-canvas);
+  stroke-width: 4px;
+  pointer-events: none;
+}
+.line-end {
+  fill: var(--bg-chrome);
+  stroke: var(--selection);
+  stroke-width: 2;
+  pointer-events: all;
+  cursor: grab;
+}
+.line-toolbar-fo {
+  overflow: visible;
+  pointer-events: none;
+}
+.line-toolbar {
+  pointer-events: all;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-pop);
+  padding: 3px 4px;
+}
+.line-toolbar button {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.line-toolbar button:hover {
+  background: var(--bg-hover);
+  color: var(--ink);
+}
+.line-toolbar button.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.line-toolbar button.danger {
+  color: var(--danger);
+}
+.line-label-input {
+  width: 100%;
+  border: 1px solid var(--selection);
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 4px 6px;
+  outline: none;
+  background: var(--bg-chrome);
+  color: var(--ink);
+}
+
+/* ---------- ink / draw mode ---------- */
+.ink-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  cursor: crosshair;
+  touch-action: none;
+}
+.ink-overlay.erasing {
+  cursor: cell;
+}
+.draw-panel {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 7px 10px;
+  box-shadow: var(--shadow-pop);
+  z-index: 75;
+}
+.draw-color {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+}
+.draw-color.on {
+  outline: 2px solid var(--selection);
+  outline-offset: 1px;
+}
+.draw-width {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  border-radius: 4px;
+}
+.draw-width.on {
+  background: var(--accent-soft);
+}
+.draw-eraser {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+  border-radius: 4px;
+}
+.draw-eraser.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.draw-done {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 0 6px;
+}

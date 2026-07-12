@@ -14,6 +14,15 @@ const root = ReactDOM.createRoot(document.getElementById('root')!)
 bootAtlas().then(({ store, db }) => {
   if (import.meta.env.DEV) {
     ;(window as unknown as Record<string, unknown>).__atlas = { store, db }
+    void Promise.all([import('./export/collect'), import('./export/html'), import('./export/markdown')]).then(
+      ([collect, html, md]) => {
+        Object.assign((window as unknown as { __atlas: object }).__atlas, {
+          collectBoardExport: collect.collectBoardExport,
+          buildHtmlExport: html.buildHtmlExport,
+          boardToMarkdown: md.boardToMarkdown,
+        })
+      },
+    )
   }
   root.render(
     <React.StrictMode>

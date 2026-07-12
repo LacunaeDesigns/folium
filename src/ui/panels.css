@@ -386,3 +386,77 @@
 .tpl-delete:hover {
   color: var(--danger);
 }
+
+/* presentation mode */
+.present-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-canvas);
+  z-index: 300;
+}
+.present-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.present-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  transition: transform 0.45s cubic-bezier(0.33, 1, 0.4, 1);
+}
+.present-card {
+  opacity: 0.35;
+  transition: opacity 0.3s;
+  cursor: pointer;
+}
+.present-card.focus {
+  opacity: 1;
+}
+.present-hud {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-pop);
+}
+.present-hud button {
+  display: flex;
+  color: var(--ink-soft);
+}
+.present-hud button:hover {
+  color: var(--ink);
+}
+.present-exit {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border);
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-card);
+}
+.present-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--ink-faint);
+}

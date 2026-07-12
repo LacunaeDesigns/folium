@@ -10,7 +10,7 @@
     {"id": "p5-structure-cards", "status": "done", "commit": "772c78f", "notes": "verified: hash nav+back, column drag both ways, pins, table, comment"},
     {"id": "p6-lines-whiteboard", "status": "done", "commit": "3b913a3", "notes": "verified: lines+toolbar+delete, draw session->ink card, sticky, shape"},
     {"id": "p7-organization", "status": "done", "commit": "d380a8c", "notes": "verified: tray, trash restore, ctrl+k search jump, settings name"},
-    {"id": "p8-templates", "status": "pending", "commit": null, "notes": "engine + 7 built-ins + save-as-template + picker"},
+    {"id": "p8-templates", "status": "done", "commit": "831bdcb", "notes": "7 built-ins + save-as-template verified in browser"},
     {"id": "p9-export-present-seed", "status": "pending", "commit": null, "notes": "html/md/json export, print css, presentation mode, welcome seed"},
     {"id": "p10-live-session", "status": "pending", "commit": null, "notes": "peerjs host/join, comment protocol, two-tab verify"},
     {"id": "p11-verification", "status": "pending", "commit": null, "notes": "vitest + full browser walkthrough per plan"}

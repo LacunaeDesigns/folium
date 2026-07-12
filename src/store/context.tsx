@@ -42,6 +42,11 @@ export async function bootAtlas(): Promise<AtlasContextValue> {
   const doc = await loadDoc(db)
   await loadSettings(db)
   const store = createAtlasStore(doc ?? undefined)
+  if (!doc) {
+    const { seedWelcome } = await import('./seed')
+    seedWelcome(store)
+    store.temporal.getState().clear()
+  }
   bindAutosave(store, db)
   return { store, db }
 }

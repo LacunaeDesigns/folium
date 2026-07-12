@@ -6,6 +6,8 @@ import { UnsortedTray } from './ui/UnsortedTray'
 import { TrashView } from './ui/TrashView'
 import { SearchPanel } from './ui/SearchPanel'
 import { TemplateGallery } from './ui/TemplateGallery'
+import { ExportMenu } from './ui/ExportMenu'
+import { PresentMode } from './ui/PresentMode'
 import { useAtlas, useAtlasStore, useDb } from './store/context'
 import { breadcrumbs } from './store/selectors'
 import { saveUserName, getUserName } from './store/settings'
@@ -92,6 +94,7 @@ export default function App() {
   const trashOpen = useUi((s) => s.trashOpen)
   const setTrashOpen = useUi((s) => s.setTrashOpen)
   const searchOpen = useUi((s) => s.searchOpen)
+  const presentationMode = useUi((s) => s.presentationMode)
   const [menu, setMenu] = React.useState<'view' | 'settings' | 'export' | null>(null)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
 
@@ -142,6 +145,7 @@ export default function App() {
             <span className="menu-anchor">
               {menu === 'view' && <ViewMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
               {menu === 'settings' && <SettingsMenu onClose={() => setMenu(null)} />}
+              {menu === 'export' && <ExportMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
             </span>
           }
         />
@@ -163,6 +167,7 @@ export default function App() {
       {templatesOpen && (
         <TemplateGallery boardId={currentBoardId} onClose={() => setTemplatesOpen(false)} />
       )}
+      {presentationMode && <PresentMode boardId={currentBoardId} />}
     </div>
   )
 }

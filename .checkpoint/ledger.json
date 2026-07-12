@@ -4,7 +4,7 @@
   "plan": "C:/Users/rika.lim/.claude/plans/replicate-milanote-as-a-lazy-meadow.md",
   "chunks": [
     {"id": "p1-scaffold-shell", "status": "done", "commit": "e61b524", "notes": "verified: tsc clean, renders in browser, no console errors"},
-    {"id": "p2-model-persist-undo", "status": "pending", "commit": null, "notes": "types, Dexie, zustand+zundo, autosave, seed Home; vitest CRUD/undo/persist"},
+    {"id": "p2-model-persist-undo", "status": "done", "commit": "647c9cb", "notes": "26 tests green; reload-persistence verified in browser; __atlas dev handle added"},
     {"id": "p3-canvas-core", "status": "pending", "commit": null, "notes": "drag/resize/select/marquee, pan/zoom, context menu, keyboard"},
     {"id": "p4-core-cards", "status": "pending", "commit": null, "notes": "note/todo/swatch/image/file/link"},
     {"id": "p5-structure-cards", "status": "pending", "commit": null, "notes": "nested boards, columns, comments, image pins, tables"},

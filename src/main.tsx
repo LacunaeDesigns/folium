@@ -7,9 +7,19 @@ import '@fontsource/pt-serif/700.css'
 import './styles/tokens.css'
 import './styles/global.css'
 import App from './App'
+import { AtlasProvider, bootAtlas } from './store/context'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+const root = ReactDOM.createRoot(document.getElementById('root')!)
+
+bootAtlas().then(({ store, db }) => {
+  if (import.meta.env.DEV) {
+    ;(window as unknown as Record<string, unknown>).__atlas = { store, db }
+  }
+  root.render(
+    <React.StrictMode>
+      <AtlasProvider store={store} db={db}>
+        <App />
+      </AtlasProvider>
+    </React.StrictMode>,
+  )
+})

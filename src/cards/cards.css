@@ -1,0 +1,447 @@
+/* ---------- shared color utilities ---------- */
+.bg-white { background: var(--card-white); }
+.bg-gray { background: var(--card-gray); }
+.bg-yellow { background: var(--card-yellow); }
+.bg-orange { background: var(--card-orange); }
+.bg-red { background: var(--card-red); }
+.bg-green { background: var(--card-green); }
+.bg-blue { background: var(--card-blue); }
+.bg-purple { background: var(--card-purple); }
+.bg-dark { background: var(--card-dark); }
+
+/* ---------- note ---------- */
+.note-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  min-height: 40px;
+  padding: 10px 12px;
+}
+
+.note-card.bg-dark,
+.note-card.bg-dark .ProseMirror {
+  color: #f0efec;
+}
+
+.note-editor .ProseMirror {
+  outline: none;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  min-height: 20px;
+  word-break: break-word;
+}
+
+.note-card.bg-dark .note-editor .ProseMirror {
+  color: #f0efec;
+}
+
+.note-editor .ProseMirror p {
+  margin: 0 0 6px;
+}
+.note-editor .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+.note-editor .ProseMirror h1 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 4px 0 8px;
+}
+.note-editor .ProseMirror h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 4px 0 6px;
+}
+.note-editor .ProseMirror ul,
+.note-editor .ProseMirror ol {
+  padding-left: 20px;
+  margin: 0 0 6px;
+}
+.note-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--border-strong);
+  margin: 4px 0 8px;
+  padding-left: 10px;
+  color: var(--ink-soft);
+}
+.note-editor .ProseMirror code {
+  background: var(--bg-active);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 12px;
+}
+.note-editor .ProseMirror mark {
+  background: var(--card-yellow);
+  padding: 0 1px;
+}
+.note-editor .ProseMirror a {
+  color: var(--accent);
+}
+.note-editor .ProseMirror ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 2px;
+}
+.note-editor .ProseMirror ul[data-type='taskList'] li {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+}
+.note-editor .ProseMirror ul[data-type='taskList'] li > label {
+  flex: none;
+}
+.note-editor .ProseMirror ul[data-type='taskList'] li > div {
+  flex: 1;
+}
+.note-editor .ProseMirror li[data-checked='true'] > div {
+  text-decoration: line-through;
+  color: var(--ink-soft);
+}
+.note-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--ink-faint);
+  pointer-events: none;
+  height: 0;
+}
+
+.note-words {
+  position: absolute;
+  right: 8px;
+  bottom: -20px;
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+/* ---------- format bar ---------- */
+.format-bar {
+  position: absolute;
+  top: -42px;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  box-shadow: var(--shadow-pop);
+  padding: 4px 6px;
+  z-index: 80;
+  white-space: nowrap;
+}
+
+.fmt-btn {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 0 4px;
+}
+.fmt-btn:hover {
+  background: var(--bg-hover);
+  color: var(--ink);
+}
+.fmt-btn.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.hl-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--card-yellow);
+  border: 1px solid var(--border-strong);
+}
+.fmt-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 4px;
+}
+.color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  flex: none;
+}
+.color-dot.on {
+  outline: 2px solid var(--selection);
+}
+
+/* ---------- todo ---------- */
+.todo-card {
+  padding: 10px 12px;
+}
+.todo-title {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-weight: 600;
+  font-size: 13.5px;
+  margin-bottom: 4px;
+}
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.todo-item input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.todo-text {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+}
+.todo-item.done .todo-text {
+  text-decoration: line-through;
+  color: var(--ink-soft);
+}
+.todo-progress {
+  text-align: right;
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: 4px;
+}
+
+/* ---------- swatch ---------- */
+.swatch-card {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--bg-chrome);
+  box-shadow: var(--shadow-card);
+}
+.swatch-block {
+  display: block;
+  position: relative;
+  height: 88px;
+  cursor: pointer;
+}
+.swatch-hex {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.swatch-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.swatch-name {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+/* ---------- image ---------- */
+.image-card {
+  margin: 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--bg-chrome);
+  box-shadow: var(--shadow-card);
+}
+.image-card img {
+  width: 100%;
+  display: block;
+}
+.image-caption {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 6px 10px;
+}
+.image-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 14px;
+  background: var(--bg-chrome);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+}
+.image-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 13px;
+}
+.image-or {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+.image-url {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  outline: none;
+  background: var(--bg-chrome);
+}
+
+/* ---------- file ---------- */
+.file-card {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--bg-chrome);
+  box-shadow: var(--shadow-card);
+}
+.file-media {
+  width: 100%;
+  display: block;
+  background: #000;
+}
+.file-audio {
+  width: calc(100% - 16px);
+  margin: 8px 8px 0;
+  height: 36px;
+}
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.file-badge {
+  width: 38px;
+  height: 44px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  flex: none;
+}
+.file-meta {
+  min-width: 0;
+}
+.file-name {
+  font-weight: 600;
+  font-size: 13px;
+  word-break: break-word;
+}
+.file-sub {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+.file-download {
+  color: var(--accent);
+}
+
+/* ---------- link ---------- */
+.link-card {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.link-thumb {
+  position: relative;
+}
+.link-thumb img {
+  width: 100%;
+  display: block;
+}
+.link-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.link-play:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+.link-body {
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.link-url-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.link-favicon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.link-url {
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.link-url:hover {
+  text-decoration: underline;
+}
+.link-title {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--accent-orange);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.link-desc {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-family: inherit;
+  line-height: 1.4;
+}
+.link-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  color: var(--ink-soft);
+}
+.link-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+}

@@ -6,6 +6,7 @@ import { useAtlas } from './store/context'
 import { breadcrumbs } from './store/selectors'
 import { useUi } from './store/uiStore'
 import { useShortcuts } from './canvas/useShortcuts'
+import './cards'
 
 export default function App() {
   const rootId = useAtlas((s) => s.rootId)

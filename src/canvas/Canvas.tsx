@@ -1,6 +1,7 @@
 import React from 'react'
 import { CardType } from '../model/types'
-import { useAtlas, useAtlasStore } from '../store/context'
+import { useAtlas, useAtlasStore, useDb } from '../store/context'
+import { putBlob } from '../store/persist'
 import { boardCards } from '../store/selectors'
 import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { ToolId } from '../ui/Toolbar'
@@ -17,6 +18,7 @@ interface CtxMenu {
 
 export function Canvas({ boardId }: { boardId: string }) {
   const store = useAtlasStore()
+  const db = useDb()
   const cards = useAtlas((s) => boardCards(s, boardId))
   const view = useUi((s) => s.views[boardId] ?? DEFAULT_VIEW)
   const setView = useUi((s) => s.setView)
@@ -59,12 +61,76 @@ export function Canvas({ boardId }: { boardId: string }) {
     return { x: clientX - r.left, y: clientY - r.top }
   }
 
+  const importFiles = React.useCallback(
+    async (files: FileList | File[], world: Pt) => {
+      const s = store.getState()
+      const newIds: string[] = []
+      let i = 0
+      for (const file of Array.from(files)) {
+        const blobId = await putBlob(db, file)
+        const at = { x: world.x + i * 26, y: world.y + i * 26 }
+        if (file.type.startsWith('image/')) {
+          newIds.push(
+            s.addCard(boardId, 'image', { ...at, content: { blobId } as never }),
+          )
+        } else {
+          newIds.push(
+            s.addCard(boardId, 'file', {
+              ...at,
+              content: { blobId, name: file.name, size: file.size, mime: file.type } as never,
+            }),
+          )
+        }
+        i++
+      }
+      if (newIds.length) useUi.getState().setSelection(newIds)
+    },
+    [boardId, db, store],
+  )
+
+  const uploadRef = React.useRef<HTMLInputElement>(null)
+
+  // paste: files -> image/file cards, URLs -> link card
+  React.useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const el = document.activeElement as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
+      const vp = viewportRef.current
+      if (!vp) return
+      const center = screenToWorld(
+        useUi.getState().views[boardId] ?? DEFAULT_VIEW,
+        vp.clientWidth / 2,
+        vp.clientHeight / 2,
+      )
+      if (e.clipboardData?.files.length) {
+        e.preventDefault()
+        void importFiles(e.clipboardData.files, center)
+        return
+      }
+      const text = e.clipboardData?.getData('text')?.trim()
+      if (text && /^https?:\/\/\S+$/i.test(text)) {
+        e.preventDefault()
+        const id = store.getState().addCard(boardId, 'link', {
+          x: center.x,
+          y: center.y,
+          content: { url: text, title: '' } as never,
+        })
+        useUi.getState().setSelection([id])
+      }
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [boardId, importFiles, store])
+
   const placeAt = (tool: ToolId, world: Pt) => {
     const s = store.getState()
     let newId: string | null = null
     if (tool === 'board') {
       const { cardId } = s.createBoard(boardId, 'Untitled', { x: world.x, y: world.y })
       newId = cardId
+    } else if (tool === 'upload') {
+      uploadRef.current?.click()
+      return
     } else if (tool === 'line' || tool === 'draw') {
       // handled by dedicated modes (phase 6)
       return
@@ -80,7 +146,6 @@ export function Canvas({ boardId }: { boardId: string }) {
         sticky: 'sticky',
         shape: 'shape',
         image: 'image',
-        upload: 'file',
       }
       const type = typeMap[tool]
       if (!type) return
@@ -178,11 +243,17 @@ export function Canvas({ boardId }: { boardId: string }) {
   }
 
   const onDrop = (e: React.DragEvent) => {
+    const local = clientToLocal(e.clientX, e.clientY)
+    const world = screenToWorld(view, local.x, local.y)
+    if (e.dataTransfer.files.length) {
+      e.preventDefault()
+      void importFiles(e.dataTransfer.files, world)
+      return
+    }
     const tool = e.dataTransfer.getData('application/x-atlasnote-tool') as ToolId
     if (!tool) return
     e.preventDefault()
-    const local = clientToLocal(e.clientX, e.clientY)
-    placeAt(tool, screenToWorld(view, local.x, local.y))
+    placeAt(tool, world)
   }
 
   const zoomStep = (dir: 1 | -1) => {
@@ -225,7 +296,11 @@ export function Canvas({ boardId }: { boardId: string }) {
       onWheel={onWheel}
       onDoubleClick={onDoubleClick}
       onDragOver={(e) => {
-        if (e.dataTransfer.types.includes('application/x-atlasnote-tool')) e.preventDefault()
+        if (
+          e.dataTransfer.types.includes('application/x-atlasnote-tool') ||
+          e.dataTransfer.types.includes('Files')
+        )
+          e.preventDefault()
       }}
       onDrop={onDrop}
     >
@@ -285,6 +360,20 @@ export function Canvas({ boardId }: { boardId: string }) {
           </button>
         </div>
       )}
+
+      <input
+        ref={uploadRef}
+        type="file"
+        multiple
+        hidden
+        onChange={(e) => {
+          if (!e.target.files?.length) return
+          const vp = viewportRef.current!
+          const center = screenToWorld(view, vp.clientWidth / 2, vp.clientHeight / 2)
+          void importFiles(e.target.files, center)
+          e.target.value = ''
+        }}
+      />
 
       <div className="zoom-pill">
         <button onClick={() => zoomStep(-1)} title="Zoom out">

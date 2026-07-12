@@ -5,7 +5,7 @@
   "chunks": [
     {"id": "p1-scaffold-shell", "status": "done", "commit": "e61b524", "notes": "verified: tsc clean, renders in browser, no console errors"},
     {"id": "p2-model-persist-undo", "status": "done", "commit": "647c9cb", "notes": "26 tests green; reload-persistence verified in browser; __atlas dev handle added"},
-    {"id": "p3-canvas-core", "status": "pending", "commit": null, "notes": "drag/resize/select/marquee, pan/zoom, context menu, keyboard"},
+    {"id": "p3-canvas-core", "status": "done", "commit": "ac71ea9", "notes": "browser-verified place/drag/marquee/zoom/delete/duplicate/undo"},
     {"id": "p4-core-cards", "status": "pending", "commit": null, "notes": "note/todo/swatch/image/file/link"},
     {"id": "p5-structure-cards", "status": "pending", "commit": null, "notes": "nested boards, columns, comments, image pins, tables"},
     {"id": "p6-lines-whiteboard", "status": "pending", "commit": null, "notes": "svg lines, ink, sticky, shapes"},

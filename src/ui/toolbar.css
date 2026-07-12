@@ -1,0 +1,72 @@
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  padding: 8px 6px;
+  gap: 14px;
+}
+
+.toolbar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.tool-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 2px 5px;
+  border-radius: var(--radius-ui);
+  color: var(--ink-soft);
+  width: 100%;
+}
+
+.tool-btn:hover {
+  background: var(--bg-hover);
+  color: var(--ink);
+}
+
+.tool-btn.active {
+  color: #fff;
+}
+
+.tool-btn.active .tool-icon {
+  background: var(--accent);
+  color: #fff;
+}
+
+.tool-btn.active .tool-label {
+  color: var(--accent);
+}
+
+.tool-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+}
+
+.tool-label {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  letter-spacing: 0.01em;
+}
+
+.tool-more {
+  position: relative;
+}
+
+.tool-more-pop {
+  left: calc(100% + 4px);
+  top: 0;
+}

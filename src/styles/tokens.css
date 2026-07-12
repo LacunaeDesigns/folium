@@ -1,0 +1,67 @@
+:root {
+  /* chrome */
+  --bg-canvas: #f2f1ed;
+  --bg-chrome: #ffffff;
+  --bg-hover: #f4f3f0;
+  --bg-active: #ebeae6;
+  --border: #e5e3de;
+  --border-strong: #d6d4ce;
+  --shadow-card: 0 1px 3px rgba(40, 40, 35, 0.12), 0 1px 2px rgba(40, 40, 35, 0.08);
+  --shadow-pop: 0 4px 24px rgba(40, 40, 35, 0.18);
+
+  /* ink */
+  --ink: #33373b;
+  --ink-soft: #74787c;
+  --ink-faint: #a3a7aa;
+  --title-ink: #323a48;
+
+  /* accents */
+  --accent: #4c6ef5;
+  --accent-soft: #e4eafd;
+  --accent-orange: #e56937;
+  --selection: #4c9ffb;
+  --danger: #d64541;
+
+  /* card palette */
+  --card-white: #ffffff;
+  --card-gray: #ecebe8;
+  --card-yellow: #f9e76f;
+  --card-orange: #f9c97c;
+  --card-red: #f5a6a0;
+  --card-green: #bfe8b4;
+  --card-blue: #bfddf5;
+  --card-purple: #d5c8f0;
+  --card-dark: #3b3f46;
+
+  /* type */
+  --font-ui: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'PT Serif', Georgia, serif;
+
+  /* layout */
+  --toolbar-w: 64px;
+  --topbar-h: 44px;
+  --titlebar-h: 46px;
+  --radius-card: 4px;
+  --radius-ui: 6px;
+}
+
+[data-board-theme='dark'] {
+  --bg-canvas: #202023;
+  --bg-chrome: #161619;
+  --bg-hover: #232326;
+  --bg-active: #2c2c30;
+  --border: #2e2e33;
+  --border-strong: #3c3c42;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 4px 24px rgba(0, 0, 0, 0.55);
+
+  --ink: #e6e6e4;
+  --ink-soft: #9c9ca0;
+  --ink-faint: #6b6b70;
+  --title-ink: #f0efec;
+
+  --accent-soft: #2b3350;
+
+  --card-white: #2a2a2e;
+  --card-gray: #333338;
+}

@@ -11,7 +11,7 @@
     {"id": "p6-lines-whiteboard", "status": "done", "commit": "3b913a3", "notes": "verified: lines+toolbar+delete, draw session->ink card, sticky, shape"},
     {"id": "p7-organization", "status": "done", "commit": "d380a8c", "notes": "verified: tray, trash restore, ctrl+k search jump, settings name"},
     {"id": "p8-templates", "status": "done", "commit": "831bdcb", "notes": "7 built-ins + save-as-template verified in browser"},
-    {"id": "p9-export-present-seed", "status": "pending", "commit": null, "notes": "html/md/json export, print css, presentation mode, welcome seed"},
+    {"id": "p9-export-present-seed", "status": "done", "commit": "90f3d2c", "notes": "viewer verified in iframe incl. nested nav; present mode + seed verified"},
     {"id": "p10-live-session", "status": "pending", "commit": null, "notes": "peerjs host/join, comment protocol, two-tab verify"},
     {"id": "p11-verification", "status": "pending", "commit": null, "notes": "vitest + full browser walkthrough per plan"}
   ],

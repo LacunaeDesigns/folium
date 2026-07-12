@@ -17,6 +17,7 @@ export function TopBar({
   onExport,
   onView,
   onSettings,
+  onTemplates,
   rightExtra,
 }: {
   crumbs: Crumb[]
@@ -27,6 +28,7 @@ export function TopBar({
   onExport: () => void
   onView: () => void
   onSettings: () => void
+  onTemplates: () => void
   rightExtra?: React.ReactNode
 }) {
   const [editing, setEditing] = React.useState(false)
@@ -93,6 +95,9 @@ export function TopBar({
         </div>
         <div className="titlebar-side right">
           {rightExtra}
+          <button className="chrome-btn" onClick={onTemplates}>
+            <Icon name="template" size={13} /> Templates
+          </button>
           <button className="chrome-btn" onClick={onExport}>
             Export <Icon name="chevron-down" size={13} />
           </button>

@@ -1,0 +1,19 @@
+{
+  "job": "atlasnote-milanote-replica",
+  "created": "2026-07-13T00:00:00Z",
+  "plan": "C:/Users/rika.lim/.claude/plans/replicate-milanote-as-a-lazy-meadow.md",
+  "chunks": [
+    {"id": "p1-scaffold-shell", "status": "in_progress", "commit": null, "notes": "Vite/React/TS scaffold, tokens, TopBar/Toolbar/canvas shell, brand assets, launch.json"},
+    {"id": "p2-model-persist-undo", "status": "pending", "commit": null, "notes": "types, Dexie, zustand+zundo, autosave, seed Home; vitest CRUD/undo/persist"},
+    {"id": "p3-canvas-core", "status": "pending", "commit": null, "notes": "drag/resize/select/marquee, pan/zoom, context menu, keyboard"},
+    {"id": "p4-core-cards", "status": "pending", "commit": null, "notes": "note/todo/swatch/image/file/link"},
+    {"id": "p5-structure-cards", "status": "pending", "commit": null, "notes": "nested boards, columns, comments, image pins, tables"},
+    {"id": "p6-lines-whiteboard", "status": "pending", "commit": null, "notes": "svg lines, ink, sticky, shapes"},
+    {"id": "p7-organization", "status": "pending", "commit": null, "notes": "unsorted, trash, search, duplicate, board themes"},
+    {"id": "p8-templates", "status": "pending", "commit": null, "notes": "engine + 7 built-ins + save-as-template + picker"},
+    {"id": "p9-export-present-seed", "status": "pending", "commit": null, "notes": "html/md/json export, print css, presentation mode, welcome seed"},
+    {"id": "p10-live-session", "status": "pending", "commit": null, "notes": "peerjs host/join, comment protocol, two-tab verify"},
+    {"id": "p11-verification", "status": "pending", "commit": null, "notes": "vitest + full browser walkthrough per plan"}
+  ],
+  "resume_hint": "Next: p1-scaffold-shell. Idempotency: check git log + existing files in src/ before re-creating; npm install is safe to re-run."
+}

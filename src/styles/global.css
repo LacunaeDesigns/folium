@@ -1,0 +1,109 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg-canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+::selection {
+  background: rgba(76, 159, 251, 0.3);
+}
+
+.app-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: var(--toolbar-w) 1fr;
+  grid-template-areas:
+    'header header'
+    'toolbar canvas';
+  height: 100%;
+}
+
+.app-header {
+  grid-area: header;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+  z-index: 40;
+}
+
+.app-toolbar {
+  grid-area: toolbar;
+  background: var(--bg-chrome);
+  border-right: 1px solid var(--border);
+  z-index: 30;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.app-canvas {
+  grid-area: canvas;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-canvas);
+}
+
+/* generic menu / popover */
+.menu-pop {
+  position: absolute;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ui);
+  box-shadow: var(--shadow-pop);
+  padding: 4px;
+  min-width: 160px;
+  z-index: 100;
+}
+
+.menu-pop button.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+.menu-pop button.menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.menu-pop button.menu-item.danger {
+  color: var(--danger);
+}
+
+.menu-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}

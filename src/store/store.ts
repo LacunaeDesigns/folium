@@ -19,7 +19,14 @@ export interface AtlasState extends DocState {
   addCard(
     boardId: string,
     type: CardType,
-    opts?: { x?: number; y?: number; content?: Partial<CardContent>; inUnsorted?: boolean },
+    opts?: {
+      x?: number
+      y?: number
+      w?: number
+      h?: number
+      content?: Partial<CardContent>
+      inUnsorted?: boolean
+    },
   ): string
   updateCard(id: string, patch: Partial<Omit<Card, 'id' | 'content'>>): void
   updateContent(id: string, patch: Record<string, unknown>): void
@@ -202,8 +209,8 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
             type,
             x: opts.x ?? 0,
             y: opts.y ?? 0,
-            w: size.w,
-            h: size.h,
+            w: opts.w ?? size.w,
+            h: opts.h ?? size.h,
             z: maxZ + 1,
             colId: null,
             colIndex: 0,

@@ -5,6 +5,7 @@ import { Canvas } from './canvas/Canvas'
 import { UnsortedTray } from './ui/UnsortedTray'
 import { TrashView } from './ui/TrashView'
 import { SearchPanel } from './ui/SearchPanel'
+import { TemplateGallery } from './ui/TemplateGallery'
 import { useAtlas, useAtlasStore, useDb } from './store/context'
 import { breadcrumbs } from './store/selectors'
 import { saveUserName, getUserName } from './store/settings'
@@ -92,6 +93,7 @@ export default function App() {
   const setTrashOpen = useUi((s) => s.setTrashOpen)
   const searchOpen = useUi((s) => s.searchOpen)
   const [menu, setMenu] = React.useState<'view' | 'settings' | 'export' | null>(null)
+  const [templatesOpen, setTemplatesOpen] = React.useState(false)
 
   useShortcuts()
 
@@ -135,6 +137,7 @@ export default function App() {
           onExport={() => setMenu(menu === 'export' ? null : 'export')}
           onView={() => setMenu(menu === 'view' ? null : 'view')}
           onSettings={() => setMenu(menu === 'settings' ? null : 'settings')}
+          onTemplates={() => setTemplatesOpen(true)}
           rightExtra={
             <span className="menu-anchor">
               {menu === 'view' && <ViewMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
@@ -157,6 +160,9 @@ export default function App() {
         {trashOpen && <TrashView />}
       </main>
       {searchOpen && <SearchPanel />}
+      {templatesOpen && (
+        <TemplateGallery boardId={currentBoardId} onClose={() => setTemplatesOpen(false)} />
+      )}
     </div>
   )
 }

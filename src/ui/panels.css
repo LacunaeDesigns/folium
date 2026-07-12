@@ -277,3 +277,112 @@
   background: var(--bg-chrome);
   color: var(--ink);
 }
+
+/* templates */
+.tpl-modal {
+  width: 720px;
+  max-width: 94vw;
+  max-height: 78vh;
+  background: var(--bg-chrome);
+  border-radius: 10px;
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tpl-save-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.tpl-save-row input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  outline: none;
+  background: var(--bg-chrome);
+  color: var(--ink);
+}
+.tpl-save-btn {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.tpl-save-btn:disabled {
+  opacity: 0.4;
+}
+.tpl-body {
+  overflow-y: auto;
+  padding: 12px 14px 16px;
+}
+.tpl-cat {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 12px 0 8px;
+}
+.tpl-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.tpl-card {
+  position: relative;
+}
+.tpl-hit {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--bg-chrome);
+}
+.tpl-hit:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-card);
+}
+.tpl-preview {
+  width: 100%;
+  height: 92px;
+  background: var(--bg-canvas);
+  border-radius: 5px;
+  display: block;
+}
+.tpl-name {
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 7px;
+  color: var(--ink);
+}
+.tpl-desc {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+  line-height: 1.35;
+}
+.tpl-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: var(--bg-chrome);
+  color: var(--ink-faint);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tpl-delete:hover {
+  color: var(--danger);
+}

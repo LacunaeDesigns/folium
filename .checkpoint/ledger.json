@@ -12,7 +12,7 @@
     {"id": "p7-organization", "status": "done", "commit": "d380a8c", "notes": "verified: tray, trash restore, ctrl+k search jump, settings name"},
     {"id": "p8-templates", "status": "done", "commit": "831bdcb", "notes": "7 built-ins + save-as-template verified in browser"},
     {"id": "p9-export-present-seed", "status": "done", "commit": "90f3d2c", "notes": "viewer verified in iframe incl. nested nav; present mode + seed verified"},
-    {"id": "p10-live-session", "status": "pending", "commit": null, "notes": "peerjs host/join, comment protocol, two-tab verify"},
+    {"id": "p10-live-session", "status": "done", "commit": "9fe4119", "notes": "two-tab E2E over real PeerJS cloud: join, comment, pin, sync-back all verified"},
     {"id": "p11-verification", "status": "pending", "commit": null, "notes": "vitest + full browser walkthrough per plan"}
   ],
   "resume_hint": "Next: p1-scaffold-shell. Idempotency: check git log + existing files in src/ before re-creating; npm install is safe to re-run."

@@ -1,0 +1,118 @@
+import React from 'react'
+import { CardBodyProps, getCardBody } from './registry'
+import { Card, ColumnContent } from '../model/types'
+import { useAtlas, useAtlasStore } from '../store/context'
+import { columnCards } from '../store/selectors'
+import { DEFAULT_VIEW, useUi } from '../store/uiStore'
+import { Icon } from '../ui/Icons'
+import { safeCapture } from '../canvas/coords'
+import { resolveCardDrop } from '../canvas/dropTarget'
+
+function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
+  const store = useAtlasStore()
+  const selected = useUi((s) => s.selection.includes(card.id))
+  const [dragXY, setDragXY] = React.useState<{ x: number; y: number } | null>(null)
+  const gesture = React.useRef<{ startX: number; startY: number; dragging: boolean } | null>(null)
+
+  const Body = getCardBody(card.type)
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (readOnly || e.button !== 0) return
+    e.stopPropagation()
+    const target = e.target as HTMLElement
+    if (target.closest('input, textarea, button, a, [contenteditable="true"], .no-drag')) return
+    useUi.getState().setSelection([card.id])
+    safeCapture(e.currentTarget as HTMLElement, e.pointerId)
+    gesture.current = { startX: e.clientX, startY: e.clientY, dragging: false }
+  }
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    const g = gesture.current
+    if (!g) return
+    if (!g.dragging && Math.hypot(e.clientX - g.startX, e.clientY - g.startY) < 5) return
+    g.dragging = true
+    setDragXY({ x: e.clientX - g.startX, y: e.clientY - g.startY })
+  }
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    const g = gesture.current
+    gesture.current = null
+    if (!g || !g.dragging) {
+      setDragXY(null)
+      return
+    }
+    setDragXY(null)
+    const drop = resolveCardDrop(e.clientX, e.clientY, [card.id])
+    const s = store.getState()
+    if (drop) {
+      s.setCardColumn(card.id, drop.colId, drop.index)
+      return
+    }
+    // released on open canvas -> pop out at world position
+    const vp = document.querySelector('.canvas-viewport')
+    if (vp) {
+      const r = vp.getBoundingClientRect()
+      const boardId = useUi.getState().currentBoardId
+      const view = (boardId && useUi.getState().views[boardId]) || DEFAULT_VIEW
+      const wx = (e.clientX - r.left - view.pan.x) / view.zoom
+      const wy = (e.clientY - r.top - view.pan.y) / view.zoom
+      s.setCardColumn(card.id, null, 0, { x: wx - card.w / 2, y: wy - 20 })
+    }
+  }
+
+  return (
+    <div
+      className={'col-member' + (selected ? ' selected' : '') + (dragXY ? ' lifting' : '')}
+      data-col-member={card.id}
+      style={dragXY ? { transform: `translate(${dragXY.x}px, ${dragXY.y}px)`, zIndex: 99 } : undefined}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+    >
+      <div className={'col-member-chrome card-face-' + card.type}>
+        <Body card={card} inColumn readOnly={readOnly} />
+      </div>
+    </div>
+  )
+}
+
+export function ColumnCard({ card, readOnly }: CardBodyProps) {
+  const content = card.content as ColumnContent
+  const store = useAtlasStore()
+  const members = useAtlas((s) => columnCards(s, card.id))
+
+  return (
+    <div className="column-card">
+      <div className="column-head">
+        <input
+          className="column-title"
+          placeholder="Column"
+          value={content.title}
+          readOnly={readOnly}
+          onChange={(e) => store.getState().updateContent(card.id, { title: e.target.value })}
+        />
+        <span className="column-count">{members.length}</span>
+        {!readOnly && (
+          <button
+            className="column-collapse no-drag"
+            title={content.collapsed ? 'Expand' : 'Collapse'}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() =>
+              store.getState().updateContent(card.id, { collapsed: !content.collapsed })
+            }
+          >
+            <Icon name={content.collapsed ? 'chevron-right' : 'chevron-down'} size={14} />
+          </button>
+        )}
+      </div>
+      {!content.collapsed && (
+        <div className="column-body">
+          {members.map((m) => (
+            <ColumnMember key={m.id} card={m} readOnly={readOnly} />
+          ))}
+          {members.length === 0 && <div className="column-empty">Drag cards here</div>}
+        </div>
+      )}
+    </div>
+  )
+}

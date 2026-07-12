@@ -40,8 +40,11 @@ export const useUi = create<UiState>((set) => ({
   unsortedOpen: false,
   presentationMode: false,
 
-  setBoard: (id) =>
-    set({ currentBoardId: id, selection: [], activeTool: null, trashOpen: false }),
+  setBoard: (id) => {
+    set({ currentBoardId: id, selection: [], activeTool: null, trashOpen: false })
+    const want = '#/b/' + id
+    if (typeof location !== 'undefined' && location.hash !== want) location.hash = want
+  },
   setSelection: (ids) => set({ selection: ids }),
   toggleSelect: (id) =>
     set((s) => ({

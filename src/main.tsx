@@ -14,15 +14,21 @@ const root = ReactDOM.createRoot(document.getElementById('root')!)
 bootAtlas().then(({ store, db }) => {
   if (import.meta.env.DEV) {
     ;(window as unknown as Record<string, unknown>).__atlas = { store, db }
-    void Promise.all([import('./export/collect'), import('./export/html'), import('./export/markdown')]).then(
-      ([collect, html, md]) => {
-        Object.assign((window as unknown as { __atlas: object }).__atlas, {
-          collectBoardExport: collect.collectBoardExport,
-          buildHtmlExport: html.buildHtmlExport,
-          boardToMarkdown: md.boardToMarkdown,
-        })
-      },
-    )
+    void Promise.all([
+      import('./export/collect'),
+      import('./export/html'),
+      import('./export/markdown'),
+      import('./live/viewerScript'),
+      import('peerjs/dist/peerjs.min.js?raw'),
+    ]).then(([collect, html, md, viewer, peerRaw]) => {
+      Object.assign((window as unknown as { __atlas: object }).__atlas, {
+        collectBoardExport: collect.collectBoardExport,
+        buildHtmlExport: html.buildHtmlExport,
+        boardToMarkdown: md.boardToMarkdown,
+        viewerLiveJs: viewer.VIEWER_LIVE_JS,
+        peerjsRaw: (peerRaw as { default: string }).default,
+      })
+    })
   }
   root.render(
     <React.StrictMode>

@@ -1,0 +1,124 @@
+.canvas-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.canvas-viewport.panning {
+  cursor: grab;
+}
+
+.canvas-viewport.placing {
+  cursor: crosshair;
+}
+
+.canvas-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+}
+
+.card-shell {
+  position: absolute;
+  background: var(--card-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  outline: 1.5px solid transparent;
+  outline-offset: 0;
+}
+
+.card-shell.selected {
+  outline-color: var(--selection);
+}
+
+.card-shell.dragging {
+  opacity: 0.92;
+  cursor: grabbing;
+}
+
+.card-shell.line-target:hover {
+  outline-color: var(--accent);
+  cursor: crosshair;
+}
+
+/* card types that draw their own chrome */
+.card-shell[data-type='sticky'],
+.card-shell[data-type='shape'],
+.card-shell[data-type='ink'],
+.card-shell[data-type='board'],
+.card-shell[data-type='swatch'],
+.card-shell[data-type='comment'],
+.card-shell[data-type='column'],
+.card-shell[data-type='image'] {
+  background: transparent;
+  box-shadow: none;
+}
+
+.resize-handle {
+  position: absolute;
+  z-index: 5;
+}
+
+.resize-handle.edge {
+  right: -5px;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.resize-handle.corner {
+  right: -6px;
+  bottom: -6px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  background: var(--bg-chrome);
+  border: 1.5px solid var(--selection);
+  border-radius: 3px;
+}
+
+.marquee {
+  position: absolute;
+  border: 1px solid var(--selection);
+  background: rgba(76, 159, 251, 0.08);
+  pointer-events: none;
+  z-index: 60;
+}
+
+.zoom-pill {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+  z-index: 50;
+}
+
+.zoom-pill button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 9px;
+  color: var(--ink-soft);
+}
+
+.zoom-pill button:hover {
+  color: var(--ink);
+  background: var(--bg-hover);
+}
+
+.zoom-pill .zoom-value {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 44px;
+}

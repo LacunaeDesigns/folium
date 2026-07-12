@@ -44,8 +44,13 @@ function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
     setDragXY(null)
     const drop = resolveCardDrop(e.clientX, e.clientY, [card.id])
     const s = store.getState()
-    if (drop) {
+    if (drop?.kind === 'column') {
       s.setCardColumn(card.id, drop.colId, drop.index)
+      return
+    }
+    if (drop?.kind === 'unsorted') {
+      s.setCardColumn(card.id, null, 0)
+      s.updateCard(card.id, { inUnsorted: true })
       return
     }
     // released on open canvas -> pop out at world position

@@ -308,6 +308,19 @@ export function Canvas({ boardId }: { boardId: string }) {
     })
   }
 
+  // View-menu commands from the top bar
+  React.useEffect(() => {
+    const onView = (e: Event) => {
+      const op = (e as CustomEvent<{ op: string }>).detail.op
+      if (op === 'zoom-in') zoomStep(1)
+      else if (op === 'zoom-out') zoomStep(-1)
+      else if (op === 'zoom-reset') setView(boardId, { zoom: 1, pan: view.pan })
+      else if (op === 'fit') fitToContent()
+    }
+    window.addEventListener('atlas:view', onView)
+    return () => window.removeEventListener('atlas:view', onView)
+  })
+
   const menuAction = (fn: () => void) => () => {
     fn()
     setCtxMenu(null)

@@ -8,6 +8,8 @@ import { SearchPanel } from './ui/SearchPanel'
 import { TemplateGallery } from './ui/TemplateGallery'
 import { ExportMenu } from './ui/ExportMenu'
 import { PresentMode } from './ui/PresentMode'
+import { LiveSessionPanel } from './ui/LiveSessionPanel'
+import { useLive } from './live/host'
 import { useAtlas, useAtlasStore, useDb } from './store/context'
 import { breadcrumbs } from './store/selectors'
 import { saveUserName, getUserName } from './store/settings'
@@ -95,8 +97,9 @@ export default function App() {
   const setTrashOpen = useUi((s) => s.setTrashOpen)
   const searchOpen = useUi((s) => s.searchOpen)
   const presentationMode = useUi((s) => s.presentationMode)
-  const [menu, setMenu] = React.useState<'view' | 'settings' | 'export' | null>(null)
+  const [menu, setMenu] = React.useState<'view' | 'settings' | 'export' | 'live' | null>(null)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
+  const liveActive = useLive((s) => s.active)
 
   useShortcuts()
 
@@ -141,11 +144,14 @@ export default function App() {
           onView={() => setMenu(menu === 'view' ? null : 'view')}
           onSettings={() => setMenu(menu === 'settings' ? null : 'settings')}
           onTemplates={() => setTemplatesOpen(true)}
+          onLive={() => setMenu(menu === 'live' ? null : 'live')}
+          liveActive={liveActive}
           rightExtra={
             <span className="menu-anchor">
               {menu === 'view' && <ViewMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
               {menu === 'settings' && <SettingsMenu onClose={() => setMenu(null)} />}
               {menu === 'export' && <ExportMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
+              {menu === 'live' && <LiveSessionPanel boardId={currentBoardId} />}
             </span>
           }
         />

@@ -5,6 +5,8 @@ import { buildHtmlExport } from '../export/html'
 import { boardToMarkdown } from '../export/markdown'
 import { exportBackup, importBackup } from '../export/json'
 import { getUserName } from '../store/settings'
+import { VIEWER_LIVE_JS } from '../live/viewerScript'
+import peerjsRaw from 'peerjs/dist/peerjs.min.js?raw'
 import { Icon } from './Icons'
 
 export function ExportMenu({ boardId, onClose }: { boardId: string; onClose: () => void }) {
@@ -23,9 +25,10 @@ export function ExportMenu({ boardId, onClose }: { boardId: string; onClose: () 
     setBusy(autoPrint ? 'print' : 'html')
     try {
       const bundle = await collectBoardExport(docState(), boardId, db)
+      const liveLayer = peerjsRaw + '\n' + VIEWER_LIVE_JS
       const html = buildHtmlExport(
         bundle,
-        autoPrint ? 'setTimeout(function(){window.print()},500);' : '',
+        autoPrint ? 'setTimeout(function(){window.print()},500);' : liveLayer,
       )
       if (autoPrint) {
         const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))

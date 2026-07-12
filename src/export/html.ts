@@ -6,6 +6,7 @@ import { ExportBundle } from './collect'
  */
 export function buildHtmlExport(bundle: ExportBundle, extraScript = ''): string {
   const json = JSON.stringify(bundle).replace(/<\//g, '<\\/')
+  const safeExtra = extraScript.replace(/<\/script/gi, '<\\/script')
   const title = bundle.boards.find((b) => b.id === bundle.rootBoardId)?.title ?? 'Board'
 
   return `<!doctype html>
@@ -208,6 +209,7 @@ function render(){
   var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   cards.forEach(function(c){ minX=Math.min(minX,c.x); minY=Math.min(minY,c.y); maxX=Math.max(maxX,c.x+c.w); maxY=Math.max(maxY,c.y+(c.h||200)); });
   var pad=50, offX=minX-pad, offY=minY-pad;
+  window.__offs = { offX: offX, offY: offY };
   world.innerHTML = '<svg class="lines" id="linesvg"></svg>' + cards.map(function(c){
     var style='left:'+(c.x-offX)+'px;top:'+(c.y-offY)+'px;width:'+c.w+'px;'+(c.h?'height:'+c.h+'px;':'')+'z-index:'+c.z;
     return '<div class="card'+(TP[c.type]?' tp':'')+'" data-card="'+c.id+'" style="'+style+'">'+cardBody(c)+'</div>';
@@ -256,7 +258,7 @@ document.addEventListener('click', function(e){
 });
 function avatarPin(name){ return avatar(name); }
 render();
-${extraScript}
+${safeExtra}
 </script>
 </body>
 </html>`

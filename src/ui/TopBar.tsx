@@ -18,6 +18,8 @@ export function TopBar({
   onView,
   onSettings,
   onTemplates,
+  onLive,
+  liveActive,
   rightExtra,
 }: {
   crumbs: Crumb[]
@@ -29,6 +31,8 @@ export function TopBar({
   onView: () => void
   onSettings: () => void
   onTemplates: () => void
+  onLive: () => void
+  liveActive?: boolean
   rightExtra?: React.ReactNode
 }) {
   const [editing, setEditing] = React.useState(false)
@@ -95,6 +99,10 @@ export function TopBar({
         </div>
         <div className="titlebar-side right">
           {rightExtra}
+          <button className="chrome-btn" onClick={onLive}>
+            <Icon name="broadcast" size={13} /> Live
+            {liveActive && <span className="live-dot" />}
+          </button>
           <button className="chrome-btn" onClick={onTemplates}>
             <Icon name="template" size={13} /> Templates
           </button>

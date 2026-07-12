@@ -97,7 +97,13 @@ export function LinesLayer({
   const lines = useAtlas((s) => linesOnBoard(s, boardId))
   const selectedLine = useUi((s) => s.selectedLine)
   const [labelEdit, setLabelEdit] = React.useState<string | null>(null)
-  const [endDrag, setEndDrag] = React.useState<{ lineId: string; which: 'from' | 'to'; pt: Pt } | null>(null)
+  const [endDrag, setEndDragState] = React.useState<{ lineId: string; which: 'from' | 'to'; pt: Pt } | null>(null)
+  // ref mirror — pointer events can all land between renders
+  const endDragRef = React.useRef<typeof endDrag>(null)
+  const setEndDrag = (v: typeof endDrag) => {
+    endDragRef.current = v
+    setEndDragState(v)
+  }
   // bump to re-measure after mount so lines attach to freshly-rendered cards
   const [, setTick] = React.useState(0)
   React.useEffect(() => {
@@ -127,13 +133,15 @@ export function LinesLayer({
   }
 
   const onEndPointerMove = (e: React.PointerEvent) => {
-    if (!endDrag) return
-    setEndDrag({ ...endDrag, pt: toWorld(e.clientX, e.clientY) })
+    const cur = endDragRef.current
+    if (!cur) return
+    setEndDrag({ ...cur, pt: toWorld(e.clientX, e.clientY) })
   }
 
   const onEndPointerUp = (e: React.PointerEvent) => {
-    if (!endDrag) return
-    const { lineId, which } = endDrag
+    const cur = endDragRef.current
+    if (!cur) return
+    const { lineId, which } = cur
     setEndDrag(null)
     // attach to a card if released over one
     const stack = document.elementsFromPoint(e.clientX, e.clientY)

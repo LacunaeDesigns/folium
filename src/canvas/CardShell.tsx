@@ -4,6 +4,7 @@ import { useAtlasStore } from '../store/context'
 import { useUi } from '../store/uiStore'
 import { getCardBody } from '../cards/registry'
 import { safeCapture } from './coords'
+import { resolveCardDrop } from './dropTarget'
 
 export interface DragState {
   ids: string[]
@@ -97,6 +98,16 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
       const dx = (e.clientX - g.startX) / zoom
       const dy = (e.clientY - g.startY) / zoom
       setDrag(null)
+      // dropping onto a column moves the cards into it (columns themselves can't nest)
+      const s = store.getState()
+      const droppable = g.ids.every((id) => s.cards[id] && s.cards[id].type !== 'column')
+      if (droppable) {
+        const drop = resolveCardDrop(e.clientX, e.clientY, g.ids)
+        if (drop) {
+          g.ids.forEach((id, i) => s.setCardColumn(id, drop.colId, drop.index + i))
+          return
+        }
+      }
       if (dx !== 0 || dy !== 0) store.getState().moveCards(g.ids, dx, dy)
     } else if (!e.shiftKey) {
       useUi.getState().setSelection([card.id])

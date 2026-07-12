@@ -2,13 +2,14 @@ import React from 'react'
 import { TopBar } from './ui/TopBar'
 import { Toolbar } from './ui/Toolbar'
 import { Canvas } from './canvas/Canvas'
-import { useAtlas } from './store/context'
+import { useAtlas, useAtlasStore } from './store/context'
 import { breadcrumbs } from './store/selectors'
 import { useUi } from './store/uiStore'
 import { useShortcuts } from './canvas/useShortcuts'
 import './cards'
 
 export default function App() {
+  const store = useAtlasStore()
   const rootId = useAtlas((s) => s.rootId)
   const currentBoardId = useUi((s) => s.currentBoardId) ?? rootId
   const board = useAtlas((s) => s.boards[currentBoardId])
@@ -21,6 +22,19 @@ export default function App() {
   const setTrashOpen = useUi((s) => s.setTrashOpen)
 
   useShortcuts()
+
+  // hash routing: #/b/<boardId>; back/forward supported
+  React.useEffect(() => {
+    const apply = () => {
+      const m = location.hash.match(/^#\/b\/(.+)$/)
+      const id = m ? m[1] : rootId
+      const target = store.getState().boards[id] ? id : rootId
+      if (useUi.getState().currentBoardId !== target) useUi.getState().setBoard(target)
+    }
+    apply()
+    window.addEventListener('hashchange', apply)
+    return () => window.removeEventListener('hashchange', apply)
+  }, [rootId, store])
 
   // fall back to root if the current board disappears (e.g. deleted)
   React.useEffect(() => {

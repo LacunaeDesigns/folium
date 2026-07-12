@@ -7,7 +7,7 @@
     {"id": "p2-model-persist-undo", "status": "done", "commit": "647c9cb", "notes": "26 tests green; reload-persistence verified in browser; __atlas dev handle added"},
     {"id": "p3-canvas-core", "status": "done", "commit": "ac71ea9", "notes": "browser-verified place/drag/marquee/zoom/delete/duplicate/undo"},
     {"id": "p4-core-cards", "status": "done", "commit": "bd0db64", "notes": "all 6 verified in browser; screenshots time out in this pane — verify via DOM/getComputedStyle instead"},
-    {"id": "p5-structure-cards", "status": "pending", "commit": null, "notes": "nested boards, columns, comments, image pins, tables"},
+    {"id": "p5-structure-cards", "status": "done", "commit": "772c78f", "notes": "verified: hash nav+back, column drag both ways, pins, table, comment"},
     {"id": "p6-lines-whiteboard", "status": "pending", "commit": null, "notes": "svg lines, ink, sticky, shapes"},
     {"id": "p7-organization", "status": "pending", "commit": null, "notes": "unsorted, trash, search, duplicate, board themes"},
     {"id": "p8-templates", "status": "pending", "commit": null, "notes": "engine + 7 built-ins + save-as-template + picker"},

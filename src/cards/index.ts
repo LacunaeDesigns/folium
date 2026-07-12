@@ -9,6 +9,9 @@ import { BoardCard } from './BoardCard'
 import { ColumnCard } from './ColumnCard'
 import { CommentCard } from './CommentCard'
 import { TableCard } from './TableCard'
+import { StickyCard } from './StickyCard'
+import { ShapeCard } from './ShapeCard'
+import { InkCard } from './InkCard'
 import './cards.css'
 
 registerCardBody('note', NoteCard)
@@ -21,3 +24,6 @@ registerCardBody('board', BoardCard)
 registerCardBody('column', ColumnCard)
 registerCardBody('comment', CommentCard)
 registerCardBody('table', TableCard)
+registerCardBody('sticky', StickyCard)
+registerCardBody('shape', ShapeCard)
+registerCardBody('ink', InkCard)

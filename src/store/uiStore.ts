@@ -8,12 +8,21 @@ export interface BoardView {
 
 export const DEFAULT_VIEW: BoardView = { pan: { x: 0, y: 0 }, zoom: 1 }
 
+export interface DrawSettings {
+  color: string
+  width: number
+  eraser: boolean
+}
+
 interface UiState {
   currentBoardId: string | null
   selection: string[]
+  /** selected line id (mutually exclusive with card selection in practice) */
+  selectedLine: string | null
   activeTool: ToolId | null
   /** per-board pan/zoom, in-memory */
   views: Record<string, BoardView>
+  draw: DrawSettings
   trashOpen: boolean
   searchOpen: boolean
   unsortedOpen: boolean
@@ -23,39 +32,48 @@ interface UiState {
   setSelection(ids: string[]): void
   toggleSelect(id: string): void
   clearSelection(): void
+  setSelectedLine(id: string | null): void
   setTool(tool: ToolId | null): void
   setView(boardId: string, view: BoardView): void
+  setDraw(patch: Partial<DrawSettings>): void
   setTrashOpen(open: boolean): void
   setSearchOpen(open: boolean): void
   setUnsortedOpen(open: boolean): void
+  setPresentationMode(on: boolean): void
 }
 
 export const useUi = create<UiState>((set) => ({
   currentBoardId: null,
   selection: [],
+  selectedLine: null,
   activeTool: null,
   views: {},
+  draw: { color: '#33373b', width: 3, eraser: false },
   trashOpen: false,
   searchOpen: false,
   unsortedOpen: false,
   presentationMode: false,
 
   setBoard: (id) => {
-    set({ currentBoardId: id, selection: [], activeTool: null, trashOpen: false })
+    set({ currentBoardId: id, selection: [], selectedLine: null, activeTool: null, trashOpen: false })
     const want = '#/b/' + id
     if (typeof location !== 'undefined' && location.hash !== want) location.hash = want
   },
-  setSelection: (ids) => set({ selection: ids }),
+  setSelection: (ids) => set({ selection: ids, selectedLine: null }),
   toggleSelect: (id) =>
     set((s) => ({
       selection: s.selection.includes(id)
         ? s.selection.filter((k) => k !== id)
         : [...s.selection, id],
+      selectedLine: null,
     })),
-  clearSelection: () => set({ selection: [] }),
+  clearSelection: () => set({ selection: [], selectedLine: null }),
+  setSelectedLine: (id) => set({ selectedLine: id, selection: id ? [] : [] }),
   setTool: (tool) => set({ activeTool: tool }),
   setView: (boardId, view) => set((s) => ({ views: { ...s.views, [boardId]: view } })),
+  setDraw: (patch) => set((s) => ({ draw: { ...s.draw, ...patch } })),
   setTrashOpen: (open) => set({ trashOpen: open }),
   setSearchOpen: (open) => set({ searchOpen: open }),
   setUnsortedOpen: (open) => set({ unsortedOpen: open }),
+  setPresentationMode: (on) => set({ presentationMode: on }),
 }))

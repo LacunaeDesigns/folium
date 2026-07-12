@@ -129,6 +129,9 @@ export interface InkContent {
   kind: 'ink'
   /** strokes in card-local coordinates */
   strokes: { points: number[]; color: string; width: number }[]
+  /** natural (creation-time) dimensions — viewBox for scaling on resize */
+  natW: number
+  natH: number
 }
 
 export type CardContent =

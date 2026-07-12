@@ -43,6 +43,12 @@ export function useShortcuts() {
       if (isTyping()) return
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (ui.selectedLine) {
+          e.preventDefault()
+          store.getState().deleteLine(ui.selectedLine)
+          ui.setSelectedLine(null)
+          return
+        }
         if (ui.selection.length === 0) return
         e.preventDefault()
         store.getState().trashCards(ui.selection)

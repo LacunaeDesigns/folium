@@ -1,5 +1,7 @@
 import React from 'react'
-import { CardType } from '../model/types'
+import { CardType, LineEnd } from '../model/types'
+import { LinesLayer } from './LinesLayer'
+import { InkLayer } from './InkLayer'
 import { useAtlas, useAtlasStore, useDb } from '../store/context'
 import { putBlob } from '../store/persist'
 import { boardCards } from '../store/selectors'
@@ -30,6 +32,21 @@ export function Canvas({ boardId }: { boardId: string }) {
   const [marquee, setMarquee] = React.useState<Rect | null>(null)
   const [ctxMenu, setCtxMenu] = React.useState<CtxMenu | null>(null)
   const [spaceDown, setSpaceDown] = React.useState(false)
+  const [pendingLineFrom, setPendingLineFrom] = React.useState<LineEnd | null>(null)
+  const [cursorWorld, setCursorWorld] = React.useState<Pt | null>(null)
+
+  // reset in-progress line when the tool changes
+  React.useEffect(() => {
+    if (activeTool !== 'line') setPendingLineFrom(null)
+  }, [activeTool])
+
+  const completeLine = (to: LineEnd) => {
+    if (!pendingLineFrom) return
+    const id = store.getState().addLine(boardId, pendingLineFrom, to)
+    setPendingLineFrom(null)
+    setTool(null)
+    useUi.getState().setSelectedLine(id)
+  }
 
   const panGesture = React.useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
   const marqueeGesture = React.useRef<{ startX: number; startY: number } | null>(null)
@@ -167,6 +184,12 @@ export function Canvas({ boardId }: { boardId: string }) {
     if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('canvas-world')) return
 
     const local = clientToLocal(e.clientX, e.clientY)
+    if (activeTool === 'line') {
+      const world = screenToWorld(view, local.x, local.y)
+      if (!pendingLineFrom) setPendingLineFrom({ x: world.x, y: world.y })
+      else completeLine({ x: world.x, y: world.y })
+      return
+    }
     if (activeTool) {
       const world = screenToWorld(view, local.x, local.y)
       placeAt(activeTool, world)
@@ -178,6 +201,10 @@ export function Canvas({ boardId }: { boardId: string }) {
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
+    if (pendingLineFrom) {
+      const local = clientToLocal(e.clientX, e.clientY)
+      setCursorWorld(screenToWorld(view, local.x, local.y))
+    }
     if (panGesture.current) {
       const g = panGesture.current
       setView(boardId, {
@@ -308,6 +335,14 @@ export function Canvas({ boardId }: { boardId: string }) {
         className="canvas-world"
         style={{ transform: `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})` }}
       >
+        <LinesLayer
+          boardId={boardId}
+          view={view}
+          viewportEl={viewportRef.current}
+          drag={drag}
+          pendingFrom={pendingLineFrom}
+          cursor={cursorWorld}
+        />
         {cards.map((card) => (
           <CardShell
             key={card.id}
@@ -316,9 +351,18 @@ export function Canvas({ boardId }: { boardId: string }) {
             drag={drag}
             setDrag={setDrag}
             onContextMenu={(cardId, x, y) => setCtxMenu({ cardId, x, y })}
+            lineToolActive={activeTool === 'line'}
+            onLineAnchor={(cardId) => {
+              if (!pendingLineFrom) setPendingLineFrom({ cardId })
+              else completeLine({ cardId })
+            }}
           />
         ))}
       </div>
+
+      {activeTool === 'draw' && (
+        <InkLayer boardId={boardId} view={view} viewportEl={viewportRef.current} />
+      )}
 
       {marquee && (
         <div

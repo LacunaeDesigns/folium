@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid'
 import { CardBodyProps } from './registry'
 import { CommentContent, CommentReply } from '../model/types'
 import { useAtlasStore } from '../store/context'
+import { getUserName } from '../store/settings'
 
 export function relTime(ts: number): string {
   const d = Date.now() - ts
@@ -32,7 +33,7 @@ export function CommentCard({ card, readOnly }: CardBodyProps) {
   const addReply = () => {
     const text = reply.trim()
     if (!text) return
-    const r: CommentReply = { id: nanoid(6), author: 'You', text, ts: Date.now() }
+    const r: CommentReply = { id: nanoid(6), author: getUserName(), text, ts: Date.now() }
     store.getState().updateContent(card.id, { replies: [...content.replies, r] })
     setReply('')
   }

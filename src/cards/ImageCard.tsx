@@ -7,6 +7,7 @@ import { putBlob } from '../store/persist'
 import { useBlobUrl } from './blobUrl'
 import { Icon } from '../ui/Icons'
 import { useUi } from '../store/uiStore'
+import { getUserName } from '../store/settings'
 import { Avatar, relTime } from './CommentCard'
 
 function PinPopover({
@@ -166,7 +167,7 @@ function ImageView({
       id: nanoid(6),
       fx: (e.clientX - r.left) / r.width,
       fy: (e.clientY - r.top) / r.height,
-      author: 'You',
+      author: getUserName(),
       text: '',
       replies: [],
       ts: Date.now(),
@@ -243,7 +244,7 @@ function ImageView({
                   setOpenPin(null)
                 }}
                 onReply={(text) => {
-                  const r: CommentReply = { id: nanoid(6), author: 'You', text, ts: Date.now() }
+                  const r: CommentReply = { id: nanoid(6), author: getUserName(), text, ts: Date.now() }
                   setPins(pins.map((p) => (p.id === open.id ? { ...p, replies: [...p.replies, r] } : p)))
                 }}
               />

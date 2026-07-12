@@ -1,6 +1,7 @@
 import { createStore, StoreApi } from 'zustand/vanilla'
 import { temporal, TemporalState } from 'zundo'
 import { nanoid } from 'nanoid'
+import { getUserName } from './settings'
 import {
   Board,
   BoardSnapshot,
@@ -69,7 +70,7 @@ export function defaultContent(type: CardType): CardContent {
     case 'column':
       return { kind: 'column', title: '', collapsed: false }
     case 'comment':
-      return { kind: 'comment', author: 'You', text: '', replies: [], ts: Date.now() }
+      return { kind: 'comment', author: getUserName(), text: '', replies: [], ts: Date.now() }
     case 'table':
       return {
         kind: 'table',
@@ -293,7 +294,10 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
             const cards = { ...s.cards }
             for (const id of ids) {
               const c = cards[id]
-              if (c) cards[id] = { ...c, trashed: false, colId: null, inUnsorted: false }
+              if (!c) continue
+              // if the card's board was deleted meanwhile, bring it home
+              const boardId = s.boards[c.boardId] ? c.boardId : s.rootId
+              cards[id] = { ...c, boardId, trashed: false, colId: null, inUnsorted: false }
             }
             return { cards }
           })

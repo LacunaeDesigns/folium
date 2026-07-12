@@ -103,8 +103,12 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
       const droppable = g.ids.every((id) => s.cards[id] && s.cards[id].type !== 'column')
       if (droppable) {
         const drop = resolveCardDrop(e.clientX, e.clientY, g.ids)
-        if (drop) {
+        if (drop?.kind === 'column') {
           g.ids.forEach((id, i) => s.setCardColumn(id, drop.colId, drop.index + i))
+          return
+        }
+        if (drop?.kind === 'unsorted') {
+          g.ids.forEach((id) => s.updateCard(id, { inUnsorted: true }))
           return
         }
       }

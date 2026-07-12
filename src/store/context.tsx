@@ -2,6 +2,7 @@ import React from 'react'
 import { useStore } from 'zustand'
 import { AtlasState, AtlasStore, createAtlasStore } from './store'
 import { AtlasDb, bindAutosave, loadDoc, openDb } from './persist'
+import { loadSettings } from './settings'
 
 interface AtlasContextValue {
   store: AtlasStore
@@ -39,6 +40,7 @@ export function useDb(): AtlasDb {
 export async function bootAtlas(): Promise<AtlasContextValue> {
   const db = openDb()
   const doc = await loadDoc(db)
+  await loadSettings(db)
   const store = createAtlasStore(doc ?? undefined)
   bindAutosave(store, db)
   return { store, db }

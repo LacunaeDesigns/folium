@@ -18,7 +18,7 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
   const setRows = (next: string[][]) => update({ rows: next })
   const setCell = (r: number, c: number, v: string) =>
     setRows(rows.map((row, ri) => (ri === r ? row.map((cell, ci) => (ci === c ? v : cell)) : row)))
-  const addRow = () => setRows([...rows, ['', '']])
+  const addRow = () => setRows([...rows, rows[0].map(() => '')])
   const delRow = () => rows.length > 2 && setRows(rows.slice(0, -1))
   const addCol = () => setRows(rows.map((row, ri) => [...row, ri === 0 ? 'Series ' + row.length : '']))
   const delCol = () => rows[0].length > 2 && setRows(rows.map((row) => row.slice(0, -1)))

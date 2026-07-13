@@ -43,6 +43,10 @@ textarea {
   grid-template-rows: auto 1fr;
   height: 100%;
   position: relative;
+  /* re-resolve --ink inside the theme scope carried on this element, so text
+     that only inherits color (to-do, swatch name, etc.) isn't stuck on the
+     concrete light-mode ink inherited from <body> when a board is dark */
+  color: var(--ink);
 }
 
 .app-header {

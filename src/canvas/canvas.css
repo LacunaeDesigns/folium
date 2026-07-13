@@ -140,6 +140,9 @@
   height: 100%;
   overflow: visible;
   pointer-events: none;
+  /* above cards so a line's endpoint handles stay grabbable where they meet a
+     card edge; only the thin .line-hit stroke and .line-end handles take hits */
+  z-index: 10000;
 }
 .line-hit {
   stroke: transparent;

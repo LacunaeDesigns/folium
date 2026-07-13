@@ -23,7 +23,7 @@ interface CardShellProps {
   onLineAnchor?: (cardId: string) => void
 }
 
-const DRAG_THRESHOLD = 4
+const DRAG_THRESHOLD = 8
 
 export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolActive, onLineAnchor }: CardShellProps) {
   const store = useAtlasStore()

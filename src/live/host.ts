@@ -14,7 +14,7 @@ function genCode(): string {
 }
 
 export function peerIdForCode(code: string): string {
-  return 'looseleaf-' + code.toLowerCase()
+  return 'folium-' + code.toLowerCase()
 }
 
 interface LiveState {

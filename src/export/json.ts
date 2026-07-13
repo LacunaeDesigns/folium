@@ -39,7 +39,7 @@ export async function exportBackup(db: AtlasDb, doc: DocState, userName: string)
   const blobRows = await db.blobs.toArray()
   const templates = await db.templates.toArray()
   const backup: Backup = {
-    app: 'looseleaf',
+    app: 'folium',
     version: 1,
     exportedAt: Date.now(),
     doc,
@@ -59,7 +59,7 @@ export async function importBackup(db: AtlasDb, store: AtlasStore, text: string)
   const backup = JSON.parse(text) as Backup
   // validate BEFORE touching the db — a rejected import must leave everything intact
   if (
-    !['looseleaf', 'atlasnote'].includes(backup.app) || // 'atlasnote' accepts legacy backups
+    !['folium', 'looseleaf', 'atlasnote'].includes(backup.app) || // accept prior brand ids
     !backup.doc?.rootId ||
     !isRecord(backup.doc.boards) ||
     !isRecord(backup.doc.cards) ||
@@ -67,7 +67,7 @@ export async function importBackup(db: AtlasDb, store: AtlasStore, text: string)
     !backup.doc.boards[backup.doc.rootId] ||
     !Array.isArray(backup.blobs)
   ) {
-    throw new Error('Not a valid Looseleaf backup file')
+    throw new Error('Not a valid Folium backup file')
   }
   await db.blobs.clear()
   await db.blobs.bulkPut(backup.blobs.map((b) => ({ id: b.id, type: b.type, buf: b64ToBuf(b.b64) })))

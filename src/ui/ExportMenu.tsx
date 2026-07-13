@@ -55,7 +55,7 @@ export function ExportMenu({ boardId, onClose }: { boardId: string; onClose: () 
     setBusy('backup')
     try {
       const json = await exportBackup(db, docState(), getUserName())
-      downloadFile('looseleaf-backup-' + new Date().toISOString().slice(0, 10) + '.json', json, 'application/json')
+      downloadFile('folium-backup-' + new Date().toISOString().slice(0, 10) + '.json', json, 'application/json')
     } finally {
       setBusy(null)
       onClose()

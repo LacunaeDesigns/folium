@@ -66,7 +66,7 @@ export async function collectBoardExport(
     lines,
     blobs,
     exportedAt: Date.now(),
-    appName: 'Looseleaf',
+    appName: 'Folium',
   }
 }
 

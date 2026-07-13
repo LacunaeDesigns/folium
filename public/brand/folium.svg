@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#2f6d5a"/>
+  <!-- leaf body: a single leaf whose veins double as ruled text lines (leaf = page) -->
+  <path d="M33 11 C48 17 51 35 43 51 C38 52 28 52 21 46 C14 40 15 24 33 11 Z" fill="#fbf8f0"/>
+  <!-- midrib / margin rule -->
+  <path d="M37 16 C31 29 27 42 25 50" fill="none" stroke="#2f6d5a" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- side veins as staggered text rules -->
+  <path d="M34 23 C38 23 41 25 43 27" fill="none" stroke="#b4622d" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M31 30 C36 30 39 32 42 35" fill="none" stroke="#cfc5ab" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M29 37 C33 37 36 38 39 41" fill="none" stroke="#cfc5ab" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M27 44 C30 44 32 45 35 47" fill="none" stroke="#cfc5ab" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- stem -->
+  <path d="M25 50 C24 53 23 55 22 57" fill="none" stroke="#2f6d5a" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

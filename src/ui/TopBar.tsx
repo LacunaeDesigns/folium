@@ -51,7 +51,7 @@ export function TopBar({
   return (
     <div className="topbar">
       <div className="topbar-row">
-        <img src="/brand/looseleaf.svg" alt="" className="topbar-logo" />
+        <img src="/brand/folium.svg" alt="" className="topbar-logo" />
         <nav className="topbar-crumbs">
           {parents.map((c) => (
             <React.Fragment key={c.id}>

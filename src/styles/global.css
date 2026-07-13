@@ -41,34 +41,38 @@ textarea {
 .app-shell {
   display: grid;
   grid-template-rows: auto 1fr;
-  grid-template-columns: var(--toolbar-w) 1fr;
-  grid-template-areas:
-    'header header'
-    'toolbar canvas';
   height: 100%;
+  position: relative;
 }
 
 .app-header {
-  grid-area: header;
   background: var(--bg-chrome);
   border-bottom: 1px solid var(--border);
   z-index: 40;
 }
 
+/* floating tool dock */
 .app-toolbar {
-  grid-area: toolbar;
+  position: absolute;
+  left: 14px;
+  top: calc(50% + var(--topbar-h) / 2);
+  transform: translateY(-50%);
   background: var(--bg-chrome);
-  border-right: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-pop);
   z-index: 30;
   overflow-y: auto;
   scrollbar-width: none;
+  max-height: calc(100% - var(--topbar-h) - 48px);
 }
 
 .app-canvas {
-  grid-area: canvas;
   position: relative;
   overflow: hidden;
-  background: var(--bg-canvas);
+  background-color: var(--bg-canvas);
+  background-image: radial-gradient(var(--bg-canvas-dot) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
 }
 
 /* generic menu / popover */

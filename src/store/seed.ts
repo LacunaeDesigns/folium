@@ -12,8 +12,8 @@ export function seedWelcome(store: AtlasStore): void {
     w: 320,
     content: {
       doc: noteDoc(
-        '# Welcome to AtlasNote 👋',
-        'Your local Milanote-style board. Everything lives on this machine.',
+        '# Welcome to Looseleaf 👋',
+        'Your own loose-leaf workspace — cards, boards and sketches, all stored on this machine.',
         '',
         '## The basics',
         'Pick a tool on the left, then click the canvas. Double-click empty space for a quick note. Drag cards anywhere; drag onto a column to stack them.',
@@ -25,7 +25,7 @@ export function seedWelcome(store: AtlasStore): void {
     x: 430,
     y: 60,
     w: 380,
-    content: { url: '/brand/welcome-moodboard.png', caption: 'Boards can hold anything' } as never,
+    content: { url: '/brand/welcome.svg', caption: 'Boards can hold anything' } as never,
   })
 
   s.addCard(home, 'sticky', {

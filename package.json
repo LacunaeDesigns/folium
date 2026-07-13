@@ -1,5 +1,5 @@
 {
-  "name": "atlasnote",
+  "name": "looseleaf",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -11,8 +11,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@fontsource/inter": "^5.0.20",
-    "@fontsource/pt-serif": "^5.0.13",
+    "@fontsource/fraunces": "^5.2.9",
+    "@fontsource/karla": "^5.2.8",
     "@tiptap/extension-highlight": "^2.6.6",
     "@tiptap/extension-link": "^2.6.6",
     "@tiptap/extension-placeholder": "^2.6.6",

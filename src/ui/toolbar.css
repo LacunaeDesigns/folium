@@ -2,9 +2,9 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  height: 100%;
-  padding: 8px 6px;
-  gap: 14px;
+  padding: 10px 7px;
+  gap: 10px;
+  width: 66px;
 }
 
 .toolbar-group {
@@ -14,7 +14,10 @@
 }
 
 .toolbar-spacer {
-  flex: 1;
+  flex: none;
+  height: 1px;
+  background: var(--border);
+  margin: 0 8px;
 }
 
 .tool-btn {
@@ -50,9 +53,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
 }
 
 .tool-label {

@@ -20,6 +20,8 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
     setRows(rows.map((row, ri) => (ri === r ? row.map((cell, ci) => (ci === c ? v : cell)) : row)))
   const addRow = () => setRows([...rows, ['', '']])
   const delRow = () => rows.length > 2 && setRows(rows.slice(0, -1))
+  const addCol = () => setRows(rows.map((row, ri) => [...row, ri === 0 ? 'Series ' + row.length : '']))
+  const delCol = () => rows[0].length > 2 && setRows(rows.map((row) => row.slice(0, -1)))
 
   const data = rowsToChartData(content.rows)
   const svg = renderChartSvg({
@@ -75,6 +77,8 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
             <>
               <button onClick={addRow}>+ Row</button>
               <button onClick={delRow}>− Row</button>
+              <button onClick={addCol}>+ Series</button>
+              <button onClick={delCol}>− Series</button>
             </>
           )}
         </div>

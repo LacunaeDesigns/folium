@@ -84,6 +84,17 @@ export function Canvas({ boardId }: { boardId: string }) {
       const newIds: string[] = []
       let i = 0
       for (const file of Array.from(files)) {
+        // markdown files import as whole boards (Milanote export path)
+        if (/\.(md|markdown)$/i.test(file.name)) {
+          const { importMarkdownBoard } = await import('../import/importBoard')
+          const text = await file.text()
+          importMarkdownBoard(store, boardId, file.name, text, {
+            x: world.x + i * 26,
+            y: world.y + i * 26,
+          })
+          i++
+          continue
+        }
         const blobId = await putBlob(db, file)
         const at = { x: world.x + i * 26, y: world.y + i * 26 }
         if (file.type.startsWith('image/')) {

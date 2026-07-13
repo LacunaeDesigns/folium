@@ -21,6 +21,7 @@ export const VIEWER_LIVE_JS = `
       for (var i=0;i<DATA.cards.length;i++){ if(DATA.cards[i].id===sc.id){ found=DATA.cards[i]; break; } }
       if (found){
         found.content = sc.content; found.x = sc.x; found.y = sc.y; found.w = sc.w; found.h = sc.h;
+        found.z = sc.z; found.colId = sc.colId; found.colIndex = sc.colIndex;
       } else {
         sc.trashed = false; sc.inUnsorted = false;
         DATA.cards.push(sc);

@@ -104,4 +104,11 @@ describe('collectSyncCards', () => {
     expect(sync).toHaveLength(2)
     expect(sync.every((c) => c.boardId === s().rootId)).toBe(true)
   })
+
+  it('excludes cards sitting in the unsorted tray', () => {
+    s().addCard(s().rootId, 'comment', { x: 0, y: 0 })
+    s().addCard(s().rootId, 'comment', { x: 0, y: 0, inUnsorted: true })
+    const sync = collectSyncCards(s(), [s().rootId])
+    expect(sync).toHaveLength(1)
+  })
 })

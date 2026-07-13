@@ -343,6 +343,7 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
             const cards = { ...s.cards }
             const boards = { ...s.boards }
             const lines = { ...s.lines }
+            const touchedColumns = new Set<string>()
             for (const id of ids) {
               const src = cards[id]
               if (!src) continue
@@ -367,10 +368,22 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
                 x: src.x + 24,
                 y: src.y + 24,
                 z: maxZ + 1,
+                // a duplicated column member slots in right after its original
+                colIndex: src.colId ? src.colIndex + 0.5 : src.colIndex,
                 content,
                 createdAt: Date.now(),
               }
+              if (src.colId) touchedColumns.add(src.colId)
               newIds.push(newId)
+            }
+            // recompact fractional indexes back to integers
+            for (const colId of touchedColumns) {
+              Object.values(cards)
+                .filter((c) => c.colId === colId && !c.trashed)
+                .sort((a, b) => a.colIndex - b.colIndex)
+                .forEach((c, i) => {
+                  cards[c.id] = { ...cards[c.id], colIndex: i }
+                })
             }
             return { cards, boards, lines }
           })

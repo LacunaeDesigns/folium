@@ -9,6 +9,7 @@ export type IconName =
   | 'column'
   | 'comment'
   | 'table'
+  | 'chart'
   | 'dots'
   | 'image'
   | 'upload'
@@ -100,6 +101,14 @@ const paths: Record<IconName, React.ReactNode> = {
       <line x1="3.5" y1="9.5" x2="20.5" y2="9.5" />
       <line x1="3.5" y1="14.5" x2="20.5" y2="14.5" />
       <line x1="11" y1="4.5" x2="11" y2="19.5" />
+    </>
+  ),
+  chart: (
+    <>
+      <line x1="4" y1="20" x2="20" y2="20" />
+      <rect x="5.5" y="11" width="3.2" height="7" rx="0.5" />
+      <rect x="10.4" y="7" width="3.2" height="11" rx="0.5" />
+      <rect x="15.3" y="13" width="3.2" height="5" rx="0.5" />
     </>
   ),
   dots: (

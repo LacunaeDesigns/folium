@@ -198,6 +198,7 @@ export function Canvas({ boardId }: { boardId: string }) {
         sticky: 'sticky',
         shape: 'shape',
         image: 'image',
+        chart: 'chart',
       }
       const type = typeMap[tool]
       if (!type) return

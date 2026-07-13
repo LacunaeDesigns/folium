@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { createAtlasStore, AtlasStore } from './store'
+import { createAtlasStore, AtlasStore, collectClip } from './store'
 import { boardCards, columnCards, breadcrumbs, boardCardCount, trashedCards } from './selectors'
 import { NoteContent, StickyContent, TodoContent } from '../model/types'
 
@@ -147,6 +147,81 @@ describe('duplicate in columns', () => {
     const indexes = members.map((c) => c.colIndex)
     expect(new Set(indexes).size).toBe(indexes.length)
     expect(indexes).toEqual([0, 1, 2])
+  })
+})
+
+describe('clipboard copy/paste', () => {
+  it('pastes a copied card onto another board with a fresh id', () => {
+    const { boardId: other } = s().createBoard(s().rootId, 'Other')
+    const id = s().addCard(s().rootId, 'note', { x: 10, y: 20 })
+    s().updateContent(id, { doc: { hello: 'world' } })
+    const clip = collectClip(s(), [id])!
+    const [pasted] = s().pasteClip(clip, other, { x: 0, y: 0 })
+    expect(pasted).not.toBe(id)
+    expect(s().cards[pasted].boardId).toBe(other)
+    expect(boardCards(s(), other).map((c) => c.id)).toContain(pasted)
+    // original untouched
+    expect(s().cards[id].boardId).toBe(s().rootId)
+    // deep content copy
+    expect((s().cards[pasted].content as NoteContent).doc).toEqual({ hello: 'world' })
+  })
+
+  it('positions the pasted group so its top-left lands at the paste point', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 100, y: 100 })
+    const b = s().addCard(s().rootId, 'note', { x: 140, y: 160 })
+    const clip = collectClip(s(), [a, b])!
+    const ids = s().pasteClip(clip, s().rootId, { x: 0, y: 0 })
+    const xs = ids.map((i) => s().cards[i].x)
+    const ys = ids.map((i) => s().cards[i].y)
+    expect(Math.min(...xs)).toBe(0)
+    expect(Math.min(...ys)).toBe(0)
+    // relative offset between the two cards is preserved
+    expect(Math.max(...xs) - Math.min(...xs)).toBe(40)
+    expect(Math.max(...ys) - Math.min(...ys)).toBe(60)
+  })
+
+  it('copying a board card clones its whole subtree on paste', () => {
+    const { boardId: child, cardId } = s().createBoard(s().rootId, 'Child')
+    s().addCard(child, 'note', { x: 0, y: 0 })
+    const { boardId: dest } = s().createBoard(s().rootId, 'Dest')
+    const clip = collectClip(s(), [cardId])!
+    const [pasted] = s().pasteClip(clip, dest, { x: 0, y: 0 })
+    const content = s().cards[pasted].content
+    if (content.kind !== 'board') throw new Error('expected board card')
+    expect(content.boardId).not.toBe(child)
+    expect(s().boards[content.boardId].parentId).toBe(dest)
+    expect(boardCards(s(), content.boardId)).toHaveLength(1)
+  })
+
+  it('copying a column brings its members and keeps them as members', () => {
+    const col = s().addCard(s().rootId, 'column', { x: 0, y: 0 })
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    const b = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    s().setCardColumn(a, col, 0)
+    s().setCardColumn(b, col, 1)
+    const { boardId: dest } = s().createBoard(s().rootId, 'Dest')
+    const clip = collectClip(s(), [col])!
+    const [newCol] = s().pasteClip(clip, dest, { x: 0, y: 0 })
+    expect(s().cards[newCol].type).toBe('column')
+    const members = columnCards(s(), newCol)
+    expect(members).toHaveLength(2)
+    expect(members.every((m) => m.boardId === dest)).toBe(true)
+  })
+
+  it('preserves lines internal to the copied set and drops dangling ones', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    const b = s().addCard(s().rootId, 'note', { x: 200, y: 0 })
+    const outside = s().addCard(s().rootId, 'note', { x: 400, y: 0 })
+    s().addLine(s().rootId, { cardId: a }, { cardId: b }) // internal — kept
+    s().addLine(s().rootId, { cardId: b }, { cardId: outside }) // dangling — dropped
+    const before = Object.keys(s().lines).length
+    const clip = collectClip(s(), [a, b])!
+    s().pasteClip(clip, s().rootId, { x: 500, y: 500 })
+    expect(Object.keys(s().lines).length).toBe(before + 1)
+  })
+
+  it('collectClip returns null for an empty selection', () => {
+    expect(collectClip(s(), [])).toBeNull()
   })
 })
 

@@ -26,6 +26,7 @@ export type CardType =
   | 'sticky'
   | 'shape'
   | 'ink'
+  | 'chart'
 
 export interface TodoItem {
   id: string
@@ -134,6 +135,16 @@ export interface InkContent {
   natH: number
 }
 
+export type ChartKind = 'bar' | 'line' | 'pie' | 'donut'
+
+export interface ChartContent {
+  kind: 'chart'
+  chart: ChartKind
+  title: string
+  /** rows[0] is the header ['Label','Value']; each later row is [label, value] */
+  rows: string[][]
+}
+
 export type CardContent =
   | NoteContent
   | TodoContent
@@ -148,6 +159,7 @@ export type CardContent =
   | StickyContent
   | ShapeContent
   | InkContent
+  | ChartContent
 
 export interface Card {
   id: string
@@ -251,4 +263,5 @@ export const DEFAULT_CARD_SIZE: Record<CardType, { w: number; h?: number }> = {
   sticky: { w: 180, h: 180 },
   shape: { w: 160, h: 120 },
   ink: { w: 200, h: 120 },
+  chart: { w: 300 },
 }

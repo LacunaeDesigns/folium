@@ -18,6 +18,7 @@ export type ToolId =
   | 'image'
   | 'upload'
   | 'draw'
+  | 'chart'
 
 interface ToolDef {
   id: ToolId
@@ -40,6 +41,7 @@ const MORE_TOOLS: ToolDef[] = [
   { id: 'swatch', icon: 'swatch', label: 'Color swatch' },
   { id: 'sticky', icon: 'sticky', label: 'Sticky note' },
   { id: 'shape', icon: 'shape', label: 'Shape' },
+  { id: 'chart', icon: 'chart', label: 'Chart' },
 ]
 
 const MEDIA_TOOLS: ToolDef[] = [

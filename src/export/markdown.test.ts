@@ -53,4 +53,18 @@ describe('boardToMarkdown', () => {
     expect(md).toContain('## Child')
     expect(md).toContain('child text')
   })
+
+  it('renders a chart card as a data table', () => {
+    const store = createAtlasStore()
+    const s = store.getState()
+    s.addCard(s.rootId, 'chart', {
+      x: 0,
+      y: 0,
+      content: { title: 'Sales', rows: [['Label', 'Value'], ['A', '4'], ['B', '7']] } as never,
+    })
+    const md = boardToMarkdown(store.getState(), store.getState().rootId)
+    expect(md).toContain('**Sales**')
+    expect(md).toContain('| Label | Value |')
+    expect(md).toContain('| A | 4 |')
+  })
 })

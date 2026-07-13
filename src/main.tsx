@@ -22,13 +22,21 @@ bootAtlas().then(({ store, db }) => {
       import('./export/markdown'),
       import('./live/viewerScript'),
       import('peerjs/dist/peerjs.min.js?raw'),
-    ]).then(([collect, html, md, viewer, peerRaw]) => {
+      import('./export/json'),
+      import('./store/folderSync'),
+    ]).then(([collect, html, md, viewer, peerRaw, json, fsync]) => {
       Object.assign((window as unknown as { __atlas: object }).__atlas, {
         collectBoardExport: collect.collectBoardExport,
         buildHtmlExport: html.buildHtmlExport,
         boardToMarkdown: md.boardToMarkdown,
         viewerLiveJs: viewer.VIEWER_LIVE_JS,
         peerjsRaw: (peerRaw as { default: string }).default,
+        exportBackup: json.exportBackup,
+        parseBackup: json.parseBackup,
+        applyBackup: json.applyBackup,
+        writeWorkspace: fsync.writeWorkspace,
+        readWorkspace: fsync.readWorkspace,
+        chooseSource: fsync.chooseSource,
       })
     })
   }

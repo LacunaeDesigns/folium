@@ -48,5 +48,12 @@ export async function bootAtlas(): Promise<AtlasContextValue> {
     store.temporal.getState().clear()
   }
   bindAutosave(store, db)
+  // folder sync (optional, opt-in): reconnect a linked folder and pull newer remote data
+  try {
+    const { initFolderSync } = await import('./sync')
+    await initFolderSync(store, db)
+  } catch {
+    /* sync is best-effort; never block boot on it */
+  }
   return { store, db }
 }

@@ -54,10 +54,9 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v)
 }
 
-/** Replaces the entire document, blobs and user templates. */
-export async function importBackup(db: AtlasDb, store: AtlasStore, text: string): Promise<void> {
+/** Parse + validate a backup. Throws on anything malformed — never returns partial. */
+export function parseBackup(text: string): Backup {
   const backup = JSON.parse(text) as Backup
-  // validate BEFORE touching the db — a rejected import must leave everything intact
   if (
     !['folium', 'looseleaf', 'atlasnote'].includes(backup.app) || // accept prior brand ids
     !backup.doc?.rootId ||
@@ -69,11 +68,22 @@ export async function importBackup(db: AtlasDb, store: AtlasStore, text: string)
   ) {
     throw new Error('Not a valid Folium backup file')
   }
+  return backup
+}
+
+/** Write a (validated) backup into the db + store, replacing everything. */
+export async function applyBackup(db: AtlasDb, store: AtlasStore, backup: Backup): Promise<void> {
   await db.blobs.clear()
   await db.blobs.bulkPut(backup.blobs.map((b) => ({ id: b.id, type: b.type, buf: b64ToBuf(b.b64) })))
   await db.templates.clear()
   if (backup.templates?.length) await db.templates.bulkPut(backup.templates)
-  // persist the doc NOW — callers reload immediately, long before autosave's debounce fires
+  // persist the doc NOW — callers may reload immediately, before autosave's debounce fires
   await saveDoc(db, backup.doc)
   store.getState().hydrate(backup.doc)
+}
+
+/** Replaces the entire document, blobs and user templates from backup text. */
+export async function importBackup(db: AtlasDb, store: AtlasStore, text: string): Promise<void> {
+  // validate BEFORE touching the db — a rejected import must leave everything intact
+  await applyBackup(db, store, parseBackup(text))
 }

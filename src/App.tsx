@@ -10,6 +10,8 @@ import { ExportMenu } from './ui/ExportMenu'
 import { PresentMode } from './ui/PresentMode'
 import { LiveSessionPanel } from './ui/LiveSessionPanel'
 import { useLive } from './live/host'
+import { useSync, linkFolder, unlinkFolder, reconnect, syncNow } from './store/sync'
+import { relTime } from './cards/CommentCard'
 import { useAtlas, useAtlasStore, useDb } from './store/context'
 import { breadcrumbs } from './store/selectors'
 import { saveUserName, getUserName } from './store/settings'
@@ -62,6 +64,75 @@ function ViewMenu({ boardId, onClose }: { boardId: string; onClose: () => void }
   )
 }
 
+function SyncSection() {
+  const sync = useSync()
+
+  if (sync.status === 'unsupported') {
+    return (
+      <div className="sync-block">
+        <label className="settings-label">Cross-machine sync</label>
+        <p className="sync-hint">
+          Folder sync needs Chrome or Edge. In this browser your work stays saved locally on this
+          machine.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="sync-block">
+      <label className="settings-label">Cross-machine sync</label>
+      {sync.status === 'off' && (
+        <>
+          <p className="sync-hint">
+            Link a folder in a synced location (OneDrive, Dropbox, iCloud…) and Folium keeps your
+            whole workspace saved there, so it appears on your other machines.
+          </p>
+          <button className="sync-btn primary" disabled={sync.busy} onClick={() => void linkFolder()}>
+            {sync.busy ? 'Linking…' : 'Link a folder…'}
+          </button>
+        </>
+      )}
+      {sync.status === 'needs-reconnect' && (
+        <>
+          <p className="sync-hint">
+            Reconnect “{sync.dirName}” to resume syncing (browsers ask permission again after a
+            reload).
+          </p>
+          <button className="sync-btn primary" disabled={sync.busy} onClick={() => void reconnect()}>
+            Reconnect
+          </button>
+        </>
+      )}
+      {sync.status === 'linked' && (
+        <>
+          <p className="sync-hint">
+            Synced to <b>{sync.dirName}</b>
+            {sync.lastSyncedAt ? ` · saved ${relTime(sync.lastSyncedAt)}` : ''}
+            {sync.busy ? ' · saving…' : ''}
+          </p>
+          <div className="sync-row">
+            <button className="sync-btn" disabled={sync.busy} onClick={() => void syncNow()}>
+              Sync now
+            </button>
+            <button className="sync-btn ghost" onClick={() => void unlinkFolder()}>
+              Unlink
+            </button>
+          </div>
+        </>
+      )}
+      {sync.status === 'error' && (
+        <>
+          <p className="sync-hint error">Sync error: {sync.error}</p>
+          <button className="sync-btn" disabled={sync.busy} onClick={() => void linkFolder()}>
+            Re-link a folder…
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 function SettingsMenu({ onClose }: { onClose: () => void }) {
   const db = useDb()
   const [name, setName] = React.useState(getUserName())
@@ -79,6 +150,8 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
         }}
         onBlur={() => void saveUserName(db, name)}
       />
+      <div className="settings-sep" />
+      <SyncSection />
     </div>
   )
 }

@@ -40,6 +40,10 @@ Tests: `npm test` (Vitest).
 - **Sharing**: export any board as a **self-contained HTML file** (images inlined,
   nested boards navigable, comment pins visible, print-to-PDF built in), Markdown
   export, full JSON backup/import.
+- **Migrating from Milanote**: export boards from Milanote as Markdown, then drag
+  the `.md` files onto AtlasNote (or Export → *Import Markdown…*) — each becomes a
+  board of typed cards. For a full-fidelity one-off migration (layout + images),
+  see [docs/milanote-migration.md](docs/milanote-migration.md).
 - **Live review sessions**: start a session to get a code; a reviewer opens the
   exported HTML anywhere, clicks *Join live session*, and their comments, image
   pins and replies land on your board in real time over an encrypted peer-to-peer

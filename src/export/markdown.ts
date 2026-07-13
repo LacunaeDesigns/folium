@@ -112,6 +112,17 @@ function cardToMarkdown(state: DocState, card: Card, depth: number): string {
         .join('\n\n')
       return `${'#'.repeat(Math.min(6, depth + 2))} ${c.title || 'Column'}\n\n${inner}`
     }
+    case 'chart': {
+      const [head, ...rows] = c.rows
+      const table = head
+        ? [
+            '| ' + head.join(' | ') + ' |',
+            '| ' + head.map(() => '---').join(' | ') + ' |',
+            ...rows.map((r) => '| ' + r.join(' | ') + ' |'),
+          ].join('\n')
+        : ''
+      return (c.title ? `**${c.title}**\n\n` : '') + table
+    }
     case 'board':
       return '' // handled by recursion in boardToMarkdown
     case 'ink':

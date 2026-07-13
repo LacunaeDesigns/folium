@@ -108,6 +108,18 @@ export function defaultContent(type: CardType): CardContent {
       return { kind: 'shape', shape: 'rect', fill: 'blue', text: '' }
     case 'ink':
       return { kind: 'ink', strokes: [], natW: 200, natH: 120 }
+    case 'chart':
+      return {
+        kind: 'chart',
+        chart: 'bar',
+        title: '',
+        rows: [
+          ['Label', 'Value'],
+          ['A', '4'],
+          ['B', '7'],
+          ['C', '3'],
+        ],
+      }
   }
 }
 

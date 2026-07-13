@@ -37,6 +37,13 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
     })
   }
 
+  // grow a to-do textarea to fit its wrapped content
+  const autoGrow = (el: HTMLTextAreaElement | null) => {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }
+
   const doneCount = items.filter((it) => it.done).length
 
   return (
@@ -56,20 +63,27 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
             disabled={readOnly}
             onChange={(e) => update(it.id, { done: e.target.checked })}
           />
-          <input
+          <textarea
             className="todo-text"
             data-todo-item={it.id}
+            ref={autoGrow}
+            rows={1}
             value={it.text}
             placeholder="To-do"
             readOnly={readOnly}
-            onChange={(e) => update(it.id, { text: e.target.value })}
+            onChange={(e) => {
+              update(it.id, { text: e.target.value })
+              autoGrow(e.target)
+            }}
             onKeyDown={(e) => {
               if (readOnly) return
               if (e.key === 'Enter') {
                 e.preventDefault()
                 addAfter(it.id)
               }
-              if (e.key === 'Backspace' && it.text === '') {
+              // only a deliberate (non-repeated) backspace on an empty item removes
+              // it, so holding backspace to clear text can't cascade-delete rows
+              if (e.key === 'Backspace' && it.text === '' && !e.repeat) {
                 e.preventDefault()
                 remove(it.id)
               }

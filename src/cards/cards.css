@@ -195,7 +195,7 @@
 }
 .todo-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 2px 0;
 }
@@ -204,13 +204,21 @@
   width: 15px;
   height: 15px;
   flex: none;
+  margin-top: 2px;
 }
 .todo-text {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   background: transparent;
   font-size: 13px;
+  font-family: inherit;
+  line-height: 1.4;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .todo-item.done .todo-text {
   text-decoration: line-through;

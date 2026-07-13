@@ -7,6 +7,8 @@ import { Icon } from '../ui/Icons'
 import { DragState } from './CardShell'
 import { Pt, Rect } from './coords'
 
+const LINE_COLORS: (string | null)[] = [null, '#e6553f', '#4f8cf0', '#3fae5c']
+
 interface WorldRects {
   get(cardId: string): Rect | null
 }
@@ -104,6 +106,19 @@ export function LinesLayer({
     endDragRef.current = v
     setEndDragState(v)
   }
+  const [bodyDrag, setBodyDragState] = React.useState<{
+    lineId: string
+    start: Pt
+    origFrom: LineEnd
+    origTo: LineEnd
+    from: LineEnd
+    to: LineEnd
+  } | null>(null)
+  const bodyDragRef = React.useRef<typeof bodyDrag>(null)
+  const setBodyDrag = (v: typeof bodyDrag) => {
+    bodyDragRef.current = v
+    setBodyDragState(v)
+  }
   // bump to re-measure after mount so lines attach to freshly-rendered cards
   const [, setTick] = React.useState(0)
   React.useEffect(() => {
@@ -156,10 +171,54 @@ export function LinesLayer({
     store.getState().updateLine(lineId, { [which]: end } as Partial<Line>)
   }
 
+  const translateEnd = (end: LineEnd, dx: number, dy: number): LineEnd => {
+    if ('cardId' in end) return end
+    return { x: end.x + dx, y: end.y + dy }
+  }
+
+  const onBodyPointerDown = (line: Line) => (e: React.PointerEvent) => {
+    e.stopPropagation()
+    if (e.button !== 0) return
+    const wasSelected = selectedLine === line.id
+    useUi.getState().setSelectedLine(line.id)
+    if (!wasSelected) return
+    const el = e.currentTarget as Element
+    try {
+      el.setPointerCapture(e.pointerId)
+    } catch {
+      /* synthetic */
+    }
+    setBodyDrag({
+      lineId: line.id,
+      start: toWorld(e.clientX, e.clientY),
+      origFrom: line.from,
+      origTo: line.to,
+      from: line.from,
+      to: line.to,
+    })
+  }
+
+  const onBodyPointerMove = (e: React.PointerEvent) => {
+    const cur = bodyDragRef.current
+    if (!cur) return
+    const pt = toWorld(e.clientX, e.clientY)
+    const dx = pt.x - cur.start.x
+    const dy = pt.y - cur.start.y
+    setBodyDrag({ ...cur, from: translateEnd(cur.origFrom, dx, dy), to: translateEnd(cur.origTo, dx, dy) })
+  }
+
+  const onBodyPointerUp = (e: React.PointerEvent) => {
+    const cur = bodyDragRef.current
+    if (!cur) return
+    setBodyDrag(null)
+    store.getState().updateLine(cur.lineId, { from: cur.from, to: cur.to })
+  }
+
   const renderLine = (line: Line) => {
     const dragging = endDrag?.lineId === line.id ? endDrag : null
-    const fromEnd: LineEnd = dragging?.which === 'from' ? dragging.pt : line.from
-    const toEnd: LineEnd = dragging?.which === 'to' ? dragging.pt : line.to
+    const dragBody = bodyDrag?.lineId === line.id ? bodyDrag : null
+    const fromEnd: LineEnd = dragging?.which === 'from' ? dragging.pt : dragBody ? dragBody.from : line.from
+    const toEnd: LineEnd = dragging?.which === 'to' ? dragging.pt : dragBody ? dragBody.to : line.to
 
     const cFrom = centerOf(fromEnd, rects)
     const cTo = centerOf(toEnd, rects)
@@ -176,10 +235,9 @@ export function LinesLayer({
         <path
           className="line-hit"
           d={d}
-          onPointerDown={(e) => {
-            e.stopPropagation()
-            useUi.getState().setSelectedLine(line.id)
-          }}
+          onPointerDown={onBodyPointerDown(line)}
+          onPointerMove={onBodyPointerMove}
+          onPointerUp={onBodyPointerUp}
           onDoubleClick={(e) => {
             e.stopPropagation()
             setLabelEdit(line.id)
@@ -188,6 +246,13 @@ export function LinesLayer({
         <path
           className="line-vis"
           d={d}
+          // inline style (not SVG presentation attrs) so per-line overrides beat
+          // the .line-vis class rules; undefined falls back to the stylesheet
+          style={{
+            stroke: line.color ?? undefined,
+            strokeWidth: line.width ?? undefined,
+            strokeDasharray: line.dash ? '6 6' : undefined,
+          }}
           markerEnd={line.arrowEnd ? 'url(#arrowhead)' : undefined}
           markerStart={line.arrowStart ? 'url(#arrowhead-start)' : undefined}
         />
@@ -219,7 +284,7 @@ export function LinesLayer({
           </>
         )}
         {isSel && (
-          <foreignObject x={mid.x - 70} y={mid.y + 12} width={150} height={36} className="line-toolbar-fo">
+          <foreignObject x={mid.x - 115} y={mid.y + 12} width={240} height={36} className="line-toolbar-fo">
             <div className="line-toolbar no-drag" onPointerDown={(e) => e.stopPropagation()}>
               <button
                 className={line.arrowEnd ? 'on' : ''}
@@ -244,6 +309,29 @@ export function LinesLayer({
               <button title="Label" onClick={() => setLabelEdit(line.id)}>
                 Aa
               </button>
+              <button
+                className={line.width === 4 ? 'on' : ''}
+                title="Thin / thick"
+                onClick={() => store.getState().updateLine(line.id, { width: line.width === 4 ? 2 : 4 })}
+              >
+                ▬
+              </button>
+              <button
+                className={line.dash ? 'on' : ''}
+                title="Dashed"
+                onClick={() => store.getState().updateLine(line.id, { dash: !line.dash })}
+              >
+                ┄
+              </button>
+              {LINE_COLORS.map((c) => (
+                <button
+                  key={c ?? 'default'}
+                  className={'line-color-swatch' + ((line.color ?? null) === c ? ' on' : '')}
+                  style={c ? { backgroundColor: c } : undefined}
+                  title={c ?? 'Default color'}
+                  onClick={() => store.getState().updateLine(line.id, { color: c ?? undefined })}
+                />
+              ))}
               <button
                 title="Delete line"
                 className="danger"

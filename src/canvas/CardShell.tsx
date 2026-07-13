@@ -38,6 +38,8 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     startY: number
     ids: string[]
     dragging: boolean
+    /** Alt held at drag start — duplicate the selection and drag the copies */
+    alt: boolean
   } | null>(null)
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -73,6 +75,7 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
       startY: e.clientY,
       ids: useUi.getState().selection,
       dragging: false,
+      alt: e.altKey,
     }
   }
 
@@ -87,6 +90,15 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
       // capture only once a drag starts — capturing on pointerdown retargets the
       // ensuing click/dblclick to the shell, killing double-click on card bodies
       safeCapture(e.currentTarget as HTMLElement, e.pointerId)
+      // alt-drag duplicates the selection and drags the copies, leaving originals put
+      if (g.alt) {
+        const dupIds = store.getState().duplicateCards(g.ids)
+        if (dupIds.length) {
+          useUi.getState().setSelection(dupIds)
+          g.ids = dupIds
+        }
+        g.alt = false
+      }
     }
     setDrag({ ids: g.ids, dx, dy })
   }

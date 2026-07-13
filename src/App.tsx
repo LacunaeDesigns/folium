@@ -14,7 +14,8 @@ import { useSync, linkFolder, unlinkFolder, reconnect, syncNow } from './store/s
 import { relTime } from './cards/CommentCard'
 import { useAtlas, useAtlasStore, useDb } from './store/context'
 import { breadcrumbs } from './store/selectors'
-import { saveUserName, getUserName } from './store/settings'
+import { saveUserName, getUserName, savePexelsKey, getPexelsKey } from './store/settings'
+import { PexelsPanel } from './ui/PexelsPanel'
 import { useUi } from './store/uiStore'
 import { useShortcuts } from './canvas/useShortcuts'
 import { Icon } from './ui/Icons'
@@ -136,6 +137,7 @@ function SyncSection() {
 function SettingsMenu({ onClose }: { onClose: () => void }) {
   const db = useDb()
   const [name, setName] = React.useState(getUserName())
+  const [pexels, setPexels] = React.useState(getPexelsKey())
   return (
     <div className="menu-pop topbar-menu settings-pop" onPointerDown={(e) => e.stopPropagation()}>
       <label className="settings-label">Your name (used on comments)</label>
@@ -149,6 +151,21 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
           }
         }}
         onBlur={() => void saveUserName(db, name)}
+      />
+      <div className="settings-sep" />
+      <label className="settings-label">Pexels API key (for free photo search)</label>
+      <input
+        type="password"
+        placeholder="Paste your key from pexels.com/api"
+        value={pexels}
+        onChange={(e) => setPexels(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            void savePexelsKey(db, pexels)
+            onClose()
+          }
+        }}
+        onBlur={() => void savePexelsKey(db, pexels)}
       />
       <div className="settings-sep" />
       <SyncSection />
@@ -172,6 +189,7 @@ export default function App() {
   const presentationMode = useUi((s) => s.presentationMode)
   const [menu, setMenu] = React.useState<'view' | 'settings' | 'export' | 'live' | null>(null)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
+  const [photosOpen, setPhotosOpen] = React.useState(false)
   const liveActive = useLive((s) => s.active)
 
   useShortcuts()
@@ -235,6 +253,7 @@ export default function App() {
           onPickTool={(t) => setTool(activeTool === t ? null : t)}
           onOpenTrash={() => setTrashOpen(!trashOpen)}
           trashActive={trashOpen}
+          onOpenPhotos={() => setPhotosOpen(true)}
         />
       </nav>
       <main className="app-canvas">
@@ -245,6 +264,9 @@ export default function App() {
       {searchOpen && <SearchPanel />}
       {templatesOpen && (
         <TemplateGallery boardId={currentBoardId} onClose={() => setTemplatesOpen(false)} />
+      )}
+      {photosOpen && (
+        <PexelsPanel boardId={currentBoardId} onClose={() => setPhotosOpen(false)} />
       )}
       {presentationMode && <PresentMode boardId={currentBoardId} />}
     </div>

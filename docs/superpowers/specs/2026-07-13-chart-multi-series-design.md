@@ -27,25 +27,28 @@ Explicitly **out of scope** (separate future specs, per the roadmap): reading da
 ### Interface change (breaking, internal — 2 callers + tests, all in-repo)
 
 ```ts
-export interface ChartSeries { name: string; color: string }
-export interface ChartPoint { label: string; values: number[] } // one entry per series, index-aligned to spec.series
+export interface ChartPoint { label: string; values: number[] } // one entry per series, index-aligned to spec.seriesNames
+export interface ChartData { seriesNames: string[]; points: ChartPoint[] }
 export interface ChartSpec {
   chart: ChartKind
   title: string
-  series: ChartSeries[]
+  seriesNames: string[]
   points: ChartPoint[]
+  palette: string[]
 }
 ```
 
-### Shared grid→spec helper (single source of truth for both callers)
+Colors are assigned **inside the renderer by index** from `spec.palette`: series `j` → `palette[j % len]`, pie slice `i` → `palette[i % len]`, legend swatch `j` → `palette[j % len]`. (A single palette rather than per-series colors is required so pie slices — which can outnumber series — each get a distinct color.)
+
+### Shared grid→data helper (single source of truth for both callers)
 
 ```ts
-export function rowsToSeries(rows: string[][], palette: string[]): { series: ChartSeries[]; points: ChartPoint[] }
+export function rowsToChartData(rows: string[][]): ChartData
 ```
 
-- `series = (rows[0] ?? []).slice(1).map((name, i) => ({ name, color: palette[i % palette.length] }))`
-- `points = rows.slice(1).map(r => ({ label: r[0] ?? '', values: series.map((_, i) => parseFloat(r[i + 1]) || 0) }))`
-- Must stay **pure / self-contained** (only params, locals, `parseFloat`, array ops) — it is embedded into the HTML export via `.toString()` exactly like `renderChartSvg`.
+- `seriesNames = (rows[0] ?? []).slice(1)`
+- `points = rows.slice(1).map(r => ({ label: r[0] ?? '', values: seriesNames.map((_, i) => parseFloat(r[i + 1]) || 0) }))` (non-finite coerced to 0)
+- Must stay **pure / self-contained** (only params, locals, `parseFloat`, `Number.isFinite`, array ops) — it is embedded into the HTML export via `.toString()` exactly like `renderChartSvg`.
 
 ### `renderChartSvg` behavior
 
@@ -61,8 +64,8 @@ export function rowsToSeries(rows: string[][], palette: string[]): { series: Cha
 
 **`src/cards/ChartCard.tsx`:**
 ```ts
-const { series, points } = rowsToSeries(content.rows, BOARD_COLORS)
-const svg = renderChartSvg({ chart: content.chart, title: content.title, series, points })
+const data = rowsToChartData(content.rows)
+const svg = renderChartSvg({ chart: content.chart, title: content.title, seriesNames: data.seriesNames, points: data.points, palette: BOARD_COLORS })
 ```
 Grid UI gains:
 - Header cells `1..N` editable → series names (already inputs; extend to all columns).
@@ -70,10 +73,10 @@ Grid UI gains:
 - **`− Series`**: remove the last column, **guarded** so ≥1 value column remains (rows never drop below `[label, value]`).
 - `+ Row` / `− Row` unchanged; a new row spans the current column count.
 
-**`src/export/html.ts`:** embed `rowsToSeries` alongside `renderChartSvg` (both via `.toString()`), and rewrite the `chart` `cardBody` case to:
+**`src/export/html.ts`:** embed `rowsToChartData` alongside `renderChartSvg` (both via `.toString()`), and rewrite the `chart` `cardBody` case to:
 ```js
-var sp = rowsToSeries(c.rows, PALETTE);
-return '<div class="chartc">' + renderChartSvg({chart:c.chart, title:c.title, series:sp.series, points:sp.points}) + '</div>';
+var cd = rowsToChartData(c.rows);
+return '<div class="chartc">' + renderChartSvg({chart:c.chart, title:c.title, seriesNames:cd.seriesNames, points:cd.points, palette:PALETTE}) + '</div>';
 ```
 where `PALETTE` is the same hardcoded `BOARD_COLORS` array already inlined there.
 
@@ -81,14 +84,14 @@ where `PALETTE` is the same hardcoded `BOARD_COLORS` array already inlined there
 
 ## Testing (`src/charts/renderChart.test.ts`)
 
-Existing single-series tests migrate to the new `series`/`values` spec shape. New coverage:
-- `rowsToSeries`: parses header into series (names + palette colors); maps rows to index-aligned `values`; single-value-column grid → one series; short/empty rows → `0`.
-- Grouped bar: `nLabels × nSeries` rects; sub-bars colored per series.
+Existing single-series tests migrate to the new `seriesNames`/`values` spec shape. New coverage:
+- `rowsToChartData`: parses header into `seriesNames`; maps rows to index-aligned `values`; single-value-column grid → one series; short/empty rows → `0`.
+- Grouped bar: `nLabels × nSeries` rects; sub-bars colored per series from the palette.
 - Multi-line: `nSeries` polylines, distinct colors.
-- Legend present iff `series.length > 1`.
+- Legend present iff `seriesNames.length > 1` (bar/line only).
 - Pie/donut plot series[0] only.
-- **Regression:** a one-series spec renders identically to the pre-change single-series output (no legend, same geometry).
-- Parity: the card and export both go through `rowsToSeries` (shared helper guarantees it).
+- **Regression:** a one-series spec renders **behaviorally identical** to the pre-change output — no legend, one rect per label / one polyline, floating-zero baseline, correct relative heights. (Not byte-identical: the multi-series bar path changes internal string order and bar-width constants slightly.)
+- Parity: the card and export both go through `rowsToChartData` (shared helper guarantees it).
 
 ## Verification
 
@@ -99,5 +102,5 @@ Existing single-series tests migrate to the new `series`/`values` spec shape. Ne
 
 ## Risks
 
-- **`.toString()` self-containment now covers two functions.** `rowsToSeries` must reference nothing external (no imports, no module-scope refs) or the export copy throws. Verified by the export browser check.
+- **`.toString()` self-containment now covers two functions.** `rowsToChartData` must reference nothing external (no imports, no module-scope refs) or the export copy throws. Verified by the export browser check.
 - **Legend/plot layout in a fixed 300×200 viewBox** — legend band must not crowd out the plot for small cards; keep it compact and single-row.

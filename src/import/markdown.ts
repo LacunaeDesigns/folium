@@ -1,6 +1,5 @@
 /**
- * Markdown → card blocks, for importing Milanote markdown exports
- * (and any generic markdown) as AtlasNote boards.
+ * Markdown → card blocks, for importing Markdown files as Folium boards.
  */
 
 interface TiptapNode {

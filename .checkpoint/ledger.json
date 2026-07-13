@@ -16,5 +16,5 @@
     {"id": "p11-verification", "status": "done", "commit": null, "notes": "48 tests + tsc + prod build green; browser sweep: all 11 tools, resize, multi-drag, endpoint reattach (bug found+fixed), pins+replies, eraser, dark theme, all 7 templates, blob inlining, prod boot with seed"}
   ],
   "resume_hint": "Job complete.",
-  "summary": "Milanote replica complete: 13 card types, canvas (drag/resize/marquee/pan/zoom/undo), nested boards, columns, lines, ink/sticky/shapes, unsorted/trash/search, 7 built-in templates + save-as-template, HTML/MD/JSON export, print/PDF, presentation mode, WebRTC live review sessions (two-tab E2E verified), first-run seed. 48 vitest tests, tsc clean, prod build boots."
+  "summary": "Milanote replica complete: 13 card types, canvas (drag/resize/marquee/pan/zoom/undo), nested boards, columns, lines, ink/sticky/shapes, unsorted/trash/search, 7 built-in templates + save-as-template, HTML/MD/JSON export, print/PDF, presentation mode, WebRTC live review sessions (two-tab E2E verified), first-run seed. Post-build independent QA wave (2 subagents): code review found 9 correctness issues (all fixed, commit 2c3a8b1 — incl. importBackup data-loss, autosave flush-on-quit, TipTap undo-clobber); UI walkthrough 20/20 flows pass, app restored to seeded baseline. Final: 52 vitest tests, tsc clean, prod build green."
 }

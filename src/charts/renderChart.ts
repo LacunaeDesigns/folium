@@ -60,21 +60,38 @@ export function renderChartSvg(spec: ChartSpec): string {
       const a0 = (acc / total) * 360
       acc += v
       const a1 = (acc / total) * 360
-      const laf = a1 - a0 > 180 ? 1 : 0
-      const [x0o, y0o] = polar(a0, r)
-      const [x1o, y1o] = polar(a1, r)
       const col = colors[i % colors.length]
-      let d: string
-      if (ir > 0) {
-        const [x0i, y0i] = polar(a0, ir)
-        const [x1i, y1i] = polar(a1, ir)
-        d =
-          'M ' + x0o + ' ' + y0o + ' A ' + r + ' ' + r + ' 0 ' + laf + ' 1 ' + x1o + ' ' + y1o +
-          ' L ' + x1i + ' ' + y1i + ' A ' + ir + ' ' + ir + ' 0 ' + laf + ' 0 ' + x0i + ' ' + y0i + ' Z'
+      if (a1 - a0 >= 359.999) {
+        // a lone slice spans the whole circle — a single arc with identical
+        // start/end points renders nothing, so draw a full disc / ring instead
+        if (ir > 0) {
+          out +=
+            '<path fill-rule="evenodd" d="M ' + (cx - r) + ' ' + cy +
+            ' A ' + r + ' ' + r + ' 0 1 0 ' + (cx + r) + ' ' + cy +
+            ' A ' + r + ' ' + r + ' 0 1 0 ' + (cx - r) + ' ' + cy +
+            ' M ' + (cx - ir) + ' ' + cy +
+            ' A ' + ir + ' ' + ir + ' 0 1 0 ' + (cx + ir) + ' ' + cy +
+            ' A ' + ir + ' ' + ir + ' 0 1 0 ' + (cx - ir) + ' ' + cy +
+            ' Z" fill="' + col + '"/>'
+        } else {
+          out += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + col + '"/>'
+        }
       } else {
-        d = 'M ' + cx + ' ' + cy + ' L ' + x0o + ' ' + y0o + ' A ' + r + ' ' + r + ' 0 ' + laf + ' 1 ' + x1o + ' ' + y1o + ' Z'
+        const laf = a1 - a0 > 180 ? 1 : 0
+        const [x0o, y0o] = polar(a0, r)
+        const [x1o, y1o] = polar(a1, r)
+        let d: string
+        if (ir > 0) {
+          const [x0i, y0i] = polar(a0, ir)
+          const [x1i, y1i] = polar(a1, ir)
+          d =
+            'M ' + x0o + ' ' + y0o + ' A ' + r + ' ' + r + ' 0 ' + laf + ' 1 ' + x1o + ' ' + y1o +
+            ' L ' + x1i + ' ' + y1i + ' A ' + ir + ' ' + ir + ' 0 ' + laf + ' 0 ' + x0i + ' ' + y0i + ' Z'
+        } else {
+          d = 'M ' + cx + ' ' + cy + ' L ' + x0o + ' ' + y0o + ' A ' + r + ' ' + r + ' 0 ' + laf + ' 1 ' + x1o + ' ' + y1o + ' Z'
+        }
+        out += '<path d="' + d + '" fill="' + col + '"/>'
       }
-      out += '<path d="' + d + '" fill="' + col + '"/>'
       const [lx, ly] = polar((a0 + a1) / 2, r + 10)
       out +=
         '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="#6e6857">' +

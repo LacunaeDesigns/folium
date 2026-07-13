@@ -80,8 +80,3 @@
 .tool-more {
   position: relative;
 }
-
-.tool-more-pop {
-  left: calc(100% + 4px);
-  top: 0;
-}

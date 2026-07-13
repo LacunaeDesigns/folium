@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { Icon, IconName } from './Icons'
 import './toolbar.css'
 
@@ -61,12 +62,24 @@ export function Toolbar({
   onOpenPhotos: () => void
 }) {
   const [moreOpen, setMoreOpen] = React.useState(false)
-  const moreRef = React.useRef<HTMLDivElement>(null)
+  const moreBtnRef = React.useRef<HTMLButtonElement>(null)
+  const morePopRef = React.useRef<HTMLDivElement>(null)
+  const [morePos, setMorePos] = React.useState({ left: 0, top: 0 })
+
+  // The flyout is portaled to <body> so it escapes the tool dock's
+  // overflow-y:auto clip (which also clips horizontally), then anchored
+  // to the right of the "More" button.
+  const toggleMore = () => {
+    const r = moreBtnRef.current?.getBoundingClientRect()
+    if (r) setMorePos({ left: r.right + 6, top: r.top })
+    setMoreOpen((v) => !v)
+  }
 
   React.useEffect(() => {
     if (!moreOpen) return
     const close = (e: PointerEvent) => {
-      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false)
+      const t = e.target as Node
+      if (!moreBtnRef.current?.contains(t) && !morePopRef.current?.contains(t)) setMoreOpen(false)
     }
     window.addEventListener('pointerdown', close)
     return () => window.removeEventListener('pointerdown', close)
@@ -107,32 +120,39 @@ export function Toolbar({
     <div className="toolbar">
       <div className="toolbar-group">
         {MAIN_TOOLS.map(btn)}
-        <div className="tool-more" ref={moreRef}>
+        <div className="tool-more">
           <button
+            ref={moreBtnRef}
             className={'tool-btn' + (moreOpen ? ' active' : '')}
-            onClick={() => setMoreOpen((v) => !v)}
+            onClick={toggleMore}
             title="More card types"
           >
             <span className="tool-icon">
               <Icon name="dots" size={19} />
             </span>
           </button>
-          {moreOpen && (
-            <div className="menu-pop tool-more-pop">
-              {MORE_TOOLS.map((t) => (
-                <button
-                  key={t.id}
-                  className="menu-item"
-                  onClick={() => {
-                    onPickTool(t.id)
-                    setMoreOpen(false)
-                  }}
-                >
-                  <Icon name={t.icon} size={16} /> {t.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {moreOpen &&
+            createPortal(
+              <div
+                ref={morePopRef}
+                className="menu-pop"
+                style={{ position: 'fixed', left: morePos.left, top: morePos.top }}
+              >
+                {MORE_TOOLS.map((t) => (
+                  <button
+                    key={t.id}
+                    className="menu-item"
+                    onClick={() => {
+                      onPickTool(t.id)
+                      setMoreOpen(false)
+                    }}
+                  >
+                    <Icon name={t.icon} size={16} /> {t.label}
+                  </button>
+                ))}
+              </div>,
+              document.body,
+            )}
         </div>
       </div>
       <div className="toolbar-group">

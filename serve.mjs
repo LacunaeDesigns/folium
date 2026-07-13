@@ -47,9 +47,16 @@ async function serveFile(res, filePath) {
   const data = await readFile(filePath)
   const ext = path.extname(filePath).toLowerCase()
   const immutable = /-[\w-]{8,}\.\w+$/.test(path.basename(filePath)) // vite's hashed assets
+  // index.html must never be cached, or the browser keeps loading an old
+  // shell that points at stale hashed bundles (hard-refresh won't fix that).
+  const cache = immutable
+    ? 'public, max-age=31536000, immutable'
+    : ext === '.html'
+      ? 'no-store, no-cache, must-revalidate'
+      : 'no-cache'
   res.writeHead(200, {
     'Content-Type': MIME[ext] || 'application/octet-stream',
-    'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
+    'Cache-Control': cache,
   })
   if (ext === '.html') {
     res.end(data.toString('utf8').replace('</body>', KEEPALIVE_SNIPPET + '</body>'))

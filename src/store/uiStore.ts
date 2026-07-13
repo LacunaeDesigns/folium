@@ -28,6 +28,8 @@ interface UiState {
   searchOpen: boolean
   unsortedOpen: boolean
   presentationMode: boolean
+  /** app-wide appearance, applied to <html>; independent of per-board themes */
+  appTheme: 'light' | 'dark'
 
   setBoard(id: string): void
   setSelection(ids: string[]): void
@@ -41,6 +43,7 @@ interface UiState {
   setSearchOpen(open: boolean): void
   setUnsortedOpen(open: boolean): void
   setPresentationMode(on: boolean): void
+  setAppTheme(theme: 'light' | 'dark'): void
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -54,6 +57,7 @@ export const useUi = create<UiState>((set) => ({
   searchOpen: false,
   unsortedOpen: false,
   presentationMode: false,
+  appTheme: 'light',
 
   setBoard: (id) => {
     set({ currentBoardId: id, selection: [], selectedLine: null, activeTool: null, trashOpen: false })
@@ -77,4 +81,5 @@ export const useUi = create<UiState>((set) => ({
   setSearchOpen: (open) => set({ searchOpen: open }),
   setUnsortedOpen: (open) => set({ unsortedOpen: open }),
   setPresentationMode: (on) => set({ presentationMode: on }),
+  setAppTheme: (theme) => set({ appTheme: theme }),
 }))

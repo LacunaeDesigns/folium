@@ -45,6 +45,9 @@
   --radius-ui: 8px;
 }
 
+/* global app dark mode ([data-theme] on <html>) and per-board dark share one
+   token set; a per-board dark board also works while the app is globally light */
+:root[data-theme='dark'],
 [data-board-theme='dark'] {
   --bg-canvas: #26231c;
   --bg-canvas-dot: #3d382b;

@@ -278,6 +278,24 @@
   color: var(--ink);
 }
 
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 13px;
+  background: var(--bg-chrome);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+.settings-toggle:hover {
+  background: var(--bg-hover);
+}
+
 /* templates */
 .tpl-modal {
   width: 720px;

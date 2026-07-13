@@ -14,7 +14,7 @@ import { useSync, linkFolder, unlinkFolder, reconnect, syncNow } from './store/s
 import { relTime } from './cards/CommentCard'
 import { useAtlas, useAtlasStore, useDb } from './store/context'
 import { breadcrumbs } from './store/selectors'
-import { saveUserName, getUserName, savePexelsKey, getPexelsKey } from './store/settings'
+import { saveUserName, getUserName, savePexelsKey, getPexelsKey, getAppTheme, saveAppTheme } from './store/settings'
 import { PexelsPanel } from './ui/PexelsPanel'
 import { useUi } from './store/uiStore'
 import { useShortcuts } from './canvas/useShortcuts'
@@ -138,8 +138,21 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
   const db = useDb()
   const [name, setName] = React.useState(getUserName())
   const [pexels, setPexels] = React.useState(getPexelsKey())
+  const appTheme = useUi((s) => s.appTheme)
   return (
     <div className="menu-pop topbar-menu settings-pop" onPointerDown={(e) => e.stopPropagation()}>
+      <label className="settings-label">Appearance</label>
+      <button
+        className="settings-toggle"
+        onClick={() => {
+          const next = appTheme === 'dark' ? 'light' : 'dark'
+          useUi.getState().setAppTheme(next)
+          void saveAppTheme(db, next)
+        }}
+      >
+        <Icon name="palette" size={15} /> {appTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      </button>
+      <div className="settings-sep" />
       <label className="settings-label">Your name (used on comments)</label>
       <input
         value={name}
@@ -187,12 +200,23 @@ export default function App() {
   const setTrashOpen = useUi((s) => s.setTrashOpen)
   const searchOpen = useUi((s) => s.searchOpen)
   const presentationMode = useUi((s) => s.presentationMode)
+  const appTheme = useUi((s) => s.appTheme)
   const [menu, setMenu] = React.useState<'view' | 'settings' | 'export' | 'live' | null>(null)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
   const [photosOpen, setPhotosOpen] = React.useState(false)
   const liveActive = useLive((s) => s.active)
 
   useShortcuts()
+
+  // load the persisted app-wide theme once settings are ready
+  React.useEffect(() => {
+    useUi.getState().setAppTheme(getAppTheme())
+  }, [])
+
+  // apply the app-wide theme to <html> so it covers the whole page, body included
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', appTheme)
+  }, [appTheme])
 
   // hash routing: #/b/<boardId>; back/forward supported
   React.useEffect(() => {

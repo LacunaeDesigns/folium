@@ -4,6 +4,8 @@ import { LinesLayer } from './LinesLayer'
 import { InkLayer } from './InkLayer'
 import { useAtlas, useAtlasStore, useDb } from '../store/context'
 import { putBlob, getBlob } from '../store/persist'
+import { collectClip } from '../store/store'
+import { getClipboard, setClipboard, hasClipboard } from '../store/clipboard'
 import { boardCards } from '../store/selectors'
 import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { ToolId } from '../ui/Toolbar'
@@ -148,6 +150,13 @@ export function Canvas({ boardId }: { boardId: string }) {
       if (e.clipboardData?.files.length) {
         e.preventDefault()
         void importFiles(e.clipboardData.files, center)
+        return
+      }
+      // in-app card clipboard takes precedence over stale OS text
+      if (hasClipboard()) {
+        e.preventDefault()
+        const ids = store.getState().pasteClip(getClipboard()!, boardId, center)
+        if (ids.length) useUi.getState().setSelection(ids)
         return
       }
       const text = e.clipboardData?.getData('text')?.trim()
@@ -380,6 +389,21 @@ export function Canvas({ boardId }: { boardId: string }) {
     useUi.getState().setSelection([id])
   }
 
+  const copySelection = () =>
+    setClipboard(collectClip(store.getState(), useUi.getState().selection))
+  const cutSelection = () => {
+    const sel = useUi.getState().selection
+    setClipboard(collectClip(store.getState(), sel))
+    store.getState().trashCards(sel)
+    useUi.getState().clearSelection()
+  }
+  const pasteAtMenu = () => {
+    const clip = getClipboard()
+    if (!clip) return
+    const ids = store.getState().pasteClip(clip, boardId, menuWorld())
+    if (ids.length) useUi.getState().setSelection(ids)
+  }
+
   const focusColumnTitle = (cardId: string) => {
     requestAnimationFrame(() => {
       const el = viewportRef.current?.querySelector(
@@ -493,7 +517,7 @@ export function Canvas({ boardId }: { boardId: string }) {
         const vp = viewportRef.current
         const rect = vp?.getBoundingClientRect()
         const MENU_W = 200
-        const MENU_H = cardId ? 220 : 340
+        const MENU_H = cardId ? 300 : 340
         const PAD = 8
         const rawX = ctxMenu.x - (rect?.left ?? 0)
         const rawY = ctxMenu.y - (rect?.top ?? 0)
@@ -516,6 +540,11 @@ export function Canvas({ boardId }: { boardId: string }) {
               >
                 {gap} Select all
               </button>
+              {hasClipboard() && (
+                <button className="menu-item" onClick={menuAction(pasteAtMenu)}>
+                  {gap} Paste
+                </button>
+              )}
               <div className="menu-sep" />
               {([
                 ['note', 'note'],
@@ -542,6 +571,13 @@ export function Canvas({ boardId }: { boardId: string }) {
             </>
           ) : (
             <>
+              <button className="menu-item" onClick={menuAction(cutSelection)}>
+                {gap} Cut
+              </button>
+              <button className="menu-item" onClick={menuAction(copySelection)}>
+                {gap} Copy
+              </button>
+              <div className="menu-sep" />
               {type === 'image' && (
                 <>
                   <button className="menu-item" onClick={menuAction(() => replaceImage(cardId))}>

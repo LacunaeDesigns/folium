@@ -15,6 +15,16 @@ import {
   DEFAULT_CARD_SIZE,
 } from '../model/types'
 
+/** Detached copy of a card selection (with board subtrees + internal lines) for paste. */
+export interface CardClip {
+  originBoardId: string
+  /** ids (within `cards`) that were directly selected — repositioned onto the target */
+  rootIds: string[]
+  cards: Card[]
+  boards: Board[]
+  lines: Line[]
+}
+
 export interface AtlasState extends DocState {
   addCard(
     boardId: string,
@@ -49,6 +59,8 @@ export interface AtlasState extends DocState {
   addLine(boardId: string, from: LineEnd, to: LineEnd): string
   updateLine(id: string, patch: Partial<Omit<Line, 'id'>>): void
   deleteLine(id: string): void
+  /** graft a copied card set onto a board with fresh ids; returns new top-level card ids */
+  pasteClip(clip: CardClip, targetBoardId: string, at?: { x: number; y: number }): string[]
   /** replace the whole document (persistence load / JSON import) */
   hydrate(doc: DocState): void
   /** graft a snapshot's boards/cards/lines into the doc (template instantiation) */
@@ -185,6 +197,75 @@ export function cloneBoardSubtree(
     }))
 
   return { rootBoardId: idMap.get(boardId)!, boards, cards, lines }
+}
+
+/**
+ * Build a detached snapshot of the given cards for the clipboard: the selected
+ * cards, any members of copied columns, the full subtree of copied board cards,
+ * and lines internal to the copied set. Ids stay original — paste re-ids them.
+ */
+export function collectClip(state: DocState, ids: string[]): CardClip | null {
+  const roots = ids.map((id) => state.cards[id]).filter((c): c is Card => !!c && !c.trashed)
+  if (!roots.length) return null
+  const originBoardId = roots[0].boardId
+
+  // pull members of any copied column along with it
+  const rootSet = new Set(roots.map((c) => c.id))
+  for (const c of Object.values(state.cards)) {
+    if (c.colId && rootSet.has(c.colId) && !c.trashed) rootSet.add(c.id)
+  }
+
+  const cardsOut: Card[] = []
+  const boardsOut: Board[] = []
+  const linesOut: Line[] = []
+  const seenCards = new Set<string>()
+  const seenBoards = new Set<string>()
+  const pushCard = (c: Card) => {
+    if (seenCards.has(c.id)) return
+    seenCards.add(c.id)
+    cardsOut.push(c)
+  }
+
+  for (const id of rootSet) {
+    const c = state.cards[id]
+    if (c) pushCard(c)
+  }
+
+  // subtree of any copied board card
+  for (const id of rootSet) {
+    const c = state.cards[id]
+    if (c?.content.kind === 'board' && c.content.boardId && state.boards[c.content.boardId]) {
+      const boardIds = subtreeBoardIds(state, c.content.boardId)
+      const boardSet = new Set(boardIds)
+      for (const bid of boardIds) {
+        if (!seenBoards.has(bid) && state.boards[bid]) {
+          seenBoards.add(bid)
+          boardsOut.push(state.boards[bid])
+        }
+      }
+      for (const cc of Object.values(state.cards)) {
+        if (boardSet.has(cc.boardId) && !cc.trashed) pushCard(cc)
+      }
+      for (const l of Object.values(state.lines)) {
+        if (boardSet.has(l.boardId)) linesOut.push(l)
+      }
+    }
+  }
+
+  // lines on the origin board whose both ends are in the copied set
+  for (const l of Object.values(state.lines)) {
+    if (l.boardId !== originBoardId) continue
+    const inSet = (e: LineEnd) => 'cardId' in e && rootSet.has(e.cardId)
+    if (inSet(l.from) && inSet(l.to)) linesOut.push(l)
+  }
+
+  return structuredClone({
+    originBoardId,
+    rootIds: [...rootSet],
+    cards: cardsOut,
+    boards: boardsOut,
+    lines: linesOut,
+  })
 }
 
 export function createAtlasStore(initial?: DocState): AtlasStore {
@@ -507,6 +588,87 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
             delete lines[id]
             return { lines }
           })
+        },
+
+        pasteClip(clip, targetBoardId, at) {
+          const newIds: string[] = []
+          set((s) => {
+            const idMap = new Map<string, string>()
+            for (const b of clip.boards) idMap.set(b.id, nanoid(10))
+            for (const c of clip.cards) idMap.set(c.id, nanoid(10))
+
+            // position the free (non-column) origin-board cards so the group lands at `at`
+            const rootSet = new Set(clip.rootIds)
+            const originFree = clip.cards.filter((c) => c.boardId === clip.originBoardId && !c.colId)
+            let offX = 24
+            let offY = 24
+            if (at && originFree.length) {
+              offX = at.x - Math.min(...originFree.map((c) => c.x))
+              offY = at.y - Math.min(...originFree.map((c) => c.y))
+            }
+
+            const maxZ = Object.values(s.cards).reduce(
+              (m, c) => (c.boardId === targetBoardId ? Math.max(m, c.z) : m),
+              0,
+            )
+
+            const boards = { ...s.boards }
+            for (const b of clip.boards) {
+              const nid = idMap.get(b.id)!
+              boards[nid] = {
+                ...b,
+                id: nid,
+                // subtree boards keep their (remapped) parent; the top one hangs off the target
+                parentId: b.parentId && idMap.has(b.parentId) ? idMap.get(b.parentId)! : targetBoardId,
+                createdAt: Date.now(),
+              }
+            }
+
+            const cards = { ...s.cards }
+            let zi = 1
+            for (const c of clip.cards) {
+              const nid = idMap.get(c.id)!
+              const isOrigin = c.boardId === clip.originBoardId
+              const onCanvas = isOrigin && !c.colId
+              const content = structuredClone(c.content) as CardContent
+              if (content.kind === 'board' && content.boardId) {
+                content.boardId = idMap.get(content.boardId) ?? content.boardId
+              }
+              cards[nid] = {
+                ...c,
+                id: nid,
+                boardId: isOrigin ? targetBoardId : idMap.get(c.boardId)!,
+                colId: c.colId ? (idMap.get(c.colId) ?? null) : null,
+                x: onCanvas ? c.x + offX : c.x,
+                y: onCanvas ? c.y + offY : c.y,
+                z: onCanvas ? maxZ + zi++ : c.z,
+                inUnsorted: false,
+                trashed: false,
+                content,
+                createdAt: Date.now(),
+              }
+              if (onCanvas && rootSet.has(c.id)) newIds.push(nid)
+            }
+
+            const lines = { ...s.lines }
+            const mapEnd = (e: LineEnd): LineEnd =>
+              'cardId' in e ? { cardId: idMap.get(e.cardId) ?? e.cardId } : { ...e }
+            for (const l of clip.lines) {
+              const ok = (e: LineEnd) => !('cardId' in e) || idMap.has(e.cardId)
+              if (!ok(l.from) || !ok(l.to)) continue
+              const nid = nanoid(10)
+              lines[nid] = {
+                ...l,
+                id: nid,
+                boardId: l.boardId === clip.originBoardId ? targetBoardId : idMap.get(l.boardId) ?? targetBoardId,
+                from: mapEnd(l.from),
+                to: mapEnd(l.to),
+              }
+            }
+
+            return { boards, cards, lines }
+          })
+          return newIds
         },
 
         hydrate(doc) {

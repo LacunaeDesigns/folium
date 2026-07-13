@@ -1,5 +1,7 @@
 import React from 'react'
 import { useAtlasStore } from '../store/context'
+import { collectClip } from '../store/store'
+import { setClipboard } from '../store/clipboard'
 import { boardCards } from '../store/selectors'
 import { useUi } from '../store/uiStore'
 
@@ -60,6 +62,22 @@ export function useShortcuts() {
         e.preventDefault()
         const ids = store.getState().duplicateCards(ui.selection)
         ui.setSelection(ids)
+        return
+      }
+      // copy / cut selected cards to the in-app clipboard (paste is handled by
+      // the canvas 'paste' listener so files/URLs keep working too)
+      if (mod && e.key.toLowerCase() === 'c') {
+        if (ui.selection.length === 0) return
+        e.preventDefault()
+        setClipboard(collectClip(store.getState(), ui.selection))
+        return
+      }
+      if (mod && e.key.toLowerCase() === 'x') {
+        if (ui.selection.length === 0) return
+        e.preventDefault()
+        setClipboard(collectClip(store.getState(), ui.selection))
+        store.getState().trashCards(ui.selection)
+        ui.clearSelection()
         return
       }
       if (mod && e.key.toLowerCase() === 'a') {

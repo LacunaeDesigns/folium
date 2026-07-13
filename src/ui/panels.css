@@ -534,3 +534,54 @@
   display: inline-block;
   margin-left: 4px;
 }
+
+/* settings: cross-machine sync */
+.settings-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 12px -12px;
+}
+.sync-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sync-hint {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.sync-hint.error {
+  color: var(--danger);
+}
+.sync-hint b {
+  color: var(--ink);
+}
+.sync-row {
+  display: flex;
+  gap: 6px;
+}
+.sync-btn {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ui);
+  padding: 6px 10px;
+}
+.sync-btn:hover:not(:disabled) {
+  background: var(--bg-active);
+}
+.sync-btn:disabled {
+  opacity: 0.5;
+}
+.sync-btn.primary {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.sync-btn.ghost {
+  background: transparent;
+  color: var(--ink-soft);
+}

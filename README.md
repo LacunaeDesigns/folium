@@ -40,6 +40,11 @@ Tests: `npm test` (Vitest).
 - **Sharing**: export any board as a **self-contained HTML file** (images inlined,
   nested boards navigable, comment pins visible, print-to-PDF built in), Markdown
   export, full JSON backup/import.
+- **Cross-machine sync** (Chrome/Edge, optional): Settings → *Cross-machine sync* →
+  link a folder in a cloud-synced location (OneDrive, Dropbox, iCloud, Syncthing).
+  Folium mirrors your whole workspace into that folder and reloads the newer copy
+  when you open it elsewhere. Sequential use across machines (last save wins);
+  IndexedDB remains the local default when unlinked. See "Cross-machine sync" below.
 - **Migrating from Milanote**: export boards from Milanote as Markdown, then drag
   the `.md` files onto Folium (or Export → *Import Markdown…*) — each becomes a
   board of typed cards. For a full-fidelity one-off migration (layout + images),
@@ -63,3 +68,30 @@ Tests: `npm test` (Vitest).
 All data lives in the browser profile that opened the app (IndexedDB,
 `atlasnote` database). Use Export → *Back up all data (JSON)* for backups and
 *Import backup* to restore or migrate.
+
+## Cross-machine sync (detail)
+
+Folium stores everything locally in IndexedDB by default. To carry boards between
+your own machines:
+
+1. Put a folder inside a service that syncs across your devices — OneDrive,
+   Dropbox, iCloud Drive, or Syncthing all work. (You can also point it at the
+   Ariadne vault, but that syncs on git's cadence and bloats history, so a
+   cloud-synced folder is smoother.)
+2. In Folium: **Settings (gear) → Cross-machine sync → Link a folder…** and pick
+   that folder. Folium writes `folium-workspace.json` there and keeps it current
+   on every change.
+3. On your other machine, open Folium and link the **same** synced folder. If it
+   already contains a workspace, Folium asks whether to load it (replacing local)
+   or overwrite it with the local boards.
+
+Notes and limits:
+- Chrome/Edge only (uses the File System Access API). Other browsers keep working
+  locally; the sync section shows a note instead.
+- Designed for **sequential** use — edit on one machine, then another. Last save
+  wins by timestamp. Editing the same board on two machines at once isn't safe
+  (same as two browser tabs).
+- After a reload the browser asks for folder permission again — click *Reconnect*
+  in Settings.
+- The whole workspace (including images, base64-encoded) is written on each save,
+  so very large image collections make a large file.

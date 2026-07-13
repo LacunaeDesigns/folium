@@ -19,12 +19,19 @@ interface SettingRow {
   value: unknown
 }
 
+/** Persisted FileSystemDirectoryHandle for folder sync (structured-cloneable). */
+interface HandleRow {
+  key: string
+  handle: FileSystemDirectoryHandle
+}
+
 /** NOTE: the Dexie database keeps its original 'atlasnote' id so pre-rebrand data survives. */
 export class AtlasDb extends Dexie {
   doc!: Table<DocRow, string>
   blobs!: Table<BlobRow, string>
   templates!: Table<Template, string>
   settings!: Table<SettingRow, string>
+  handles!: Table<HandleRow, string>
 
   constructor(name = 'atlasnote') {
     super(name)
@@ -34,6 +41,8 @@ export class AtlasDb extends Dexie {
       templates: 'id',
       settings: 'key',
     })
+    // v2 adds the folder-sync directory handle store; existing tables carry forward
+    this.version(2).stores({ handles: 'key' })
   }
 }
 
@@ -87,6 +96,21 @@ export async function getSetting<T>(db: AtlasDb, key: string, fallback: T): Prom
 
 export async function setSetting(db: AtlasDb, key: string, value: unknown): Promise<void> {
   await db.settings.put({ key, value })
+}
+
+const SYNC_HANDLE_KEY = 'syncDir'
+
+export async function saveSyncHandle(db: AtlasDb, handle: FileSystemDirectoryHandle): Promise<void> {
+  await db.handles.put({ key: SYNC_HANDLE_KEY, handle })
+}
+
+export async function loadSyncHandle(db: AtlasDb): Promise<FileSystemDirectoryHandle | null> {
+  const row = await db.handles.get(SYNC_HANDLE_KEY)
+  return row?.handle ?? null
+}
+
+export async function clearSyncHandle(db: AtlasDb): Promise<void> {
+  await db.handles.delete(SYNC_HANDLE_KEY)
 }
 
 /** Debounced autosave: persists the doc slice on every store change. Returns unsubscribe. */

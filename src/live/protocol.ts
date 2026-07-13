@@ -111,7 +111,10 @@ export function applyLiveMsg(store: AtlasStore, msg: LiveMsg): void {
 export function collectSyncCards(state: DocState, boardIds: string[]): SyncCard[] {
   const set = new Set(boardIds)
   return Object.values(state.cards)
-    .filter((c) => set.has(c.boardId) && !c.trashed && (c.type === 'comment' || c.type === 'image'))
+    .filter(
+      (c) =>
+        set.has(c.boardId) && !c.trashed && !c.inUnsorted && (c.type === 'comment' || c.type === 'image'),
+    )
     .map((c) => ({
       id: c.id,
       boardId: c.boardId,

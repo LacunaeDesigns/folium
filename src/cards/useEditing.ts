@@ -17,14 +17,25 @@ export function useEditing(cardId: string): [boolean, (v: boolean) => void] {
 export function useDebouncedCommit(fn: (v: unknown) => void, delay = 350) {
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const latest = React.useRef(fn)
+  const pending = React.useRef<unknown>(undefined)
   latest.current = fn
+  // flush (not drop) an in-flight commit on unmount — otherwise the last
+  // keystrokes vanish when the user switches boards mid-debounce
   React.useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current)
+    if (timer.current) {
+      clearTimeout(timer.current)
+      timer.current = null
+      latest.current(pending.current)
+    }
   }, [])
   return React.useCallback(
     (v: unknown) => {
+      pending.current = v
       if (timer.current) clearTimeout(timer.current)
-      timer.current = setTimeout(() => latest.current(v), delay)
+      timer.current = setTimeout(() => {
+        timer.current = null
+        latest.current(v)
+      }, delay)
     },
     [delay],
   )

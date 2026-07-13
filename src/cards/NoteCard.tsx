@@ -92,6 +92,20 @@ export function NoteCard({ card, readOnly }: CardBodyProps) {
     if (editing) editor.commands.focus('end')
   }, [editing, editor, readOnly])
 
+  // TipTap only reads `content` at mount — sync external doc changes (undo/redo,
+  // backup import) into the editor while it is not being typed in, otherwise the
+  // stale editor clobbers the undone content on the next keystroke
+  React.useEffect(() => {
+    if (!editor || editing) return
+    if (!content.doc) {
+      if (!editor.isEmpty) editor.commands.clearContent(false)
+      return
+    }
+    if (JSON.stringify(editor.getJSON()) !== JSON.stringify(content.doc)) {
+      editor.commands.setContent(content.doc as never, false)
+    }
+  }, [editor, editing, content.doc])
+
   const words = editor ? editor.getText().split(/\s+/).filter(Boolean).length : 0
 
   return (

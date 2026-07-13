@@ -1,5 +1,5 @@
 import { DocState, Template } from '../model/types'
-import { AtlasDb } from '../store/persist'
+import { AtlasDb, saveDoc } from '../store/persist'
 import { AtlasStore } from '../store/store'
 
 interface BackupBlob {
@@ -50,15 +50,30 @@ export async function exportBackup(db: AtlasDb, doc: DocState, userName: string)
   return JSON.stringify(backup)
 }
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v)
+}
+
 /** Replaces the entire document, blobs and user templates. */
 export async function importBackup(db: AtlasDb, store: AtlasStore, text: string): Promise<void> {
   const backup = JSON.parse(text) as Backup
-  if (backup.app !== 'atlasnote' || !backup.doc?.rootId || !backup.doc.boards) {
-    throw new Error('Not an AtlasNote backup file')
+  // validate BEFORE touching the db — a rejected import must leave everything intact
+  if (
+    backup.app !== 'atlasnote' ||
+    !backup.doc?.rootId ||
+    !isRecord(backup.doc.boards) ||
+    !isRecord(backup.doc.cards) ||
+    !isRecord(backup.doc.lines) ||
+    !backup.doc.boards[backup.doc.rootId] ||
+    !Array.isArray(backup.blobs)
+  ) {
+    throw new Error('Not a valid AtlasNote backup file')
   }
   await db.blobs.clear()
   await db.blobs.bulkPut(backup.blobs.map((b) => ({ id: b.id, type: b.type, buf: b64ToBuf(b.b64) })))
   await db.templates.clear()
   if (backup.templates?.length) await db.templates.bulkPut(backup.templates)
+  // persist the doc NOW — callers reload immediately, long before autosave's debounce fires
+  await saveDoc(db, backup.doc)
   store.getState().hydrate(backup.doc)
 }

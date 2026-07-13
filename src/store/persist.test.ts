@@ -68,3 +68,42 @@ describe('blob storage', () => {
     expect(await getBlob(db, id)).toBeUndefined()
   })
 })
+
+describe('backup import persistence (regression: review finding #1)', () => {
+  it('importBackup persists the imported doc so a reload does not revert it', async () => {
+    const { exportBackup, importBackup } = await import('../export/json')
+    const { createAtlasStore } = await import('./store')
+
+    // source doc with a card
+    const src = createAtlasStore()
+    src.getState().addCard(src.getState().rootId, 'sticky', { x: 1, y: 2, content: { text: 'from backup' } as never })
+    const srcDoc = {
+      rootId: src.getState().rootId,
+      boards: src.getState().boards,
+      cards: src.getState().cards,
+      lines: src.getState().lines,
+    }
+    const dbA = openDb('test-' + nanoid(6))
+    const json = await exportBackup(dbA, srcDoc, 'You')
+
+    // target: different db + store; import, then simulate reload via loadDoc
+    const dbB = openDb('test-' + nanoid(6))
+    const target = createAtlasStore()
+    await importBackup(dbB, target, json)
+    const reloaded = await loadDoc(dbB)
+    expect(reloaded).not.toBeNull()
+    expect(reloaded!.rootId).toBe(srcDoc.rootId)
+    expect(Object.keys(reloaded!.cards)).toHaveLength(1)
+  })
+
+  it('importBackup rejects backups missing cards/lines without touching the db', async () => {
+    const { importBackup } = await import('../export/json')
+    const { createAtlasStore } = await import('./store')
+    const db = openDb('test-' + nanoid(6))
+    await putBlob(db, new Blob(['keep me']))
+    const store = createAtlasStore()
+    const bad = JSON.stringify({ app: 'atlasnote', version: 1, doc: { rootId: 'x', boards: { x: {} } }, blobs: [], templates: [] })
+    await expect(importBackup(db, store, bad)).rejects.toThrow()
+    expect(await db.blobs.count()).toBe(1) // blobs untouched on rejection
+  })
+})

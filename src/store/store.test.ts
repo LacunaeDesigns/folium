@@ -134,6 +134,22 @@ describe('duplicate', () => {
   })
 })
 
+describe('duplicate in columns', () => {
+  it('duplicating a column member keeps colIndexes unique and places the copy after the original', () => {
+    const col = s().addCard(s().rootId, 'column', { x: 0, y: 0 })
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    const b = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    s().setCardColumn(a, col, 0)
+    s().setCardColumn(b, col, 1)
+    const [dup] = s().duplicateCards([a])
+    const members = columnCards(s(), col)
+    expect(members.map((c) => c.id)).toEqual([a, dup, b])
+    const indexes = members.map((c) => c.colIndex)
+    expect(new Set(indexes).size).toBe(indexes.length)
+    expect(indexes).toEqual([0, 1, 2])
+  })
+})
+
 describe('nested boards', () => {
   it('createBoard makes a child board plus a board card on the parent', () => {
     const { boardId, cardId } = s().createBoard(s().rootId, 'Work')

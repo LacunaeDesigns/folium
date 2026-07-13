@@ -91,15 +91,38 @@ export async function setSetting(db: AtlasDb, key: string, value: unknown): Prom
 /** Debounced autosave: persists the doc slice on every store change. Returns unsubscribe. */
 export function bindAutosave(store: AtlasStore, db: AtlasDb, delay = 600): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null
+  const write = () => {
+    const s = store.getState()
+    void saveDoc(db, { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines })
+  }
   const unsub = store.subscribe(() => {
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
-      const s = store.getState()
-      void saveDoc(db, { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines })
+      timer = null
+      write()
     }, delay)
   })
+  // flush a pending save when the tab hides/closes — a debounce alone loses the last edits
+  const flush = () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+      write()
+    }
+  }
+  const onVisibility = () => {
+    if (document.visibilityState === 'hidden') flush()
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onVisibility)
+  }
   return () => {
-    if (timer) clearTimeout(timer)
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+    flush()
     unsub()
   }
 }

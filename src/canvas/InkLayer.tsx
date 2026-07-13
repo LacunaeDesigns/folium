@@ -58,7 +58,13 @@ export function InkLayer({
   }
 
   const finalize = React.useCallback(() => {
-    const all = strokesRef.current
+    // include a stroke still being drawn (e.g. Esc pressed mid-stroke)
+    const live = current.current
+    current.current = null
+    const all =
+      live && live.width > 0 && live.points.length >= 4
+        ? [...strokesRef.current, live]
+        : strokesRef.current
     if (!all.length) return
     let minX = Infinity,
       minY = Infinity,

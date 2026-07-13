@@ -66,4 +66,45 @@ describe('renderChartSvg', () => {
     const svg = renderChartSvg({ ...bars, chart: 'pie' })
     expect((svg.match(/<path/g) || []).length).toBe(2)
   })
+
+  it('treats non-finite values as zero instead of poisoning the scale', () => {
+    const svg = renderChartSvg({ ...bars, points: [{ label: 'A', value: NaN }, { label: 'B', value: 6 }] })
+    expect(svg).toContain('<rect')
+    expect(svg).not.toContain('NaN')
+  })
+
+  it('renders bars for all-negative data instead of the empty placeholder', () => {
+    const svg = renderChartSvg({ ...bars, points: [{ label: 'A', value: -4 }, { label: 'B', value: -8 }] })
+    expect(svg).toContain('<rect')
+    expect(svg).not.toContain('Add data')
+  })
+
+  it('gives symmetric +/- values equal bar heights around a mid-chart zero line', () => {
+    const svg = renderChartSvg({ ...bars, points: [{ label: 'P', value: 5 }, { label: 'N', value: -5 }] })
+    const heights = [...svg.matchAll(/<rect[^>]*height="([\d.]+)"/g)].map((m) => parseFloat(m[1]))
+    expect(heights.length).toBe(2)
+    expect(heights[0]).toBeCloseTo(heights[1], 1)
+  })
+
+  it('draws negative bars below the zero line and positive bars above it', () => {
+    const svg = renderChartSvg({ ...bars, points: [{ label: 'P', value: 5 }, { label: 'N', value: -5 }] })
+    const zeroY = parseFloat((svg.match(/<line[^>]*y1="([\d.]+)"/) as RegExpMatchArray)[1])
+    const rects = [...svg.matchAll(/<rect[^>]*y="([\d.]+)"[^>]*height="([\d.]+)"/g)].map((m) => ({
+      y: parseFloat(m[1]),
+      h: parseFloat(m[2]),
+    }))
+    expect(rects[0].y).toBeLessThan(zeroY) // positive bar top is above the zero line
+    expect(rects[1].y).toBeCloseTo(zeroY, 1) // negative bar starts at the zero line
+    expect(rects[1].y + rects[1].h).toBeGreaterThan(zeroY) // …and extends below it
+  })
+
+  it('makes the line cross the zero baseline for mixed data', () => {
+    const svg = renderChartSvg({ ...bars, chart: 'line', points: [{ label: 'A', value: 3 }, { label: 'B', value: -3 }] })
+    const zeroY = parseFloat((svg.match(/<line[^>]*y1="([\d.]+)"/) as RegExpMatchArray)[1])
+    const ys = (svg.match(/<polyline points="([^"]+)"/) as RegExpMatchArray)[1]
+      .split(' ')
+      .map((pt) => parseFloat(pt.split(',')[1]))
+    expect(Math.min(...ys)).toBeLessThan(zeroY)
+    expect(Math.max(...ys)).toBeGreaterThan(zeroY)
+  })
 })

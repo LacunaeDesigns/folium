@@ -25,7 +25,10 @@ export function renderChartSvg(spec: ChartSpec): string {
       /[&<>"]/g,
       (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[ch],
     )
-  const points = spec.points || []
+  const points = (spec.points || []).map((p) => ({
+    label: p.label,
+    value: Number.isFinite(p.value) ? p.value : 0,
+  }))
   const colors = spec.colors && spec.colors.length ? spec.colors : ['#2f6d5a']
   const titleH = spec.title ? 22 : 8
   const open =
@@ -39,7 +42,6 @@ export function renderChartSvg(spec: ChartSpec): string {
     '<text x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle" font-size="12" fill="#a49b84">Add data</text>'
 
   const total = points.reduce((a, p) => a + (p.value > 0 ? p.value : 0), 0)
-  const max = points.reduce((a, p) => Math.max(a, p.value), 0)
 
   // Pie / donut -------------------------------------------------------------
   if (spec.chart === 'pie' || spec.chart === 'donut') {
@@ -102,23 +104,30 @@ export function renderChartSvg(spec: ChartSpec): string {
   }
 
   // Bar / line --------------------------------------------------------------
-  if (points.length === 0 || max <= 0) return open + titleSvg + placeholder + '</svg>'
+  // Range always includes 0 so the zero baseline is on-chart; positive-only
+  // data collapses the baseline to the bottom (identical to a bottom axis).
+  const lo = points.reduce((a, p) => Math.min(a, p.value), 0)
+  const hi = points.reduce((a, p) => Math.max(a, p.value), 0)
+  const range = hi - lo
+  if (points.length === 0 || range === 0) return open + titleSvg + placeholder + '</svg>'
   const padL = 10
   const padR = 10
   const padB = 22
   const x0 = padL
-  const y0 = titleH
+  const plotTop = titleH
   const pw = W - padL - padR
   const ph = H - titleH - padB
-  const baseY = y0 + ph
+  const plotBottom = plotTop + ph
+  const yat = (v: number): number => plotBottom - ((v - lo) / range) * ph
+  const zeroY = yat(0)
+  const labelY = plotBottom + 12
   const axis =
-    '<line x1="' + x0 + '" y1="' + baseY + '" x2="' + (x0 + pw) + '" y2="' + baseY + '" stroke="#e2dac6" stroke-width="1"/>'
+    '<line x1="' + x0 + '" y1="' + zeroY + '" x2="' + (x0 + pw) + '" y2="' + zeroY + '" stroke="#e2dac6" stroke-width="1"/>'
   const n = points.length
   let body = ''
 
   if (spec.chart === 'line') {
     const xat = (i: number): number => x0 + (n === 1 ? pw / 2 : (i * pw) / (n - 1))
-    const yat = (v: number): number => baseY - (Math.max(0, v) / max) * ph
     const pts = points.map((p, i) => xat(i) + ',' + yat(p.value)).join(' ')
     body +=
       '<polyline points="' + pts + '" fill="none" stroke="' + colors[0] +
@@ -126,23 +135,23 @@ export function renderChartSvg(spec: ChartSpec): string {
     for (let i = 0; i < n; i++) {
       body += '<circle cx="' + xat(i) + '" cy="' + yat(points[i].value) + '" r="2.5" fill="' + colors[0] + '"/>'
       body +=
-        '<text x="' + xat(i) + '" y="' + (baseY + 12) + '" text-anchor="middle" font-size="9" fill="#6e6857">' +
+        '<text x="' + xat(i) + '" y="' + labelY + '" text-anchor="middle" font-size="9" fill="#6e6857">' +
         esc(points[i].label) +
         '</text>'
     }
   } else {
-    // bar
+    // bar — grows up or down from the zero line depending on sign
     const slot = pw / n
     const bw = Math.min(slot * 0.6, 46)
     for (let i = 0; i < n; i++) {
-      const v = Math.max(0, points[i].value)
-      const bh = (v / max) * ph
+      const yv = yat(points[i].value)
+      const by = Math.min(yv, zeroY)
+      const bh = Math.abs(yv - zeroY)
       const cx = x0 + (i + 0.5) * slot
       const bx = cx - bw / 2
-      const by = baseY - bh
       body += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="2" fill="' + colors[0] + '"/>'
       body +=
-        '<text x="' + cx + '" y="' + (baseY + 12) + '" text-anchor="middle" font-size="9" fill="#6e6857">' +
+        '<text x="' + cx + '" y="' + labelY + '" text-anchor="middle" font-size="9" fill="#6e6857">' +
         esc(points[i].label) +
         '</text>'
     }

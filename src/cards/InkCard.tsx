@@ -22,6 +22,16 @@ export function InkCard({ card }: CardBodyProps) {
           strokeLinejoin="round"
         />
       ))}
+      {content.strokes.map((s, i) => (
+        <path
+          key={'hit-' + i}
+          className="ink-hit"
+          d={strokesToPath(s.points)}
+          strokeWidth={Math.max(s.width, 12)}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
     </svg>
   )
 }

@@ -118,6 +118,20 @@ export function Canvas({ boardId }: { boardId: string }) {
 
   const uploadRef = React.useRef<HTMLInputElement>(null)
 
+  // Add-image / Upload toolbar buttons open the OS file picker immediately.
+  // Dispatched synchronously from the button click so the .click() stays inside
+  // the browser's user-activation window (a useEffect would lose it and be blocked).
+  React.useEffect(() => {
+    const onPick = (e: Event) => {
+      const input = uploadRef.current
+      if (!input) return
+      input.accept = (e as CustomEvent).detail?.accept ?? ''
+      input.click()
+    }
+    window.addEventListener('folium:pick-files', onPick)
+    return () => window.removeEventListener('folium:pick-files', onPick)
+  }, [])
+
   // paste: files -> image/file cards, URLs -> link card
   React.useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
@@ -259,7 +273,7 @@ export function Canvas({ boardId }: { boardId: string }) {
     }
   }
 
-  const onWheel = (e: React.WheelEvent) => {
+  const onWheel = (e: WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault()
       const local = clientToLocal(e.clientX, e.clientY)
@@ -271,6 +285,18 @@ export function Canvas({ boardId }: { boardId: string }) {
       setView(boardId, { zoom: view.zoom, pan: { x: view.pan.x - dx, y: view.pan.y - dy } })
     }
   }
+  const onWheelRef = React.useRef(onWheel)
+  onWheelRef.current = onWheel
+
+  // native non-passive listener — React's synthetic wheel can't preventDefault the
+  // browser's ctrl+wheel page zoom, so zooming the board also zoomed Chrome itself
+  React.useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+    const h = (e: WheelEvent) => onWheelRef.current(e)
+    el.addEventListener('wheel', h, { passive: false })
+    return () => el.removeEventListener('wheel', h)
+  }, [])
 
   const onDoubleClick = (e: React.MouseEvent) => {
     if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('canvas-world')) return
@@ -344,7 +370,6 @@ export function Canvas({ boardId }: { boardId: string }) {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onWheel={onWheel}
       onDoubleClick={onDoubleClick}
       onDragOver={(e) => {
         if (
@@ -395,10 +420,21 @@ export function Canvas({ boardId }: { boardId: string }) {
         />
       )}
 
-      {ctxMenu && (
+      {ctxMenu && (() => {
+        // clamp inside the viewport so the menu never spills off-screen / behind the board
+        const vp = viewportRef.current
+        const rect = vp?.getBoundingClientRect()
+        const MENU_W = 190
+        const MENU_H = 150
+        const PAD = 8
+        const rawX = ctxMenu.x - (rect?.left ?? 0)
+        const rawY = ctxMenu.y - (rect?.top ?? 0)
+        const left = Math.max(PAD, Math.min(rawX, (vp?.clientWidth ?? 0) - MENU_W - PAD))
+        const top = Math.max(PAD, Math.min(rawY, (vp?.clientHeight ?? 0) - MENU_H - PAD))
+        return (
         <div
           className="menu-pop"
-          style={{ left: ctxMenu.x - (viewportRef.current?.getBoundingClientRect().left ?? 0), top: ctxMenu.y - (viewportRef.current?.getBoundingClientRect().top ?? 0) }}
+          style={{ left, top }}
           onPointerDown={(e) => e.stopPropagation()}
         >
           <button
@@ -427,7 +463,8 @@ export function Canvas({ boardId }: { boardId: string }) {
             <Icon name="trash" size={15} /> Delete
           </button>
         </div>
-      )}
+        )
+      })()}
 
       <input
         ref={uploadRef}

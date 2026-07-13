@@ -74,7 +74,19 @@ export function Toolbar({
     <button
       key={t.id}
       className={'tool-btn' + (activeTool === t.id ? ' active' : '')}
-      onClick={() => onPickTool(t.id)}
+      onClick={() => {
+        // Add-image / Upload open the file picker immediately rather than
+        // arming a tool that needs a second click on the canvas
+        if (t.id === 'image' || t.id === 'upload') {
+          window.dispatchEvent(
+            new CustomEvent('folium:pick-files', {
+              detail: { accept: t.id === 'image' ? 'image/*' : '' },
+            }),
+          )
+          return
+        }
+        onPickTool(t.id)
+      }}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('application/x-atlasnote-tool', t.id)

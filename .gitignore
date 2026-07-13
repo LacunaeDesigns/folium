@@ -3,6 +3,9 @@ dist
 *.local
 .DS_Store
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Milanote migration working files (large raw data)
 .migration/
 

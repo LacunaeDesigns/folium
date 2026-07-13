@@ -49,4 +49,21 @@ describe('renderChartSvg', () => {
   it('handles a single data point without throwing', () => {
     expect(renderChartSvg({ ...bars, points: [{ label: 'Solo', value: 5 }] })).toContain('<svg')
   })
+
+  it('draws a single full-circle pie slice as a circle (not a degenerate arc)', () => {
+    const svg = renderChartSvg({ ...bars, chart: 'pie', points: [{ label: 'Solo', value: 5 }] })
+    expect(svg).toContain('<circle')
+    // a lone slice must not collapse to a zero-length arc with identical endpoints
+    expect(svg).not.toMatch(/<path d="M [\d.]+ [\d.]+ L ([\d.]+) ([\d.]+) A [\d.]+ [\d.]+ 0 \d 1 \1 \2/)
+  })
+
+  it('draws a single full-circle donut slice as an even-odd ring', () => {
+    const svg = renderChartSvg({ ...bars, chart: 'donut', points: [{ label: 'Solo', value: 5 }] })
+    expect(svg).toContain('fill-rule="evenodd"')
+  })
+
+  it('still splits a multi-slice pie into per-slice paths', () => {
+    const svg = renderChartSvg({ ...bars, chart: 'pie' })
+    expect((svg.match(/<path/g) || []).length).toBe(2)
+  })
 })

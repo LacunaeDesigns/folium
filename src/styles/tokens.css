@@ -1,67 +1,71 @@
 :root {
-  /* chrome */
-  --bg-canvas: #f2f1ed;
-  --bg-chrome: #ffffff;
-  --bg-hover: #f4f3f0;
-  --bg-active: #ebeae6;
-  --border: #e5e3de;
-  --border-strong: #d6d4ce;
-  --shadow-card: 0 1px 3px rgba(40, 40, 35, 0.12), 0 1px 2px rgba(40, 40, 35, 0.08);
-  --shadow-pop: 0 4px 24px rgba(40, 40, 35, 0.18);
+  /* chrome — warm paper */
+  --bg-canvas: #f3eee3;
+  --bg-canvas-dot: #d9d0bb;
+  --bg-chrome: #fbf8f0;
+  --bg-hover: #f1ecdf;
+  --bg-active: #e8e1d0;
+  --border: #e2dac6;
+  --border-strong: #cfc5ab;
+  --shadow-card: 0 1px 2px rgba(74, 64, 41, 0.1), 0 2px 6px rgba(74, 64, 41, 0.08);
+  --shadow-pop: 0 6px 28px rgba(74, 64, 41, 0.2);
 
   /* ink */
-  --ink: #33373b;
-  --ink-soft: #74787c;
-  --ink-faint: #a3a7aa;
-  --title-ink: #323a48;
+  --ink: #2c2a23;
+  --ink-soft: #6e6857;
+  --ink-faint: #a49b84;
+  --title-ink: #262019;
 
-  /* accents */
-  --accent: #4c6ef5;
-  --accent-soft: #e4eafd;
-  --accent-orange: #e56937;
-  --selection: #4c9ffb;
-  --danger: #d64541;
+  /* accents — viridian + russet */
+  --accent: #2f6d5a;
+  --accent-soft: #e0ece4;
+  --accent-orange: #b4622d;
+  --selection: #2f6d5a;
+  --danger: #c24e3e;
 
-  /* card palette */
-  --card-white: #ffffff;
-  --card-gray: #ecebe8;
-  --card-yellow: #f9e76f;
-  --card-orange: #f9c97c;
-  --card-red: #f5a6a0;
-  --card-green: #bfe8b4;
-  --card-blue: #bfddf5;
-  --card-purple: #d5c8f0;
-  --card-dark: #3b3f46;
+  /* card palette — gouache */
+  --card-white: #fffdf7;
+  --card-gray: #ede8da;
+  --card-yellow: #f5e3a3;
+  --card-orange: #f2c99a;
+  --card-red: #eeafa2;
+  --card-green: #c8dfc0;
+  --card-blue: #becfdd;
+  --card-purple: #d4c4dd;
+  --card-dark: #3a372e;
 
   /* type */
-  --font-ui: 'Inter', -apple-system, 'Segoe UI', sans-serif;
-  --font-serif: 'PT Serif', Georgia, serif;
+  --font-ui: 'Karla', 'Segoe UI', sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
 
   /* layout */
-  --toolbar-w: 64px;
-  --topbar-h: 44px;
-  --titlebar-h: 46px;
-  --radius-card: 4px;
-  --radius-ui: 6px;
+  --toolbar-w: 0px;
+  --topbar-h: 52px;
+  --radius-card: 10px;
+  --radius-ui: 8px;
 }
 
 [data-board-theme='dark'] {
-  --bg-canvas: #202023;
-  --bg-chrome: #161619;
-  --bg-hover: #232326;
-  --bg-active: #2c2c30;
-  --border: #2e2e33;
-  --border-strong: #3c3c42;
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-pop: 0 4px 24px rgba(0, 0, 0, 0.55);
+  --bg-canvas: #26231c;
+  --bg-canvas-dot: #3d382b;
+  --bg-chrome: #1c1a15;
+  --bg-hover: #2c2820;
+  --bg-active: #363126;
+  --border: #383327;
+  --border-strong: #4a4433;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 6px 28px rgba(0, 0, 0, 0.55);
 
-  --ink: #e6e6e4;
-  --ink-soft: #9c9ca0;
-  --ink-faint: #6b6b70;
-  --title-ink: #f0efec;
+  --ink: #e9e4d6;
+  --ink-soft: #a59d88;
+  --ink-faint: #6f6851;
+  --title-ink: #f2ede0;
 
-  --accent-soft: #2b3350;
+  --accent: #5aa88e;
+  --accent-soft: #22362e;
+  --accent-orange: #d08a53;
+  --selection: #5aa88e;
 
-  --card-white: #2a2a2e;
-  --card-gray: #333338;
+  --card-white: #2e2b23;
+  --card-gray: #38342a;
 }

@@ -52,13 +52,13 @@ export const VIEWER_LIVE_JS = `
   }
 
   function connect(){
-    var code = (prompt('Session code (from the reviewer\\u2019s AtlasNote):')||'').replace(/[^a-z0-9]/gi,'').toLowerCase();
+    var code = (prompt('Session code (from the host\\u2019s Looseleaf):')||'').replace(/[^a-z0-9]/gi,'').toLowerCase();
     if (!code) return;
     myName = (prompt('Your name:')||'Reviewer').slice(0,60);
     status('<span style="color:var(--faint);font-size:12px">Connecting…</span>');
     var peer = new Peer();
     peer.on('open', function(){
-      conn = peer.connect('atlasnote-'+code, { reliable: true });
+      conn = peer.connect('looseleaf-'+code, { reliable: true });
       conn.on('open', function(){
         conn.send({ t:'hello', name: myName });
       });

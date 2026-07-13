@@ -99,7 +99,7 @@
   align-items: center;
   background: var(--bg-chrome);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 999px;
   box-shadow: var(--shadow-card);
   z-index: 50;
 }

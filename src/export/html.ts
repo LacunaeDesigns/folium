@@ -14,16 +14,16 @@ export function buildHtmlExport(bundle: ExportBundle, extraScript = ''): string 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(title)} — AtlasNote</title>
+<title>${escapeHtml(title)} — Looseleaf</title>
 <style>
 :root{
-  --bg:#f2f1ed;--chrome:#fff;--border:#e5e3de;--ink:#33373b;--soft:#74787c;--faint:#a3a7aa;
-  --accent:#4c6ef5;--orange:#e56937;--yellow:#f9e76f;--shadow:0 1px 3px rgba(40,40,35,.12),0 1px 2px rgba(40,40,35,.08);
-  --c-white:#fff;--c-gray:#ecebe8;--c-yellow:#f9e76f;--c-orange:#f9c97c;--c-red:#f5a6a0;--c-green:#bfe8b4;--c-blue:#bfddf5;--c-purple:#d5c8f0;--c-dark:#3b3f46;
+  --bg:#f3eee3;--chrome:#fbf8f0;--border:#e2dac6;--ink:#2c2a23;--soft:#6e6857;--faint:#a49b84;
+  --accent:#2f6d5a;--orange:#b4622d;--yellow:#f5e3a3;--shadow:0 1px 2px rgba(74,64,41,.1),0 2px 6px rgba(74,64,41,.08);
+  --c-white:#fffdf7;--c-gray:#ede8da;--c-yellow:#f5e3a3;--c-orange:#f2c99a;--c-red:#eeafa2;--c-green:#c8dfc0;--c-blue:#becfdd;--c-purple:#d4c4dd;--c-dark:#3a372e;
 }
-[data-theme=dark]{--bg:#202023;--chrome:#161619;--border:#2e2e33;--ink:#e6e6e4;--soft:#9c9ca0;--faint:#6b6b70;--c-white:#2a2a2e;--c-gray:#333338}
+[data-theme=dark]{--bg:#26231c;--chrome:#1c1a15;--border:#383327;--ink:#e9e4d6;--soft:#a59d88;--faint:#6f6851;--accent:#5aa88e;--orange:#d08a53;--c-white:#2e2b23;--c-gray:#38342a}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Inter,-apple-system,'Segoe UI',sans-serif;font-size:14px;color:var(--ink);background:var(--bg)}
+body{font-family:Karla,-apple-system,'Segoe UI',sans-serif;font-size:14px;color:var(--ink);background:var(--bg)}
 header{position:sticky;top:0;background:var(--chrome);border-bottom:1px solid var(--border);padding:10px 18px;z-index:50;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 header .crumbs{display:flex;gap:6px;align-items:center;font-size:13px;font-weight:600;color:var(--soft);flex:1;min-width:0}
 header .crumbs a{color:var(--soft);text-decoration:none;padding:3px 5px;border-radius:4px}
@@ -33,7 +33,7 @@ header .badge{font-size:11px;color:var(--faint)}
 header .actions{display:flex;gap:8px;align-items:center}
 header button{font:inherit;font-size:12.5px;color:var(--soft);background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer}
 header button:hover{color:var(--ink)}
-h1.title{font-family:'PT Serif',Georgia,serif;font-size:22px;color:var(--ink);width:100%;text-align:center;padding:8px 0 2px}
+h1.title{font-family:'Fraunces',Georgia,serif;font-size:22px;color:var(--ink);width:100%;text-align:center;padding:8px 0 2px}
 #viewport{position:relative;overflow:auto;height:calc(100vh - 92px)}
 #world{position:relative;transform-origin:0 0}
 .card{position:absolute;background:var(--c-white);border-radius:4px;box-shadow:var(--shadow);font-size:13.5px;line-height:1.5}
@@ -64,7 +64,7 @@ figure.img figcaption{font-size:12px;color:var(--soft);padding:6px 10px}
 .pinpop .rep{border-left:2px solid var(--border);padding-left:7px;margin-top:6px}
 .filec{background:var(--chrome);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
 .filec .row{display:flex;gap:10px;align-items:center;padding:10px 12px}
-.filec .badge{width:38px;height:44px;border-radius:5px;background:#e4eafd;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex:none}
+.filec .badge{width:38px;height:44px;border-radius:5px;background:var(--accent-soft,#e0ece4);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex:none}
 .filec .nm{font-weight:600;font-size:13px}.filec .sz{font-size:11.5px;color:var(--soft)}
 .filec a{color:var(--accent)}
 .filec video,.filec audio{width:100%;display:block}
@@ -195,7 +195,7 @@ function render(){
   var board = boards[current];
   document.getElementById('btitle').textContent = board.title;
   document.body.setAttribute('data-theme', board.theme==='dark'?'dark':'light');
-  document.getElementById('stamp').textContent = 'Exported ' + new Date(DATA.exportedAt).toLocaleDateString() + ' · AtlasNote';
+  document.getElementById('stamp').textContent = 'Exported ' + new Date(DATA.exportedAt).toLocaleDateString() + ' · Looseleaf';
   // breadcrumbs within the export
   var trail=[]; var cur=board;
   while(cur){ trail.unshift(cur); cur = cur.parentId ? boards[cur.parentId] : null; }

@@ -46,41 +46,28 @@ export function TopBar({
     else setDraft(title)
   }
 
+  const parents = crumbs.slice(0, -1)
+
   return (
     <div className="topbar">
       <div className="topbar-row">
-        <div className="topbar-crumbs">
-          <img src="/brand/logomark.png" alt="" className="topbar-logo" />
-          {crumbs.map((c, i) => (
+        <img src="/brand/looseleaf.svg" alt="" className="topbar-logo" />
+        <nav className="topbar-crumbs">
+          {parents.map((c) => (
             <React.Fragment key={c.id}>
-              {i > 0 && <span className="crumb-sep">/</span>}
-              {c.color && i > 0 && <span className="crumb-swatch" style={{ background: c.color }} />}
-              <button
-                className={'crumb' + (i === crumbs.length - 1 ? ' current' : '')}
-                onClick={() => onNavigate(c.id)}
-              >
+              <button className="crumb" onClick={() => onNavigate(c.id)}>
+                {c.color && <span className="crumb-swatch" style={{ background: c.color }} />}
                 {c.title}
               </button>
+              <span className="crumb-sep">/</span>
             </React.Fragment>
           ))}
-        </div>
-        <div className="topbar-icons">
-          <button className="icon-btn" title="Search boards (Ctrl+K)" onClick={onSearch}>
-            <Icon name="search" />
-          </button>
-          <button className="icon-btn" title="Settings" onClick={onSettings}>
-            <Icon name="settings" />
-          </button>
-        </div>
-      </div>
-      <div className="titlebar">
-        <div className="titlebar-side" />
-        <div className="titlebar-center">
           {editing ? (
             <input
               className="board-title-input"
               value={draft}
               autoFocus
+              size={Math.max(6, draft.length)}
               onChange={(e) => setDraft(e.target.value)}
               onBlur={commit}
               onKeyDown={(e) => {
@@ -96,9 +83,12 @@ export function TopBar({
               {title}
             </h1>
           )}
-        </div>
-        <div className="titlebar-side right">
+        </nav>
+        <div className="topbar-actions">
           {rightExtra}
+          <button className="icon-btn" title="Search boards (Ctrl+K)" onClick={onSearch}>
+            <Icon name="search" />
+          </button>
           <button className="chrome-btn" onClick={onLive}>
             <Icon name="broadcast" size={13} /> Live
             {liveActive && <span className="live-dot" />}
@@ -111,6 +101,9 @@ export function TopBar({
           </button>
           <button className="chrome-btn" onClick={onView}>
             View <Icon name="chevron-down" size={13} />
+          </button>
+          <button className="icon-btn" title="Settings" onClick={onSettings}>
+            <Icon name="settings" />
           </button>
         </div>
       </div>

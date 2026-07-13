@@ -210,16 +210,16 @@ export interface DocState {
 }
 
 export const BOARD_COLORS = [
-  '#4c6ef5',
-  '#e56937',
-  '#d64541',
-  '#e8b93c',
-  '#4caf6e',
-  '#37a7c4',
-  '#8e5cd9',
-  '#d4589c',
-  '#7a5236',
-  '#5b6470',
+  '#2f6d5a',
+  '#b4622d',
+  '#c24e3e',
+  '#b8912e',
+  '#5b7fa6',
+  '#7a5f96',
+  '#a64d79',
+  '#5f7040',
+  '#6b5138',
+  '#5c6062',
 ] as const
 
 export const NOTE_COLORS = [

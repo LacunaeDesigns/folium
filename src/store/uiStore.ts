@@ -6,7 +6,8 @@ export interface BoardView {
   zoom: number
 }
 
-export const DEFAULT_VIEW: BoardView = { pan: { x: 0, y: 0 }, zoom: 1 }
+/* default pan clears the floating tool dock on the left */
+export const DEFAULT_VIEW: BoardView = { pan: { x: 96, y: 0 }, zoom: 1 }
 
 export interface DrawSettings {
   color: string

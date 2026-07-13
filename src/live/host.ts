@@ -14,7 +14,7 @@ function genCode(): string {
 }
 
 export function peerIdForCode(code: string): string {
-  return 'atlasnote-' + code.toLowerCase()
+  return 'looseleaf-' + code.toLowerCase()
 }
 
 interface LiveState {

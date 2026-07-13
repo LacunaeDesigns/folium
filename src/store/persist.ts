@@ -19,6 +19,7 @@ interface SettingRow {
   value: unknown
 }
 
+/** NOTE: the Dexie database keeps its original 'atlasnote' id so pre-rebrand data survives. */
 export class AtlasDb extends Dexie {
   doc!: Table<DocRow, string>
   blobs!: Table<BlobRow, string>

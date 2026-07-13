@@ -108,7 +108,7 @@ describe('importMarkdownBoard', () => {
 
   it('falls back to the filename when there is no h1', () => {
     const store = createAtlasStore()
-    const boardId = importMarkdownBoard(store, store.getState().rootId, 'My Milanote Export.md', 'just a paragraph')
-    expect(store.getState().boards[boardId].title).toBe('My Milanote Export')
+    const boardId = importMarkdownBoard(store, store.getState().rootId, 'My Board Export.md', 'just a paragraph')
+    expect(store.getState().boards[boardId].title).toBe('My Board Export')
   })
 })

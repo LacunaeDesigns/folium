@@ -103,10 +103,10 @@ export function ExportMenu({ boardId, onClose }: { boardId: string; onClose: () 
         <Icon name="download" size={15} /> {busy === 'backup' ? 'Backing up…' : 'Back up all data (JSON)'}
       </button>
       <button className="menu-item" onClick={() => importRef.current?.click()}>
-        <Icon name="upload" size={15} /> Import backup…
+        <Icon name="upload" size={15} /> Import backup
       </button>
       <button className="menu-item" onClick={() => mdRef.current?.click()}>
-        <Icon name="template" size={15} /> Import Markdown… (Milanote)
+        <Icon name="template" size={15} /> Import Markdown files
       </button>
       <input
         ref={mdRef}

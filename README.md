@@ -45,10 +45,10 @@ Tests: `npm test` (Vitest).
   Folium mirrors your whole workspace into that folder and reloads the newer copy
   when you open it elsewhere. Sequential use across machines (last save wins);
   IndexedDB remains the local default when unlinked. See "Cross-machine sync" below.
-- **Migrating from Milanote**: export boards from Milanote as Markdown, then drag
-  the `.md` files onto Folium (or Export → *Import Markdown…*) — each becomes a
-  board of typed cards. For a full-fidelity one-off migration (layout + images),
-  see [docs/milanote-migration.md](docs/milanote-migration.md).
+- **Importing Markdown**: drag `.md` files onto a board (or Export → *Import
+  Markdown files*) and each becomes a board of typed cards — handy for bringing
+  content over from any tool that exports Markdown. See
+  [docs/importing.md](docs/importing.md).
 - **Live review sessions**: start a session to get a code; a reviewer opens the
   exported HTML anywhere, clicks *Join live session*, and their comments, image
   pins and replies land on your board in real time over an encrypted peer-to-peer

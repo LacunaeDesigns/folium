@@ -22,6 +22,17 @@
   color: #f0efec;
 }
 
+/* the coloured palette is always light — force dark ink so text stays readable
+   even under a dark board theme, where --ink would otherwise flip to light */
+.note-card.bg-yellow, .note-card.bg-yellow .ProseMirror,
+.note-card.bg-orange, .note-card.bg-orange .ProseMirror,
+.note-card.bg-red,    .note-card.bg-red .ProseMirror,
+.note-card.bg-green,  .note-card.bg-green .ProseMirror,
+.note-card.bg-blue,   .note-card.bg-blue .ProseMirror,
+.note-card.bg-purple, .note-card.bg-purple .ProseMirror {
+  color: #2c2a23;
+}
+
 .note-editor .ProseMirror {
   outline: none;
   font-size: 13.5px;
@@ -550,7 +561,7 @@
 .column-card {
   background: rgba(0, 0, 0, 0.045);
   border-radius: 8px;
-  padding: 8px;
+  padding: 10px;
   min-height: 60px;
 }
 [data-board-theme='dark'] .column-card {
@@ -559,8 +570,8 @@
 .column-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 4px 8px;
+  gap: 8px;
+  padding: 2px 6px 12px;
 }
 .column-title {
   flex: 1;
@@ -605,6 +616,11 @@
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   overflow: hidden;
+}
+/* while editing a note inside a column, let its floating format bar escape the
+   column's clip instead of hiding behind the board */
+.col-member:has(.note-editor.editing) .col-member-chrome {
+  overflow: visible;
 }
 .col-member.selected .col-member-chrome {
   outline: 1.5px solid var(--selection);
@@ -879,8 +895,15 @@
 }
 
 /* ---------- ink ---------- */
+/* only the strokes catch the pointer, so cards beneath the bounding box stay clickable */
 .ink-card {
   display: block;
   width: 100%;
   height: 100%;
+  pointer-events: none;
+}
+.ink-hit {
+  stroke: transparent;
+  fill: none;
+  pointer-events: stroke;
 }

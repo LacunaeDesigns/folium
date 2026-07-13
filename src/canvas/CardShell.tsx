@@ -68,8 +68,6 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     }
     if (!ui.selection.includes(card.id)) ui.setSelection([card.id])
 
-    const el = e.currentTarget as HTMLElement
-    safeCapture(el, e.pointerId)
     gesture.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -86,6 +84,9 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     if (!g.dragging) {
       if (Math.hypot(e.clientX - g.startX, e.clientY - g.startY) < DRAG_THRESHOLD) return
       g.dragging = true
+      // capture only once a drag starts — capturing on pointerdown retargets the
+      // ensuing click/dblclick to the shell, killing double-click on card bodies
+      safeCapture(e.currentTarget as HTMLElement, e.pointerId)
     }
     setDrag({ ids: g.ids, dx, dy })
   }

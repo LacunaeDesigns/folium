@@ -22,15 +22,19 @@ function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
     const target = e.target as HTMLElement
     if (target.closest('input, textarea, button, a, [contenteditable="true"], .no-drag')) return
     useUi.getState().setSelection([card.id])
-    safeCapture(e.currentTarget as HTMLElement, e.pointerId)
     gesture.current = { startX: e.clientX, startY: e.clientY, dragging: false }
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
     const g = gesture.current
     if (!g) return
-    if (!g.dragging && Math.hypot(e.clientX - g.startX, e.clientY - g.startY) < 5) return
-    g.dragging = true
+    if (!g.dragging) {
+      if (Math.hypot(e.clientX - g.startX, e.clientY - g.startY) < 5) return
+      g.dragging = true
+      // capture only once a drag starts — capturing on pointerdown retargets the
+      // ensuing click/dblclick to the member shell, killing double-click editing
+      safeCapture(e.currentTarget as HTMLElement, e.pointerId)
+    }
     setDragXY({ x: e.clientX - g.startX, y: e.clientY - g.startY })
   }
 

@@ -29,11 +29,23 @@
   border-radius: var(--radius-ui);
   color: var(--ink-soft);
   width: 100%;
+  cursor: grab;
 }
 
 .tool-btn:hover {
   background: var(--bg-hover);
   color: var(--ink);
+}
+
+/* nudge the icon on hover to signal the tool can be dragged onto the canvas */
+.tool-btn .tool-icon {
+  transition: transform 0.12s ease;
+}
+.tool-btn:hover .tool-icon {
+  transform: translateX(3px);
+}
+.tool-btn:active {
+  cursor: grabbing;
 }
 
 .tool-btn.active {

@@ -46,6 +46,14 @@
   cursor: crosshair;
 }
 
+/* ink shells pass clicks through their empty bounding box (strokes re-enable hits) */
+.card-shell[data-type='ink'] {
+  pointer-events: none;
+}
+.card-shell[data-type='ink'] .resize-handle {
+  pointer-events: all;
+}
+
 /* card types that draw their own chrome */
 .card-shell[data-type='sticky'],
 .card-shell[data-type='shape'],

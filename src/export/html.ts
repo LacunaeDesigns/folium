@@ -1,4 +1,5 @@
 import { ExportBundle } from './collect'
+import { renderChartSvg } from '../charts/renderChart'
 
 /**
  * Build a single self-contained .html file: embedded board JSON + read-only viewer.
@@ -85,6 +86,8 @@ table.tbl{width:100%;border-collapse:collapse;background:var(--chrome);border-ra
 table.tbl td{border:1px solid var(--border);padding:7px 9px}
 table.tbl tr:first-child{background:var(--yellow);font-weight:700}
 [data-theme=dark] table.tbl tr:first-child{background:#4d451c}
+.chartc{padding:8px}
+.chartc svg{width:100%;height:auto;display:block}
 .swatch{border-radius:4px;overflow:hidden;background:var(--chrome);box-shadow:var(--shadow)}
 .swatch .blk{height:88px;position:relative}.swatch .hx{position:absolute;top:10px;left:12px;font-weight:600;font-size:13px}
 .swatch .nm{padding:9px 12px;font-size:13px}
@@ -123,6 +126,7 @@ var DATA = JSON.parse(document.getElementById('atlas-data').textContent);
 var boards = {}; DATA.boards.forEach(function(b){ boards[b.id] = b; });
 var current = DATA.rootBoardId;
 var esc = function(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); };
+var renderChartSvg = ${renderChartSvg.toString()};
 var safeUrl = function(u){ u=String(u==null?'':u).trim(); return (/^(https?:|mailto:|data:image\\/|data:video\\/|data:audio\\/|data:application\\/)/i.test(u)) ? esc(u) : ''; };
 function relTime(ts){ var d = Date.now()-ts; if(d<3600000) return Math.max(1,Math.floor(d/60000))+'m ago'; if(d<86400000) return Math.floor(d/3600000)+'h ago'; return new Date(ts).toLocaleDateString(); }
 function avatar(name){ var h=0; for(var i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))|0; return '<span class="av" style="background:hsl('+(Math.abs(h)%360)+' 55% 55%)">'+esc((name||'?')[0].toUpperCase())+'</span>'; }
@@ -178,6 +182,7 @@ function cardBody(card){
     case 'column': { var members=DATA.cards.filter(function(k){return k.colId===card.id;}).sort(function(a,b){return a.colIndex-b.colIndex;}); return '<div class="colc"><div class="ch">'+esc(c.title||'Column')+' <span class="cnt">'+members.length+'</span></div><div class="stack">'+members.map(function(m){return '<div>'+cardBody(m)+'</div>';}).join('')+'</div></div>'; }
     case 'comment': return '<div class="cmt">'+avatar(c.author)+'<span class="who">'+esc(c.author)+'</span><span class="when">'+relTime(c.ts)+'</span><div>'+esc(c.text)+'</div>'+(c.replies||[]).map(function(r){return '<div class="rep">'+avatar(r.author)+'<span class="who">'+esc(r.author)+'</span><span class="when">'+relTime(r.ts)+'</span><div>'+esc(r.text)+'</div></div>';}).join('')+'</div>';
     case 'table': return '<table class="tbl">'+c.rows.map(function(r){return '<tr>'+r.map(function(cell){return '<td>'+esc(cell)+'</td>';}).join('')+'</tr>';}).join('')+'</table>';
+    case 'chart': return '<div class="chartc">'+renderChartSvg({chart:c.chart,title:c.title,points:c.rows.slice(1).map(function(r){return {label:r[0],value:parseFloat(r[1])||0};}),colors:['#2f6d5a','#b4622d','#c24e3e','#b8912e','#5b7fa6','#7a5f96','#a64d79','#5f7040','#6b5138','#5c6062']})+'</div>';
     case 'swatch': return '<div class="swatch"><div class="blk" style="background:'+esc(c.hex)+'"><span class="hx">'+esc(c.hex.toUpperCase())+'</span></div>'+(c.name?'<div class="nm">'+esc(c.name)+'</div>':'')+'</div>';
     case 'sticky': return '<div class="stick" style="background:var(--c-'+(c.color||'yellow')+')">'+esc(c.text)+'</div>';
     case 'shape': { var col='var(--c-'+(c.fill||'blue')+')'; var sh=''; if(c.shape==='ellipse') sh='<ellipse cx="50" cy="50" rx="48" ry="48" fill="'+col+'"/>'; else if(c.shape==='diamond') sh='<polygon points="50,2 98,50 50,98 2,50" fill="'+col+'"/>'; else sh='<rect x="2" y="2" width="96" height="96" rx="6" fill="'+col+'"/>'; return '<div class="shape"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'+sh+'</svg><div class="tx">'+esc(c.text)+'</div></div>'; }

@@ -3,7 +3,7 @@ import { CardType, LineEnd } from '../model/types'
 import { LinesLayer } from './LinesLayer'
 import { InkLayer } from './InkLayer'
 import { useAtlas, useAtlasStore, useDb } from '../store/context'
-import { putBlob } from '../store/persist'
+import { putBlob, getBlob } from '../store/persist'
 import { boardCards } from '../store/selectors'
 import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { ToolId } from '../ui/Toolbar'
@@ -15,7 +15,8 @@ import './canvas.css'
 interface CtxMenu {
   x: number
   y: number
-  cardId: string
+  /** null = right-clicked empty canvas (board menu) */
+  cardId: string | null
 }
 
 export function Canvas({ boardId }: { boardId: string }) {
@@ -363,6 +364,61 @@ export function Canvas({ boardId }: { boardId: string }) {
     setCtxMenu(null)
   }
 
+  // world point where the context menu was opened (for "New <card>" placement)
+  const menuWorld = (): Pt => {
+    if (!ctxMenu) return { x: 0, y: 0 }
+    const local = clientToLocal(ctxMenu.x, ctxMenu.y)
+    return screenToWorld(view, local.x, local.y)
+  }
+
+  const createAt = (type: CardType) => {
+    const world = menuWorld()
+    const id =
+      type === 'board'
+        ? store.getState().createBoard(boardId, 'Untitled', world).cardId
+        : store.getState().addCard(boardId, type, { x: world.x, y: world.y })
+    useUi.getState().setSelection([id])
+  }
+
+  const focusColumnTitle = (cardId: string) => {
+    requestAnimationFrame(() => {
+      const el = viewportRef.current?.querySelector(
+        `[data-card-id="${cardId}"] .column-title`,
+      ) as HTMLInputElement | null
+      el?.focus()
+      el?.select()
+    })
+  }
+
+  // image replace: pick a new file and swap the card's blob in place
+  const replaceRef = React.useRef<HTMLInputElement>(null)
+  const replaceTarget = React.useRef<string | null>(null)
+  const replaceImage = (cardId: string) => {
+    replaceTarget.current = cardId
+    replaceRef.current?.click()
+  }
+  const downloadImage = async (cardId: string) => {
+    const card = store.getState().cards[cardId]
+    if (!card || card.content.kind !== 'image') return
+    const { blobId, url } = card.content
+    if (blobId) {
+      const blob = await getBlob(db, blobId)
+      if (!blob) return
+      const href = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = href
+      a.download = 'image'
+      a.click()
+      URL.revokeObjectURL(href)
+    } else if (url) {
+      const a = document.createElement('a')
+      a.href = url
+      a.target = '_blank'
+      a.rel = 'noopener'
+      a.click()
+    }
+  }
+
   return (
     <div
       ref={viewportRef}
@@ -379,6 +435,15 @@ export function Canvas({ boardId }: { boardId: string }) {
           e.preventDefault()
       }}
       onDrop={onDrop}
+      onContextMenu={(e) => {
+        // board menu only when the empty canvas is right-clicked; cards open
+        // their own menu via CardShell's pointerdown handler
+        const t = e.target as HTMLElement
+        if (t === viewportRef.current || t.classList.contains('canvas-world')) {
+          e.preventDefault()
+          setCtxMenu({ x: e.clientX, y: e.clientY, cardId: null })
+        }
+      }}
     >
       <div
         className="canvas-world"
@@ -421,47 +486,114 @@ export function Canvas({ boardId }: { boardId: string }) {
       )}
 
       {ctxMenu && (() => {
+        const cardId = ctxMenu.cardId
+        const card = cardId ? store.getState().cards[cardId] : null
+        const type = card?.type
         // clamp inside the viewport so the menu never spills off-screen / behind the board
         const vp = viewportRef.current
         const rect = vp?.getBoundingClientRect()
-        const MENU_W = 190
-        const MENU_H = 150
+        const MENU_W = 200
+        const MENU_H = cardId ? 220 : 340
         const PAD = 8
         const rawX = ctxMenu.x - (rect?.left ?? 0)
         const rawY = ctxMenu.y - (rect?.top ?? 0)
         const left = Math.max(PAD, Math.min(rawX, (vp?.clientWidth ?? 0) - MENU_W - PAD))
         const top = Math.max(PAD, Math.min(rawY, (vp?.clientHeight ?? 0) - MENU_H - PAD))
+        const gap = <span style={{ display: 'inline-block', width: 15 }} />
         return (
         <div
           className="menu-pop"
           style={{ left, top }}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <button
-            className="menu-item"
-            onClick={menuAction(() => {
-              const ids = store.getState().duplicateCards(useUi.getState().selection)
-              useUi.getState().setSelection(ids)
-            })}
-          >
-            <Icon name="duplicate" size={15} /> Duplicate
-          </button>
-          <button
-            className="menu-item"
-            onClick={menuAction(() => store.getState().bringToFront(ctxMenu.cardId))}
-          >
-            <Icon name="fit" size={15} /> Bring to front
-          </button>
-          <div className="menu-sep" />
-          <button
-            className="menu-item danger"
-            onClick={menuAction(() => {
-              store.getState().trashCards(useUi.getState().selection)
-              useUi.getState().clearSelection()
-            })}
-          >
-            <Icon name="trash" size={15} /> Delete
-          </button>
+          {!cardId ? (
+            <>
+              <button
+                className="menu-item"
+                onClick={menuAction(() =>
+                  useUi.getState().setSelection(boardCards(store.getState(), boardId).map((c) => c.id)),
+                )}
+              >
+                {gap} Select all
+              </button>
+              <div className="menu-sep" />
+              {([
+                ['note', 'note'],
+                ['link', 'link'],
+                ['todo', 'to-do'],
+              ] as const).map(([t, label]) => (
+                <button key={t} className="menu-item" onClick={menuAction(() => createAt(t))}>
+                  <Icon name={t} size={15} /> New {label}
+                </button>
+              ))}
+              <button className="menu-item" onClick={menuAction(() => setTool('line'))}>
+                <Icon name="line" size={15} /> New line
+              </button>
+              {([
+                ['board', 'board'],
+                ['column', 'column'],
+                ['comment', 'comment'],
+                ['table', 'table'],
+              ] as const).map(([t, label]) => (
+                <button key={t} className="menu-item" onClick={menuAction(() => createAt(t))}>
+                  <Icon name={t} size={15} /> New {label}
+                </button>
+              ))}
+            </>
+          ) : (
+            <>
+              {type === 'image' && (
+                <>
+                  <button className="menu-item" onClick={menuAction(() => replaceImage(cardId))}>
+                    <Icon name="image" size={15} /> Replace image
+                  </button>
+                  <button className="menu-item" onClick={menuAction(() => void downloadImage(cardId))}>
+                    <Icon name="download" size={15} /> Download image
+                  </button>
+                  <div className="menu-sep" />
+                </>
+              )}
+              {type === 'column' && (
+                <>
+                  <button className="menu-item" onClick={menuAction(() => focusColumnTitle(cardId))}>
+                    {gap} Rename
+                  </button>
+                  <div className="menu-sep" />
+                </>
+              )}
+              <button
+                className="menu-item"
+                onClick={menuAction(() => {
+                  const ids = store.getState().duplicateCards(useUi.getState().selection)
+                  useUi.getState().setSelection(ids)
+                })}
+              >
+                <Icon name="duplicate" size={15} /> Duplicate
+              </button>
+              <button
+                className="menu-item"
+                onClick={menuAction(() => store.getState().bringToFront(cardId))}
+              >
+                {gap} Bring to front
+              </button>
+              <button
+                className="menu-item"
+                onClick={menuAction(() => store.getState().sendToBack(cardId))}
+              >
+                {gap} Send to back
+              </button>
+              <div className="menu-sep" />
+              <button
+                className="menu-item danger"
+                onClick={menuAction(() => {
+                  store.getState().trashCards(useUi.getState().selection)
+                  useUi.getState().clearSelection()
+                })}
+              >
+                <Icon name="trash" size={15} /> Delete
+              </button>
+            </>
+          )}
         </div>
         )
       })()}
@@ -477,6 +609,22 @@ export function Canvas({ boardId }: { boardId: string }) {
           const center = screenToWorld(view, vp.clientWidth / 2, vp.clientHeight / 2)
           void importFiles(e.target.files, center)
           e.target.value = ''
+        }}
+      />
+
+      <input
+        ref={replaceRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={async (e) => {
+          const file = e.target.files?.[0]
+          const cardId = replaceTarget.current
+          e.target.value = ''
+          replaceTarget.current = null
+          if (!file || !cardId) return
+          const blobId = await putBlob(db, file)
+          store.getState().updateContent(cardId, { blobId, url: '', naturalW: 0, naturalH: 0 })
         }}
       />
 

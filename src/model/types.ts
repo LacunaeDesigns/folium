@@ -180,6 +180,9 @@ export interface Line {
   arrowStart: boolean
   arrowEnd: boolean
   label: string
+  color?: string
+  width?: number
+  dash?: boolean
 }
 
 export interface TemplateMeta {

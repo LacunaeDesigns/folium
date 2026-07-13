@@ -33,6 +33,7 @@ export interface AtlasState extends DocState {
   moveCards(ids: string[], dx: number, dy: number): void
   resizeCard(id: string, w: number, h?: number): void
   bringToFront(id: string): void
+  sendToBack(id: string): void
   trashCards(ids: string[]): void
   restoreCards(ids: string[]): void
   emptyTrash(): void
@@ -272,6 +273,18 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
               0,
             )
             return { cards: { ...s.cards, [id]: { ...c, z: maxZ + 1 } } }
+          })
+        },
+
+        sendToBack(id) {
+          set((s) => {
+            const c = s.cards[id]
+            if (!c) return s
+            const minZ = Object.values(s.cards).reduce(
+              (m, k) => (k.boardId === c.boardId ? Math.min(m, k.z) : m),
+              c.z,
+            )
+            return { cards: { ...s.cards, [id]: { ...c, z: minZ - 1 } } }
           })
         },
 

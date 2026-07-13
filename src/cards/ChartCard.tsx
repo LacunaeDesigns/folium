@@ -3,7 +3,7 @@ import { CardBodyProps } from './registry'
 import { ChartContent, ChartKind, BOARD_COLORS } from '../model/types'
 import { useAtlasStore } from '../store/context'
 import { useUi } from '../store/uiStore'
-import { renderChartSvg } from '../charts/renderChart'
+import { renderChartSvg, rowsToChartData } from '../charts/renderChart'
 
 const KINDS: ChartKind[] = ['bar', 'line', 'pie', 'donut']
 
@@ -21,11 +21,13 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
   const addRow = () => setRows([...rows, ['', '']])
   const delRow = () => rows.length > 2 && setRows(rows.slice(0, -1))
 
+  const data = rowsToChartData(content.rows)
   const svg = renderChartSvg({
     chart: content.chart,
     title: content.title,
-    points: rows.slice(1).map((r) => ({ label: r[0] ?? '', value: parseFloat(r[1]) || 0 })),
-    colors: BOARD_COLORS as unknown as string[],
+    seriesNames: data.seriesNames,
+    points: data.points,
+    palette: BOARD_COLORS as unknown as string[],
   })
 
   const showGrid = editing && selected && !readOnly

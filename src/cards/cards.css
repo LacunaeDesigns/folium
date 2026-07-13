@@ -907,3 +907,17 @@
   fill: none;
   pointer-events: stroke;
 }
+
+/* ---------- chart ---------- */
+.chart-card { padding: 8px; }
+.chart-card .chart-svg { width: 100%; }
+.chart-card .chart-svg svg { width: 100%; height: auto; display: block; }
+.chart-grid { width: 100%; border-collapse: collapse; font-size: 12px; }
+.chart-grid td { border: 1px solid var(--border); padding: 0; }
+.chart-grid input { width: 100%; border: 0; background: none; font: inherit; padding: 4px 6px; color: inherit; }
+.chart-grid .thead input { font-weight: 600; }
+.chart-controls { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; align-items: center; }
+.chart-controls button { font: inherit; font-size: 11px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--chrome); cursor: pointer; color: var(--soft); }
+.chart-controls button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.chart-kinds { display: flex; gap: 3px; }
+.chart-title-input { font: inherit; font-size: 11px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; background: none; color: inherit; width: 90px; }

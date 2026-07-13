@@ -1,4 +1,4 @@
-# Looseleaf
+# Folium
 
 A fully local, freeform visual workspace — boards, cards, columns, lines,
 whiteboard tools, templates and live review sessions. Everything is stored in your
@@ -41,7 +41,7 @@ Tests: `npm test` (Vitest).
   nested boards navigable, comment pins visible, print-to-PDF built in), Markdown
   export, full JSON backup/import.
 - **Migrating from Milanote**: export boards from Milanote as Markdown, then drag
-  the `.md` files onto Looseleaf (or Export → *Import Markdown…*) — each becomes a
+  the `.md` files onto Folium (or Export → *Import Markdown…*) — each becomes a
   board of typed cards. For a full-fidelity one-off migration (layout + images),
   see [docs/milanote-migration.md](docs/milanote-migration.md).
 - **Live review sessions**: start a session to get a code; a reviewer opens the

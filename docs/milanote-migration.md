@@ -1,7 +1,7 @@
 # Migrating from Milanote
 
 Milanote has no structured export (no JSON, no public API) — its export menu
-offers PDF, PNG, Word, Markdown and plain text only. Looseleaf supports two
+offers PDF, PNG, Word, Markdown and plain text only. Folium supports two
 migration paths.
 
 ## Path 1 — Markdown import (available now)
@@ -11,7 +11,7 @@ Best for: getting your content over quickly. Layout is not preserved
 embedded files.
 
 1. In Milanote, open a board → Export → **Markdown** (repeat per board).
-2. In Looseleaf, either
+2. In Folium, either
    - drag the `.md` file(s) onto any board's canvas, or
    - Export menu → **Import Markdown… (Milanote)** and pick the files.
 3. Each file becomes a new board (named from its `# Heading` or filename)
@@ -28,7 +28,7 @@ How it works: Milanote's web app fetches each board's full structure as JSON.
 With your logged-in Chrome session connected (Claude-in-Chrome extension),
 Claude opens your boards one by one, captures that JSON from the network
 traffic, downloads the images through your session, converts everything into
-a Looseleaf backup file, and you import it via Export → Import backup.
+a Folium backup file, and you import it via Export → Import backup.
 
 To run it you need:
 1. Chrome open on this machine with the **Claude in Chrome** extension

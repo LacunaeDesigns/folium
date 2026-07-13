@@ -12,7 +12,7 @@ export function seedWelcome(store: AtlasStore): void {
     w: 320,
     content: {
       doc: noteDoc(
-        '# Welcome to Looseleaf 👋',
+        '# Welcome to Folium 👋',
         'Your own loose-leaf workspace — cards, boards and sketches, all stored on this machine.',
         '',
         '## The basics',

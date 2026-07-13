@@ -14,7 +14,7 @@ export function buildHtmlExport(bundle: ExportBundle, extraScript = ''): string 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(title)} — Looseleaf</title>
+<title>${escapeHtml(title)} — Folium</title>
 <style>
 :root{
   --bg:#f3eee3;--chrome:#fbf8f0;--border:#e2dac6;--ink:#2c2a23;--soft:#6e6857;--faint:#a49b84;
@@ -195,7 +195,7 @@ function render(){
   var board = boards[current];
   document.getElementById('btitle').textContent = board.title;
   document.body.setAttribute('data-theme', board.theme==='dark'?'dark':'light');
-  document.getElementById('stamp').textContent = 'Exported ' + new Date(DATA.exportedAt).toLocaleDateString() + ' · Looseleaf';
+  document.getElementById('stamp').textContent = 'Exported ' + new Date(DATA.exportedAt).toLocaleDateString() + ' · Folium';
   // breadcrumbs within the export
   var trail=[]; var cur=board;
   while(cur){ trail.unshift(cur); cur = cur.parentId ? boards[cur.parentId] : null; }

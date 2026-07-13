@@ -114,6 +114,23 @@ describe('renderChartSvg', () => {
     expect(rects[1].y + rects[1].h).toBeGreaterThan(zeroY)
   })
 
+  it('gives symmetric +/- values equal bar heights around a mid-chart zero line', () => {
+    const svg = renderChartSvg({ ...bars, points: [{ label: 'P', values: [5] }, { label: 'N', values: [-5] }] })
+    const heights = [...svg.matchAll(/<rect[^>]*height="([\d.]+)"/g)].map((m) => parseFloat(m[1]))
+    expect(heights.length).toBe(2)
+    expect(heights[0]).toBeCloseTo(heights[1], 1)
+  })
+
+  it('makes the line cross the zero baseline for mixed data', () => {
+    const svg = renderChartSvg({ ...bars, chart: 'line', points: [{ label: 'A', values: [3] }, { label: 'B', values: [-3] }] })
+    const zeroY = parseFloat((svg.match(/<line[^>]*y1="([\d.]+)"/) as RegExpMatchArray)[1])
+    const ys = (svg.match(/<polyline points="([^"]+)"/) as RegExpMatchArray)[1]
+      .split(' ')
+      .map((pt) => parseFloat(pt.split(',')[1]))
+    expect(Math.min(...ys)).toBeLessThan(zeroY)
+    expect(Math.max(...ys)).toBeGreaterThan(zeroY)
+  })
+
   // --- multi-series ---
 
   const multi = {

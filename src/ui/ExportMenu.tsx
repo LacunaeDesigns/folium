@@ -7,6 +7,8 @@ import { exportBackup, importBackup } from '../export/json'
 import { getUserName } from '../store/settings'
 import { VIEWER_LIVE_JS } from '../live/viewerScript'
 import peerjsRaw from 'peerjs/dist/peerjs.min.js?raw'
+import { importMarkdownBoard } from '../import/importBoard'
+import { useUi } from '../store/uiStore'
 import { Icon } from './Icons'
 
 export function ExportMenu({ boardId, onClose }: { boardId: string; onClose: () => void }) {
@@ -60,6 +62,20 @@ export function ExportMenu({ boardId, onClose }: { boardId: string; onClose: () 
     }
   }
 
+  const mdRef = React.useRef<HTMLInputElement>(null)
+
+  const onImportMarkdown = async (files: FileList) => {
+    let lastBoard: string | null = null
+    let i = 0
+    for (const file of Array.from(files)) {
+      const text = await file.text()
+      lastBoard = importMarkdownBoard(store, boardId, file.name, text, { x: 80 + i * 40, y: 80 + i * 40 })
+      i++
+    }
+    onClose()
+    if (lastBoard && files.length === 1) useUi.getState().setBoard(lastBoard)
+  }
+
   const onImportFile = async (file: File) => {
     const text = await file.text()
     try {
@@ -89,6 +105,20 @@ export function ExportMenu({ boardId, onClose }: { boardId: string; onClose: () 
       <button className="menu-item" onClick={() => importRef.current?.click()}>
         <Icon name="upload" size={15} /> Import backup…
       </button>
+      <button className="menu-item" onClick={() => mdRef.current?.click()}>
+        <Icon name="template" size={15} /> Import Markdown… (Milanote)
+      </button>
+      <input
+        ref={mdRef}
+        type="file"
+        accept=".md,.markdown,.txt,text/markdown,text/plain"
+        multiple
+        hidden
+        onChange={(e) => {
+          if (e.target.files?.length) void onImportMarkdown(e.target.files)
+          e.target.value = ''
+        }}
+      />
       <input
         ref={importRef}
         type="file"

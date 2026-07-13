@@ -2,3 +2,9 @@ node_modules
 dist
 *.local
 .DS_Store
+
+# Milanote migration working files (large raw data)
+.migration/
+
+# Playwright MCP browser-tooling debug logs
+.playwright-mcp/

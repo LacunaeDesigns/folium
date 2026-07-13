@@ -1,0 +1,131 @@
+.pexels-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(40, 36, 26, 0.4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 60px 16px;
+}
+
+.pexels-panel {
+  width: min(760px, 100%);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+
+.pexels-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pexels-search {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+  outline: none;
+  background: var(--bg-canvas);
+  color: var(--ink);
+}
+.pexels-search:focus {
+  border-color: var(--accent);
+}
+
+.pexels-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+.pexels-close:hover {
+  background: var(--bg-hover);
+  color: var(--ink);
+}
+
+.pexels-msg {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.pexels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.pexels-thumb {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-active);
+  cursor: pointer;
+}
+.pexels-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.15s ease;
+}
+.pexels-thumb:hover img {
+  transform: scale(1.04);
+}
+.pexels-thumb:disabled {
+  cursor: default;
+}
+
+.pexels-adding {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pexels-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.pexels-foot button {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+.pexels-foot button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+.pexels-foot button:disabled {
+  opacity: 0.4;
+}
+.pexels-credit {
+  margin-left: auto;
+  color: var(--ink-faint);
+}

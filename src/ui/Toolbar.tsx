@@ -52,11 +52,13 @@ export function Toolbar({
   onPickTool,
   onOpenTrash,
   trashActive,
+  onOpenPhotos,
 }: {
   activeTool: ToolId | null
   onPickTool: (tool: ToolId) => void
   onOpenTrash: () => void
   trashActive: boolean
+  onOpenPhotos: () => void
 }) {
   const [moreOpen, setMoreOpen] = React.useState(false)
   const moreRef = React.useRef<HTMLDivElement>(null)
@@ -133,7 +135,15 @@ export function Toolbar({
           )}
         </div>
       </div>
-      <div className="toolbar-group">{MEDIA_TOOLS.map(btn)}</div>
+      <div className="toolbar-group">
+        {MEDIA_TOOLS.map(btn)}
+        <button className="tool-btn" onClick={onOpenPhotos} title="Free stock photos (Pexels)">
+          <span className="tool-icon">
+            <Icon name="search" size={19} />
+          </span>
+          <span className="tool-label">Photos</span>
+        </button>
+      </div>
       <div className="toolbar-spacer" />
       <div className="toolbar-group bottom">
         <button className={'tool-btn' + (trashActive ? ' active' : '')} onClick={onOpenTrash} title="Trash">

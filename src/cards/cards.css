@@ -909,7 +909,7 @@
 }
 
 /* ---------- chart ---------- */
-.chart-card { padding: 8px; }
+.chart-card { padding: 8px; color: var(--ink); }
 .chart-card .chart-svg { width: 100%; }
 .chart-card .chart-svg svg { width: 100%; height: auto; display: block; }
 .chart-grid { width: 100%; border-collapse: collapse; font-size: 12px; }

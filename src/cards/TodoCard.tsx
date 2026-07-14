@@ -98,14 +98,19 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
               // drops a line break within the item instead
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
+                e.stopPropagation()
                 splitAt(it.id, ta.selectionStart ?? it.text.length)
                 return
               }
               // a deliberate (non-repeated) backspace with the caret at the very
               // start merges this item into the end of the previous one, same as
-              // backspacing at the start of a paragraph in a normal text editor
+              // backspacing at the start of a paragraph in a normal text editor.
+              // stopPropagation is essential here: once handled locally, this key
+              // must never reach the window-level Delete/Backspace shortcut that
+              // trashes the selected card — see the CardShell fromFormField note
               if (e.key === 'Backspace' && !e.repeat && ta.selectionStart === 0 && ta.selectionEnd === 0) {
                 e.preventDefault()
+                e.stopPropagation()
                 mergeIntoPrevious(it.id)
               }
             }}

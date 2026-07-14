@@ -169,12 +169,17 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       ui.toggleSelect(card.id)
       return
     }
-    if (!ui.selection.includes(card.id)) ui.setSelection([card.id])
+    // a plain click into a checkbox/text field must NOT change selection — only
+    // committing to an actual drag (past the threshold, in onPointerMove) should,
+    // otherwise merely clicking to type would select the card, and a stray
+    // keystroke afterward could trigger the global "delete selected cards"
+    // shortcut instead of being a harmless no-op
+    if (!fromFormField && !ui.selection.includes(card.id)) ui.setSelection([card.id])
 
     gesture.current = {
       startX: e.clientX,
       startY: e.clientY,
-      ids: useUi.getState().selection,
+      ids: fromFormField ? (ui.selection.includes(card.id) ? ui.selection : [card.id]) : useUi.getState().selection,
       dragging: false,
       alt: e.altKey,
       fromFormField,
@@ -218,7 +223,7 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
     if ((e.buttons & 1) === 0) {
       gesture.current = null
       if (g.dragging) finishDrag(g, e.clientX, e.clientY)
-      else if (!e.shiftKey) useUi.getState().setSelection([card.id])
+      else if (!e.shiftKey && !g.fromFormField) useUi.getState().setSelection([card.id])
       return
     }
     let dx = (e.clientX - g.startX) / zoom
@@ -231,8 +236,10 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       safeCapture(e.currentTarget as HTMLElement, e.pointerId)
       // a drag that started on a checkbox/text field cancels its focus and any
       // in-progress text selection, so moving the pointer repositions the card
-      // instead of continuing to select text
+      // instead of continuing to select text — selection is committed here too,
+      // since a plain click on a form field deliberately leaves it untouched
       if (g.fromFormField) {
+        useUi.getState().setSelection(g.ids)
         ;(document.activeElement as HTMLElement | null)?.blur()
         window.getSelection()?.removeAllRanges()
       }
@@ -297,7 +304,7 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
     if (!g) return
     if (g.dragging) {
       finishDrag(g, e.clientX, e.clientY)
-    } else if (!e.shiftKey) {
+    } else if (!e.shiftKey && !g.fromFormField) {
       useUi.getState().setSelection([card.id])
     }
   }

@@ -11,6 +11,31 @@ export function youtubeId(url: string): string | null {
   return m ? m[1] : null
 }
 
+export function isMapsUrl(url: string): boolean {
+  return /google\.com\/maps|maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl/i.test(url)
+}
+
+export function mapsPlaceName(url: string): string | null {
+  const m = url.match(/\/maps\/place\/([^/@?]+)/i)
+  if (!m) return null
+  const raw = m[1].replace(/\+/g, ' ')
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return raw
+  }
+}
+
+export type DocKind = 'doc' | 'sheet' | 'slides' | 'notion'
+
+export function isDocUrl(url: string): DocKind | null {
+  if (/docs\.google\.com\/document/i.test(url)) return 'doc'
+  if (/docs\.google\.com\/spreadsheets/i.test(url)) return 'sheet'
+  if (/docs\.google\.com\/presentation/i.test(url)) return 'slides'
+  if (/notion\.(so|site)/i.test(url)) return 'notion'
+  return null
+}
+
 function domainOf(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, '')
@@ -29,9 +54,18 @@ export function LinkCard({ card, readOnly }: CardBodyProps) {
     if (!url) return
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url
     const yt = youtubeId(url)
+    const doc = isDocUrl(url)
+    let defaultTitle: string
+    if (yt) defaultTitle = 'YouTube video'
+    else if (isMapsUrl(url)) defaultTitle = mapsPlaceName(url) || 'Map location'
+    else if (doc === 'doc') defaultTitle = 'Google Doc'
+    else if (doc === 'sheet') defaultTitle = 'Google Sheet'
+    else if (doc === 'slides') defaultTitle = 'Google Slides'
+    else if (doc === 'notion') defaultTitle = 'Notion page'
+    else defaultTitle = domainOf(url)
     store.getState().updateContent(card.id, {
       url,
-      title: content.title || (yt ? 'YouTube video' : domainOf(url)),
+      title: content.title || defaultTitle,
     })
   }
 
@@ -62,6 +96,7 @@ export function LinkCard({ card, readOnly }: CardBodyProps) {
   }
 
   const yt = youtubeId(content.url)
+  const isMap = !yt && isMapsUrl(content.url)
   const favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domainOf(content.url))}&sz=32`
 
   return (
@@ -77,6 +112,20 @@ export function LinkCard({ card, readOnly }: CardBodyProps) {
             title="Open video"
           >
             <Icon name="play" size={22} />
+          </a>
+        </div>
+      )}
+      {isMap && (
+        <div className="link-thumb link-thumb-maps">
+          <Icon name="pin" size={44} />
+          <a
+            className="link-play no-drag"
+            href={content.url}
+            target="_blank"
+            rel="noreferrer"
+            title="Open in Maps"
+          >
+            <Icon name="pin" size={22} />
           </a>
         </div>
       )}

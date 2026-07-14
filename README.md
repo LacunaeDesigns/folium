@@ -138,9 +138,9 @@ Firefox and Safari aren't actively tested and may be missing features.
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE) — free for any noncommercial
-purpose; commercial use or redistribution requires a separate license from
-the author.
+[PolyForm Noncommercial 1.0.0](LICENSE) — free to use, study, modify and share
+for any noncommercial purpose (personal use, education, research, nonprofits).
+Commercial use or redistribution requires a separate license from the author.
 
 ## Contributing
 

@@ -55,19 +55,6 @@ function edgeAnchor(r: Rect, ax: number, ay: number): Pt {
   return { x: px, y: dy > 0 ? r.y + r.h : r.y }
 }
 
-type Side = 'top' | 'right' | 'bottom' | 'left'
-
-// which side a hand-placed (ax, ay) anchor resolves to, and its position along
-// that side — mirrors edgeAnchor's own edge pick so the two stay in sync
-function sideOf(r: Rect, ax: number, ay: number): { side: Side; t: number } {
-  const px = r.x + ax * r.w
-  const py = r.y + ay * r.h
-  const dx = px - (r.x + r.w / 2)
-  const dy = py - (r.y + r.h / 2)
-  if (Math.abs(dx) * r.h > Math.abs(dy) * r.w) return { side: dx > 0 ? 'right' : 'left', t: ay }
-  return { side: dy > 0 ? 'bottom' : 'top', t: ax }
-}
-
 function endPoint(end: LineEnd, rects: WorldRects, toward: Pt): Pt | null {
   if ('cardId' in end) {
     const r = rects.get(end.cardId)
@@ -165,49 +152,6 @@ export function LinesLayer({
   }, [lines.length, drag, view.zoom])
 
   const rects = makeRectSource(svgRef.current, viewportEl, view.zoom)
-
-  // when several lines land on the same card edge (e.g. dragged from the same
-  // connect-handle), spread their anchors along that edge instead of stacking
-  // them on the exact same point
-  const fanT = new Map<string, number>() // `${lineId}:${which}` -> position along the edge
-  {
-    const groups = new Map<string, { lineId: string; which: 'from' | 'to'; sortKey: number }[]>()
-    for (const line of lines) {
-      for (const which of ['from', 'to'] as const) {
-        const end = which === 'from' ? line.from : line.to
-        if (!('cardId' in end) || end.ax == null || end.ay == null) continue
-        const r = rects.get(end.cardId)
-        if (!r) continue
-        const { side } = sideOf(r, end.ax, end.ay)
-        // order slots to match where each line's other end actually sits, so
-        // the fanned lines diverge cleanly instead of crossing near the source
-        const other = centerOf(which === 'from' ? line.to : line.from, rects)
-        const sortKey = other ? (side === 'top' || side === 'bottom' ? other.x : other.y) : 0
-        const key = `${end.cardId}|${side}`
-        const arr = groups.get(key) ?? []
-        arr.push({ lineId: line.id, which, sortKey })
-        groups.set(key, arr)
-      }
-    }
-    for (const arr of groups.values()) {
-      if (arr.length <= 1) continue
-      arr.sort((a, b) => a.sortKey - b.sortKey || (a.lineId + a.which).localeCompare(b.lineId + b.which))
-      const margin = 0.18
-      arr.forEach((item, i) => {
-        const t = margin + (1 - 2 * margin) * (i / (arr.length - 1))
-        fanT.set(`${item.lineId}:${item.which}`, t)
-      })
-    }
-  }
-  const withFan = (end: LineEnd, lineId: string, which: 'from' | 'to'): LineEnd => {
-    if (!('cardId' in end) || end.ax == null || end.ay == null) return end
-    const t = fanT.get(`${lineId}:${which}`)
-    if (t == null) return end
-    const r = rects.get(end.cardId)
-    if (!r) return end
-    const { side } = sideOf(r, end.ax, end.ay)
-    return side === 'top' || side === 'bottom' ? { ...end, ax: t } : { ...end, ay: t }
-  }
 
   const toWorld = (clientX: number, clientY: number): Pt => {
     const o = svgRef.current?.getBoundingClientRect()
@@ -310,12 +254,12 @@ export function LinesLayer({
       ? dragging.pt
       : dragBody
         ? dragBody.from
-        : withFan(line.from, line.id, 'from')
+        : line.from
     const toEnd: LineEnd = dragging?.which === 'to'
       ? dragging.pt
       : dragBody
         ? dragBody.to
-        : withFan(line.to, line.id, 'to')
+        : line.to
 
     const cFrom = centerOf(fromEnd, rects)
     const cTo = centerOf(toEnd, rects)

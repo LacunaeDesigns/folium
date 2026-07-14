@@ -83,7 +83,7 @@ interface CardShellProps {
   /** drag-to-connect from an edge handle (ax, ay = normalized handle position) */
   onConnectStart?: (cardId: string, ax: number, ay: number) => void
   onConnectMove?: (clientX: number, clientY: number) => void
-  onConnectEnd?: (clientX: number, clientY: number) => void
+  onConnectEnd?: (clientX: number, clientY: number, ctrlKey: boolean) => void
 }
 
 const DRAG_THRESHOLD = 8
@@ -336,7 +336,7 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       // button already released — pointerup was likely missed; finish here
       // instead of leaving a pending line stuck to the cursor
       connecting.current = false
-      onConnectEnd?.(e.clientX, e.clientY)
+      onConnectEnd?.(e.clientX, e.clientY, e.ctrlKey)
       return
     }
     onConnectMove?.(e.clientX, e.clientY)
@@ -344,14 +344,14 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
   const onHandleUp = (e: React.PointerEvent) => {
     if (!connecting.current) return
     connecting.current = false
-    onConnectEnd?.(e.clientX, e.clientY)
+    onConnectEnd?.(e.clientX, e.clientY, e.ctrlKey)
   }
   const onHandleCancel = () => {
     if (!connecting.current) return
     connecting.current = false
     // off-screen coordinates guarantee no card is found, so this aborts
     // without creating a connection
-    onConnectEnd?.(-999999, -999999)
+    onConnectEnd?.(-999999, -999999, false)
   }
 
   // --- resize --- dirX/dirY: which edge each handle drives (-1 left/top, +1

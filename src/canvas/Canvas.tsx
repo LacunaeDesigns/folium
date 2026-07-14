@@ -67,7 +67,7 @@ export function Canvas({ boardId }: { boardId: string }) {
     setCursorWorld(screenToWorld(view, local.x, local.y))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view])
-  const onConnectEnd = React.useCallback((clientX: number, clientY: number) => {
+  const onConnectEnd = React.useCallback((clientX: number, clientY: number, ctrlKey: boolean) => {
     const from = connectFrom.current
     connectFrom.current = null
     setPendingLineFrom(null)
@@ -84,12 +84,14 @@ export function Canvas({ boardId }: { boardId: string }) {
     const r = shell.getBoundingClientRect()
     let ax = Math.min(1, Math.max(0, (clientX - r.left) / r.width))
     let ay = Math.min(1, Math.max(0, (clientY - r.top) / r.height))
-    // snap the anchor to the nearest edge-center if the drop landed close to one
-    for (const [cxN, cyN] of [[0.5, 0], [0.5, 1], [0, 0.5], [1, 0.5]]) {
-      if (Math.hypot(clientX - (r.left + cxN * r.width), clientY - (r.top + cyN * r.height)) < 26) {
-        ax = cxN
-        ay = cyN
-        break
+    // snap the anchor to the nearest edge-center if the drop landed close to one (hold Ctrl to place freely)
+    if (!ctrlKey) {
+      for (const [cxN, cyN] of [[0.5, 0], [0.5, 1], [0, 0.5], [1, 0.5]]) {
+        if (Math.hypot(clientX - (r.left + cxN * r.width), clientY - (r.top + cyN * r.height)) < 26) {
+          ax = cxN
+          ay = cyN
+          break
+        }
       }
     }
     const id = store.getState().addLine(boardId, from, { cardId: targetId, ax, ay })

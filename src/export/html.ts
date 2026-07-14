@@ -202,6 +202,13 @@ function edgeAnchor(r, ax, ay){
   if(Math.abs(dx)*r.h > Math.abs(dy)*r.w) return {x: dx>0?r.x+r.w:r.x, y:py};
   return {x:px, y: dy>0?r.y+r.h:r.y};
 }
+// which side a hand-placed (ax, ay) anchor resolves to, and its position along
+// that side — mirrors edgeAnchor's own edge pick so the two stay in sync
+function sideOf(r, ax, ay){
+  var px=r.x+ax*r.w, py=r.y+ay*r.h, dx=px-(r.x+r.w/2), dy=py-(r.y+r.h/2);
+  if(Math.abs(dx)*r.h > Math.abs(dy)*r.w) return {side: dx>0?'right':'left', t: ay};
+  return {side: dy>0?'bottom':'top', t: ax};
+}
 function render(){
   var board = boards[current];
   document.getElementById('btitle').textContent = board.title;
@@ -238,15 +245,67 @@ function render(){
     cards.forEach(function(c){ var el=world.querySelector('[data-card="'+c.id+'"]'); if(el) rects[c.id]={x:el.offsetLeft,y:el.offsetTop,w:el.offsetWidth,h:el.offsetHeight}; });
     var svg=document.getElementById('linesvg'); if(!svg) return;
     var lines = DATA.lines.filter(function(l){ return l.boardId===current; });
-    svg.innerHTML = '<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="var(--soft)" stroke-width="1.8"/></marker></defs>' +
-      lines.map(function(l){
-        function pt(end, other){ if(end.cardId){ var r=rects[end.cardId]; if(!r) return null; if(!other) return {x:r.x+r.w/2,y:r.y+r.h/2}; if(end.ax!=null&&end.ay!=null) return edgeAnchor(r,end.ax,end.ay); return anchor(r,other); } return {x:end.x-offX,y:end.y-offY}; }
-        var ca=pt(l.from,null), cb=pt(l.to,null); if(!ca||!cb) return '';
-        var a=pt(l.from,cb), b=pt(l.to,ca);
+    function centerOfEnd(end){ if(end.cardId){ var r=rects[end.cardId]; return r?{x:r.x+r.w/2,y:r.y+r.h/2}:null; } return {x:end.x-offX,y:end.y-offY}; }
+    // when several card-attached ends share the same card edge, spread their
+    // anchors along that edge instead of stacking — mirrors LinesLayer.tsx
+    var fanT = {};
+    (function(){
+      var groups = {};
+      lines.forEach(function(l){
+        ['from','to'].forEach(function(which){
+          var end = l[which];
+          if(!end.cardId || end.ax==null || end.ay==null) return;
+          var r = rects[end.cardId]; if(!r) return;
+          var s = sideOf(r, end.ax, end.ay);
+          var other = centerOfEnd(which==='from' ? l.to : l.from);
+          var sortKey = other ? (s.side==='top'||s.side==='bottom' ? other.x : other.y) : 0;
+          var key = end.cardId+'|'+s.side;
+          (groups[key] = groups[key] || []).push({lineId:l.id, which:which, sortKey:sortKey});
+        });
+      });
+      Object.keys(groups).forEach(function(key){
+        var arr = groups[key];
+        if(arr.length<=1) return;
+        arr.sort(function(a,b){ return (a.sortKey-b.sortKey) || (a.lineId+a.which).localeCompare(b.lineId+b.which); });
+        var margin=0.18;
+        arr.forEach(function(item,i){
+          fanT[item.lineId+':'+item.which] = margin + (1-2*margin)*(i/(arr.length-1));
+        });
+      });
+    })();
+    function withFan(end, lineId, which){
+      if(!end.cardId || end.ax==null || end.ay==null) return end;
+      var t = fanT[lineId+':'+which];
+      if(t==null) return end;
+      var r = rects[end.cardId]; if(!r) return end;
+      var s = sideOf(r, end.ax, end.ay);
+      return s.side==='top'||s.side==='bottom' ? {cardId:end.cardId, ax:t, ay:end.ay} : {cardId:end.cardId, ax:end.ax, ay:t};
+    }
+    // one arrow marker per distinct line color in use, so markers inherit the
+    // per-line stroke color (SVG markers don't cascade currentColor from the
+    // referencing element, so a shared marker can't just recolor itself)
+    var usedColors = {};
+    lines.forEach(function(l){ if(l.arrowStart||l.arrowEnd) usedColors[l.color||'DEFAULT']=true; });
+    var colorIds = {};
+    var defs = '<defs>';
+    Object.keys(usedColors).forEach(function(col,i){
+      var mid='ah'+i; colorIds[col]=mid;
+      var strokeVal = col==='DEFAULT' ? 'var(--soft)' : esc(col);
+      defs += '<marker id="'+mid+'" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="'+strokeVal+'" stroke-width="1.8"/></marker>';
+    });
+    defs += '</defs>';
+    svg.innerHTML = defs + lines.map(function(l){
+      var fromEnd = withFan(l.from, l.id, 'from'), toEnd = withFan(l.to, l.id, 'to');
+      function pt(end, other){ if(end.cardId){ var r=rects[end.cardId]; if(!r) return null; if(!other) return {x:r.x+r.w/2,y:r.y+r.h/2}; if(end.ax!=null&&end.ay!=null) return edgeAnchor(r,end.ax,end.ay); return anchor(r,other); } return {x:end.x-offX,y:end.y-offY}; }
+        var ca=pt(fromEnd,null), cb=pt(toEnd,null); if(!ca||!cb) return '';
+        var a=pt(fromEnd,cb), b=pt(toEnd,ca);
         var mx=(a.x+b.x)/2, my=(a.y+b.y)/2, cxp=mx-(b.y-a.y)*l.curve, cyp=my+(b.x-a.x)*l.curve;
         var d='M '+a.x+' '+a.y+' Q '+cxp+' '+cyp+' '+b.x+' '+b.y;
         var lbl = l.label ? '<text x="'+((a.x+2*cxp+b.x)/4)+'" y="'+((a.y+2*cyp+b.y)/4)+'" text-anchor="middle">'+esc(l.label)+'</text>' : '';
-        return '<path d="'+d+'"'+(l.arrowEnd?' marker-end="url(#ah)"':'')+(l.arrowStart?' marker-start="url(#ah)"':'')+'/>'+lbl;
+        var col = l.color || null;
+        var style = 'stroke:'+(col?esc(col):'var(--soft)')+';stroke-width:'+(l.width||2)+(l.dash?';stroke-dasharray:6 6':'')+';';
+        var markerId = colorIds[col||'DEFAULT'];
+        return '<path d="'+d+'" style="'+style+'"'+(l.arrowEnd?' marker-end="url(#'+markerId+')"':'')+(l.arrowStart?' marker-start="url(#'+markerId+')"':'')+'/>'+lbl;
       }).join('');
   });
 }

@@ -128,6 +128,19 @@ export function PresentMode({ boardId }: { boardId: string }) {
     }
   }, [])
 
+  const zoomStep = (dir: 1 | -1) => {
+    const stage = stageRef.current
+    if (!stage) return
+    setViewLocal((v) => zoomAt(v, stage.clientWidth / 2, stage.clientHeight / 2, v.zoom * (dir > 0 ? 1.2 : 1 / 1.2)))
+  }
+
+  const recenter = () => {
+    const stage = stageRef.current
+    const list = cardsRef.current
+    if (!stage || list.length === 0) return
+    setViewLocal(frameCard(list[Math.min(index, list.length - 1)], stage.clientWidth, stage.clientHeight))
+  }
+
   if (cards.length === 0) {
     return (
       <div className="present-overlay" data-board-theme={appTheme}>
@@ -169,6 +182,9 @@ export function PresentMode({ boardId }: { boardId: string }) {
         </div>
       </div>
       <div className="present-hud">
+        <button onClick={recenter} title="Recenter on current card">
+          <Icon name="fit" size={16} />
+        </button>
         <button onClick={() => setIndex((i) => Math.max(0, i - 1))} title="Previous">
           <Icon name="back" size={16} />
         </button>
@@ -177,6 +193,15 @@ export function PresentMode({ boardId }: { boardId: string }) {
         </span>
         <button onClick={() => setIndex((i) => Math.min(cards.length - 1, i + 1))} title="Next">
           <Icon name="chevron-right" size={16} />
+        </button>
+      </div>
+      <div className="zoom-pill">
+        <button onClick={() => zoomStep(-1)} title="Zoom out">
+          <Icon name="zoom-out" size={15} />
+        </button>
+        <span className="zoom-value">{Math.round(view.zoom * 100)}%</span>
+        <button onClick={() => zoomStep(1)} title="Zoom in">
+          <Icon name="zoom-in" size={15} />
         </button>
       </div>
       <button className="present-exit" onClick={exit} title="Exit (Esc)">

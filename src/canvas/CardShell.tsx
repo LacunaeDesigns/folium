@@ -363,7 +363,13 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
     resizeGesture.current = null
     if (!g) return
     setResizePreview((preview) => {
-      if (preview) store.getState().updateCard(card.id, { x: preview.x, y: preview.y, w: preview.w, h: preview.h })
+      if (preview) {
+        if (card.type === 'frame') {
+          store.getState().resizeFrame(card.id, preview.x, preview.y, preview.w, preview.h ?? card.h ?? 320)
+        } else {
+          store.getState().updateCard(card.id, { x: preview.x, y: preview.y, w: preview.w, h: preview.h })
+        }
+      }
       return null
     })
   }
@@ -408,7 +414,8 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
     top: resizePreview?.y ?? card.y,
     width: w,
     height: h,
-    zIndex: card.z,
+    // frames always render behind regular cards, regardless of their own z
+    zIndex: card.type === 'frame' ? card.z - 1_000_000 : card.z,
     transform: isDragging ? `translate(${drag!.dx}px, ${drag!.dy}px)` : undefined,
   }
 

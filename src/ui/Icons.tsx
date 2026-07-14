@@ -42,6 +42,7 @@ export type IconName =
   | 'zoom-out'
   | 'fit'
   | 'eraser'
+  | 'frame'
 
 const paths: Record<IconName, React.ReactNode> = {
   note: (
@@ -285,6 +286,14 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <path d="m5 15 8.5-8.5a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12 18H8Z" />
       <path d="M5 18h14" transform="translate(0 2)" />
+    </>
+  ),
+  frame: (
+    <>
+      <path d="M4 9V4h5" />
+      <path d="M15 4h5v5" />
+      <path d="M20 15v5h-5" />
+      <path d="M9 20H4v-5" />
     </>
   ),
 }

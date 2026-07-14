@@ -13,6 +13,11 @@ export function columnCards(s: DocState, colId: string): Card[] {
     .sort((a, b) => a.colIndex - b.colIndex)
 }
 
+/** Cards currently inside a frame (section). */
+export function frameMemberCount(s: DocState, frameId: string): number {
+  return Object.values(s.cards).filter((c) => c.frameId === frameId && !c.trashed).length
+}
+
 export function unsortedCards(s: DocState, boardId: string): Card[] {
   return Object.values(s.cards)
     .filter((c) => c.boardId === boardId && c.inUnsorted && !c.trashed)

@@ -199,6 +199,7 @@ describe('computeReferencedBlobIds', () => {
     z: 0,
     colId: null,
     colIndex: 0,
+    frameId: null,
     inUnsorted: false,
     createdAt: 0,
   }

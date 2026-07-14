@@ -27,6 +27,7 @@ export type CardType =
   | 'shape'
   | 'ink'
   | 'chart'
+  | 'frame'
 
 export interface TodoItem {
   id: string
@@ -145,6 +146,11 @@ export interface ChartContent {
   rows: string[][]
 }
 
+export interface FrameContent {
+  kind: 'frame'
+  title: string
+}
+
 export type CardContent =
   | NoteContent
   | TodoContent
@@ -160,6 +166,7 @@ export type CardContent =
   | ShapeContent
   | InkContent
   | ChartContent
+  | FrameContent
 
 export interface Card {
   id: string
@@ -174,6 +181,8 @@ export interface Card {
   /** column membership */
   colId: string | null
   colIndex: number
+  /** frame (section) membership — cards keep their own x/y, moving/resizing the frame cascades to members */
+  frameId: string | null
   inUnsorted: boolean
   trashed: boolean
   createdAt: number
@@ -267,4 +276,5 @@ export const DEFAULT_CARD_SIZE: Record<CardType, { w: number; h?: number }> = {
   shape: { w: 160, h: 120 },
   ink: { w: 200, h: 120 },
   chart: { w: 300 },
+  frame: { w: 480, h: 320 },
 }

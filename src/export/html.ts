@@ -95,6 +95,8 @@ table.tbl tr:first-child{background:var(--yellow);font-weight:700}
 .shape{position:relative;width:100%;height:100%}
 .shape svg{position:absolute;inset:0;width:100%;height:100%}
 .shape .tx{position:absolute;inset:30% 18%;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:500;font-size:13px;color:#33373b}
+.framec{box-sizing:border-box;width:100%;height:100%;border:1.5px dashed var(--accent);border-radius:6px;background:rgba(47,109,90,.04);padding:6px 10px}
+.framec .fh{display:inline-block;font-weight:600;font-size:13px;color:var(--accent)}
 svg.lines{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 svg.lines path{stroke:var(--soft);stroke-width:2;fill:none}
 svg.lines text{font-size:12px;fill:var(--soft);paint-order:stroke;stroke:var(--bg);stroke-width:4px}
@@ -188,10 +190,11 @@ function cardBody(card){
     case 'sticky': return '<div class="stick" style="background:var(--c-'+(c.color||'yellow')+')">'+esc(c.text)+'</div>';
     case 'shape': { var col='var(--c-'+(c.fill||'blue')+')'; var sh=''; if(c.shape==='ellipse') sh='<ellipse cx="50" cy="50" rx="48" ry="48" fill="'+col+'"/>'; else if(c.shape==='diamond') sh='<polygon points="50,2 98,50 50,98 2,50" fill="'+col+'"/>'; else sh='<rect x="2" y="2" width="96" height="96" rx="6" fill="'+col+'"/>'; return '<div class="shape"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'+sh+'</svg><div class="tx">'+esc(c.text)+'</div></div>'; }
     case 'ink': { var paths=(c.strokes||[]).map(function(s){ var d=''; for(var i=0;i+1<s.points.length;i+=2){ d+=(i===0?'M ':' L ')+s.points[i]+' '+s.points[i+1]; } return '<path d="'+d+'" stroke="'+esc(s.color)+'" stroke-width="'+s.width+'" fill="none" stroke-linecap="round"/>'; }).join(''); return '<svg style="display:block;width:100%;height:100%" viewBox="0 0 '+c.natW+' '+c.natH+'" preserveAspectRatio="none">'+paths+'</svg>'; }
+    case 'frame': return '<div class="framec"><div class="fh">'+esc(c.title||'Frame')+'</div></div>';
   }
   return '';
 }
-var TP = {sticky:1,shape:1,ink:1,board:1,swatch:1,comment:1,column:1,image:1};
+var TP = {sticky:1,shape:1,ink:1,board:1,swatch:1,comment:1,column:1,image:1,frame:1};
 function anchor(r, other){
   var cx=r.x+r.w/2, cy=r.y+r.h/2, dx=other.x-cx, dy=other.y-cy;
   if(Math.abs(dx)*r.h > Math.abs(dy)*r.w) return {x: dx>0?r.x+r.w:r.x, y:cy};
@@ -229,7 +232,9 @@ function render(){
   var pad=50, offX=minX-pad, offY=minY-pad;
   window.__offs = { offX: offX, offY: offY };
   world.innerHTML = '<svg class="lines" id="linesvg"></svg>' + cards.map(function(c){
-    var style='left:'+(c.x-offX)+'px;top:'+(c.y-offY)+'px;width:'+c.w+'px;'+(c.h?'height:'+c.h+'px;':'')+'z-index:'+c.z;
+    // frames always render behind regular cards, mirroring the live app
+    var zi = c.type==='frame' ? c.z-1000000 : c.z;
+    var style='left:'+(c.x-offX)+'px;top:'+(c.y-offY)+'px;width:'+c.w+'px;'+(c.h?'height:'+c.h+'px;':'')+'z-index:'+zi;
     return '<div class="card'+(TP[c.type]?' tp':'')+'" data-card="'+c.id+'" style="'+style+'">'+cardBody(c)+'</div>';
   }).join('');
   world.style.width=(maxX-minX+2*pad)+'px';

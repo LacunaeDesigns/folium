@@ -48,6 +48,8 @@ export interface AtlasState extends DocState {
   restoreCards(ids: string[]): void
   emptyTrash(): void
   duplicateCards(ids: string[]): string[]
+  /** resize a frame, scaling its members' x/y/w/h proportionally */
+  resizeFrame(id: string, x: number, y: number, w: number, h: number): void
   createBoard(
     parentBoardId: string,
     title?: string,
@@ -120,7 +122,22 @@ export function defaultContent(type: CardType): CardContent {
           ['C', '3'],
         ],
       }
+    case 'frame':
+      return { kind: 'frame', title: '' }
   }
+}
+
+/** Topmost frame (by z) on `boardId` whose rect contains the point (cx, cy), or null. */
+function containingFrameId(cards: Record<string, Card>, boardId: string, cx: number, cy: number): string | null {
+  let best: Card | null = null
+  for (const f of Object.values(cards)) {
+    if (f.type !== 'frame' || f.trashed || f.boardId !== boardId) continue
+    const fh = f.h ?? 0
+    if (cx >= f.x && cx <= f.x + f.w && cy >= f.y && cy <= f.y + fh) {
+      if (!best || f.z > best.z) best = f
+    }
+  }
+  return best ? best.id : null
 }
 
 function makeBoard(parentId: string | null, title: string, colorIndex: number): Board {
@@ -187,6 +204,7 @@ export function cloneBoardSubtree(
       id: idMap.get(c.id)!,
       boardId: idMap.get(c.boardId)!,
       colId: c.colId ? (idMap.get(c.colId) ?? null) : null,
+      frameId: c.frameId ? (idMap.get(c.frameId) ?? null) : null,
       content,
       createdAt: Date.now(),
     }
@@ -221,10 +239,11 @@ export function collectClip(state: DocState, ids: string[]): CardClip | null {
   if (!roots.length) return null
   const originBoardId = roots[0].boardId
 
-  // pull members of any copied column along with it
+  // pull members of any copied column or frame along with it
   const rootSet = new Set(roots.map((c) => c.id))
   for (const c of Object.values(state.cards)) {
     if (c.colId && rootSet.has(c.colId) && !c.trashed) rootSet.add(c.id)
+    if (c.frameId && rootSet.has(c.frameId) && !c.trashed) rootSet.add(c.id)
   }
 
   const cardsOut: Card[] = []
@@ -297,17 +316,24 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
           )
           const size = DEFAULT_CARD_SIZE[type]
           const base = defaultContent(type)
+          const x = opts.x ?? 0
+          const y = opts.y ?? 0
+          const w = opts.w ?? size.w
+          const h = opts.h ?? size.h
+          const frameId =
+            type === 'frame' ? null : containingFrameId(state.cards, boardId, x + w / 2, y + (h ?? 80) / 2)
           const card: Card = {
             id,
             boardId,
             type,
-            x: opts.x ?? 0,
-            y: opts.y ?? 0,
-            w: opts.w ?? size.w,
-            h: opts.h ?? size.h,
+            x,
+            y,
+            w,
+            h,
             z: maxZ + 1,
             colId: null,
             colIndex: 0,
+            frameId,
             inUnsorted: opts.inUnsorted ?? false,
             trashed: false,
             createdAt: Date.now(),
@@ -341,9 +367,37 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
         moveCards(ids, dx, dy) {
           set((s) => {
             const cards = { ...s.cards }
+            const idSet = new Set(ids)
+            // a moved frame drags its (unselected) members along
+            const extra = new Set<string>()
+            for (const id of ids) {
+              const c = cards[id]
+              if (c?.type === 'frame') {
+                for (const k of Object.values(cards)) {
+                  if (k.frameId === id && !idSet.has(k.id)) extra.add(k.id)
+                }
+              }
+            }
             for (const id of ids) {
               const c = cards[id]
               if (c) cards[id] = { ...c, x: c.x + dx, y: c.y + dy }
+            }
+            for (const id of extra) {
+              const c = cards[id]
+              if (c) cards[id] = { ...c, x: c.x + dx, y: c.y + dy }
+            }
+            // re-evaluate frame membership of directly-moved (non-frame) cards
+            // against their new position — this is what assigns/releases membership
+            // on drag-and-drop, since frames don't nest there's nothing to do for
+            // cascaded members (they moved with their frame, so stay contained) or
+            // for frame cards themselves
+            for (const id of ids) {
+              const c = cards[id]
+              if (!c || c.type === 'frame') continue
+              const cx = c.x + c.w / 2
+              const cy = c.y + (c.h ?? 80) / 2
+              const newFrameId = containingFrameId(cards, c.boardId, cx, cy)
+              if (c.frameId !== newFrameId) cards[id] = { ...c, frameId: newFrameId }
             }
             return { cards }
           })
@@ -354,6 +408,34 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
             const c = s.cards[id]
             if (!c) return s
             return { cards: { ...s.cards, [id]: { ...c, w, h } } }
+          })
+        },
+
+        resizeFrame(id, x, y, w, h) {
+          set((s) => {
+            const frame = s.cards[id]
+            if (!frame || frame.type !== 'frame') return s
+            const cards = { ...s.cards }
+            const oldX = frame.x
+            const oldY = frame.y
+            const oldW = frame.w || 1
+            const oldH = frame.h || 1
+            const scaleX = w / oldW
+            const scaleY = h / oldH
+            for (const c of Object.values(cards)) {
+              if (c.frameId !== id) continue
+              const relX = c.x - oldX
+              const relY = c.y - oldY
+              cards[c.id] = {
+                ...c,
+                x: Math.round(x + relX * scaleX),
+                y: Math.round(y + relY * scaleY),
+                w: Math.max(60, Math.round(c.w * scaleX)),
+                h: c.h !== undefined ? Math.max(40, Math.round(c.h * scaleY)) : c.h,
+              }
+            }
+            cards[id] = { ...frame, x, y, w, h }
+            return { cards }
           })
         },
 
@@ -391,7 +473,11 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
             const cards = { ...s.cards }
             for (const id of expand) {
               const c = cards[id]
-              if (c) cards[id] = { ...c, trashed: true, colId: null, inUnsorted: false }
+              if (c) cards[id] = { ...c, trashed: true, colId: null, frameId: null, inUnsorted: false }
+            }
+            // trashing a frame releases (not deletes) its members
+            for (const c of Object.values(cards)) {
+              if (c.frameId && expand.has(c.frameId)) cards[c.id] = { ...c, frameId: null }
             }
             const lines: typeof s.lines = {}
             for (const [lid, l] of Object.entries(s.lines)) {
@@ -410,7 +496,7 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
               if (!c) continue
               // if the card's board was deleted meanwhile, bring it home
               const boardId = s.boards[c.boardId] ? c.boardId : s.rootId
-              cards[id] = { ...c, boardId, trashed: false, colId: null, inUnsorted: false }
+              cards[id] = { ...c, boardId, trashed: false, colId: null, frameId: null, inUnsorted: false }
             }
             return { cards }
           })
@@ -450,10 +536,27 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
             const boards = { ...s.boards }
             const lines = { ...s.lines }
             const touchedColumns = new Set<string>()
+
+            // duplicating a frame duplicates its members too
+            const expandedIds = [...ids]
+            const seen = new Set(ids)
             for (const id of ids) {
+              const c = s.cards[id]
+              if (c?.type !== 'frame') continue
+              for (const k of Object.values(s.cards)) {
+                if (k.frameId === id && !k.trashed && !seen.has(k.id)) {
+                  seen.add(k.id)
+                  expandedIds.push(k.id)
+                }
+              }
+            }
+            const idMap = new Map<string, string>()
+            for (const id of expandedIds) idMap.set(id, nanoid(10))
+
+            for (const id of expandedIds) {
               const src = cards[id]
               if (!src) continue
-              const newId = nanoid(10)
+              const newId = idMap.get(id)!
               let content = structuredClone(src.content) as CardContent
               if (content.kind === 'board' && content.boardId && s.boards[content.boardId]) {
                 const clone = cloneBoardSubtree(s, content.boardId)
@@ -476,6 +579,9 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
                 z: maxZ + 1,
                 // a duplicated column member slots in right after its original
                 colIndex: src.colId ? src.colIndex + 0.5 : src.colIndex,
+                // stays a member of the same frame if it wasn't duplicated too,
+                // otherwise repoints at the duplicated frame
+                frameId: src.frameId ? (idMap.get(src.frameId) ?? src.frameId) : null,
                 content,
                 createdAt: Date.now(),
               }
@@ -651,6 +757,7 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
                 id: nid,
                 boardId: isOrigin ? targetBoardId : idMap.get(c.boardId)!,
                 colId: c.colId ? (idMap.get(c.colId) ?? null) : null,
+                frameId: c.frameId ? (idMap.get(c.frameId) ?? null) : null,
                 x: onCanvas ? c.x + offX : c.x,
                 y: onCanvas ? c.y + offY : c.y,
                 z: onCanvas ? maxZ + zi++ : c.z,

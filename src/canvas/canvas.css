@@ -62,7 +62,8 @@
 .card-shell[data-type='swatch'],
 .card-shell[data-type='comment'],
 .card-shell[data-type='column'],
-.card-shell[data-type='image'] {
+.card-shell[data-type='image'],
+.card-shell[data-type='frame'] {
   background: transparent;
   box-shadow: none;
 }

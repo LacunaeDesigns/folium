@@ -24,6 +24,7 @@ function makeBundle(lines: Line[]): ExportBundle {
     z: 0,
     colId: null,
     colIndex: 0,
+    frameId: null,
     inUnsorted: false,
     trashed: false,
     createdAt: 0,
@@ -92,5 +93,31 @@ describe('buildHtmlExport line rendering', () => {
     const html = buildHtmlExport(makeBundle([line]))
     expect(html).toContain('var(--soft)')
     expect(html).toContain('"id":"l2"')
+  })
+})
+
+describe('buildHtmlExport frame rendering', () => {
+  it('renders a frame card as a labeled box behind regular cards', () => {
+    const bundle = makeBundle([])
+    const frame: Card = {
+      ...bundle.cards[0],
+      id: 'f1',
+      type: 'frame',
+      x: 0,
+      y: 0,
+      w: 400,
+      h: 300,
+      z: 0,
+      content: { kind: 'frame', title: 'My Section' },
+    }
+    bundle.cards.push(frame)
+    const html = buildHtmlExport(bundle)
+
+    expect(html).toContain('framec')
+    expect(html).toContain('My Section')
+    // frames get a very-negative z-index so they render behind regular cards,
+    // mirroring CardShell.tsx's live-app behavior
+    expect(html).toContain("c.type==='frame'")
+    expect(html).toContain('frame:1') // TP (transparent) map entry
   })
 })

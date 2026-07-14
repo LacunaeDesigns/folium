@@ -293,6 +293,83 @@ describe('columns', () => {
   })
 })
 
+describe('frames', () => {
+  it('a card placed inside a frame is assigned membership at creation', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 50, y: 50 })
+    expect(s().cards[a].frameId).toBe(frame)
+  })
+
+  it('a card placed outside any frame has no frameId', () => {
+    s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 900, y: 900 })
+    expect(s().cards[a].frameId).toBeNull()
+  })
+
+  it('dragging a card into a frame assigns membership; dragging it out clears it', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 900, y: 900, w: 100, h: 60 })
+    expect(s().cards[a].frameId).toBeNull()
+    s().moveCards([a], -800, -800) // lands at (100,100), inside the frame
+    expect(s().cards[a].frameId).toBe(frame)
+    s().moveCards([a], 800, 800) // back outside
+    expect(s().cards[a].frameId).toBeNull()
+  })
+
+  it('moving a frame cascades the move to its members', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 50, y: 50 })
+    expect(s().cards[a].frameId).toBe(frame)
+    s().moveCards([frame], 30, 40)
+    expect(s().cards[frame].x).toBe(30)
+    expect(s().cards[a].x).toBe(80)
+    expect(s().cards[a].y).toBe(90)
+  })
+
+  it('resizing a frame scales member position and size proportionally', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 100, y: 100, w: 100, h: 60 })
+    expect(s().cards[a].frameId).toBe(frame)
+    s().resizeFrame(frame, 0, 0, 800, 600) // 2x both axes
+    expect(s().cards[a].x).toBe(200)
+    expect(s().cards[a].y).toBe(200)
+    expect(s().cards[a].w).toBe(200)
+    expect(s().cards[a].h).toBe(120)
+  })
+
+  it('trashing a frame releases its members instead of trashing them', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 50, y: 50 })
+    s().trashCards([frame])
+    expect(s().cards[frame].trashed).toBe(true)
+    expect(s().cards[a].trashed).toBe(false)
+    expect(s().cards[a].frameId).toBeNull()
+  })
+
+  it('duplicating a frame duplicates its members and remaps their frameId', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 50, y: 50 })
+    const newIds = s().duplicateCards([frame])
+    expect(newIds.length).toBe(2)
+    const newFrame = newIds.find((id) => s().cards[id].type === 'frame')!
+    const newMember = newIds.find((id) => id !== newFrame)!
+    expect(newFrame).toBeDefined()
+    expect(newMember).toBeDefined()
+    expect(s().cards[newMember].frameId).toBe(newFrame)
+    // originals untouched
+    expect(s().cards[a].frameId).toBe(frame)
+  })
+
+  it('restoring a trashed member clears its frameId', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 50, y: 50 })
+    s().trashCards([a])
+    expect(s().cards[a].frameId).toBeNull() // trashCards itself doesn't set frameId (card wasn't the frame)
+    s().restoreCards([a])
+    expect(s().cards[a].frameId).toBeNull()
+  })
+})
+
 describe('lines', () => {
   it('addLine connects two cards and updateLine patches it', () => {
     const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })

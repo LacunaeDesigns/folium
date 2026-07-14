@@ -127,6 +127,9 @@ function cardToMarkdown(state: DocState, card: Card, depth: number): string {
       return '' // handled by recursion in boardToMarkdown
     case 'ink':
       return '*[sketch]*'
+    case 'frame':
+      // members stay top-level cards (frame doesn't own layout) — just a section label
+      return `${'#'.repeat(Math.min(6, depth + 2))} ${c.title || 'Frame'}`
   }
 }
 

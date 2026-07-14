@@ -13,6 +13,7 @@ import { StickyCard } from './StickyCard'
 import { ShapeCard } from './ShapeCard'
 import { InkCard } from './InkCard'
 import { ChartCard } from './ChartCard'
+import { FrameCard } from './FrameCard'
 import './cards.css'
 
 registerCardBody('note', NoteCard)
@@ -29,3 +30,4 @@ registerCardBody('sticky', StickyCard)
 registerCardBody('shape', ShapeCard)
 registerCardBody('ink', InkCard)
 registerCardBody('chart', ChartCard)
+registerCardBody('frame', FrameCard)

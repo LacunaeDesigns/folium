@@ -256,6 +256,7 @@ export function Canvas({ boardId }: { boardId: string }) {
         shape: 'shape',
         image: 'image',
         chart: 'chart',
+        frame: 'frame',
       }
       const type = typeMap[tool]
       if (!type) return
@@ -550,7 +551,7 @@ export function Canvas({ boardId }: { boardId: string }) {
   const focusColumnTitle = (cardId: string) => {
     requestAnimationFrame(() => {
       const el = viewportRef.current?.querySelector(
-        `[data-card-id="${cardId}"] .column-title`,
+        `[data-card-id="${cardId}"] .column-title, [data-card-id="${cardId}"] .frame-title`,
       ) as HTMLInputElement | null
       el?.focus()
       el?.select()
@@ -718,6 +719,7 @@ export function Canvas({ boardId }: { boardId: string }) {
               {([
                 ['board', 'board'],
                 ['column', 'column'],
+                ['frame', 'frame'],
                 ['comment', 'comment'],
                 ['table', 'table'],
               ] as const).map(([t, label]) => (
@@ -746,7 +748,7 @@ export function Canvas({ boardId }: { boardId: string }) {
                   <div className="menu-sep" />
                 </>
               )}
-              {type === 'column' && (
+              {(type === 'column' || type === 'frame') && (
                 <>
                   <button className="menu-item" onClick={menuAction(() => focusColumnTitle(cardId))}>
                     {gap} Rename

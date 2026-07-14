@@ -2,7 +2,7 @@ import React from 'react'
 import { CardBodyProps } from './registry'
 import { BoardCardContent, BOARD_COLORS } from '../model/types'
 import { useAtlas, useAtlasStore } from '../store/context'
-import { boardCardCount } from '../store/selectors'
+import { boardCardCount, boardTodoStats } from '../store/selectors'
 import { useUi } from '../store/uiStore'
 import { Icon, IconName } from '../ui/Icons'
 
@@ -13,6 +13,10 @@ export function BoardCard({ card, readOnly }: CardBodyProps) {
   const store = useAtlasStore()
   const board = useAtlas((s) => s.boards[content.boardId])
   const count = useAtlas((s) => (board ? boardCardCount(s, content.boardId) : 0))
+  // primitive selectors so the fresh {done,total} object doesn't defeat
+  // zustand's identity check and re-render on every unrelated store change
+  const todoDone = useAtlas((s) => (board ? boardTodoStats(s, content.boardId).done : 0))
+  const todoTotal = useAtlas((s) => (board ? boardTodoStats(s, content.boardId).total : 0))
   const isSelected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
   const [pickerOpen, setPickerOpen] = React.useState(false)
 
@@ -57,6 +61,11 @@ export function BoardCard({ card, readOnly }: CardBodyProps) {
       <div className="board-count">
         {count} {count === 1 ? 'card' : 'cards'}
       </div>
+      {todoTotal > 0 && (
+        <div className="board-count">
+          {todoDone}/{todoTotal} tasks
+        </div>
+      )}
 
       {pickerOpen && isSelected && (
         <div className="menu-pop board-picker no-drag" onPointerDown={(e) => e.stopPropagation()}>

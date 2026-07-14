@@ -1,4 +1,4 @@
-import { Board, Card, DocState, Line } from '../model/types'
+import { Board, Card, DocState, Line, TodoContent } from '../model/types'
 
 /** Cards floating on the board canvas (not trashed / unsorted / in a column). */
 export function boardCards(s: DocState, boardId: string): Card[] {
@@ -28,6 +28,19 @@ export function trashedCards(s: DocState): Card[] {
 /** Live card count on a board (canvas + columns + unsorted). */
 export function boardCardCount(s: DocState, boardId: string): number {
   return Object.values(s.cards).filter((c) => c.boardId === boardId && !c.trashed).length
+}
+
+/** Aggregate todo-item progress across all todo cards directly on a board (non-recursive). */
+export function boardTodoStats(s: DocState, boardId: string): { done: number; total: number } {
+  let done = 0
+  let total = 0
+  for (const c of Object.values(s.cards)) {
+    if (c.boardId !== boardId || c.trashed || c.type !== 'todo') continue
+    const items = (c.content as TodoContent).items
+    total += items.length
+    done += items.filter((i) => i.done).length
+  }
+  return { done, total }
 }
 
 export function breadcrumbs(s: DocState, boardId: string): Board[] {

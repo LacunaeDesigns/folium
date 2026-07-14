@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createAtlasStore, AtlasStore, collectClip } from './store'
-import { boardCards, columnCards, breadcrumbs, boardCardCount, trashedCards } from './selectors'
+import { boardCards, columnCards, breadcrumbs, boardCardCount, trashedCards, boardTodoStats } from './selectors'
 import { NoteContent, StickyContent, TodoContent } from '../model/types'
 
 let store: AtlasStore
@@ -61,6 +61,27 @@ describe('cards', () => {
     const b = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
     s().bringToFront(a)
     expect(s().cards[a].z).toBeGreaterThan(s().cards[b].z)
+  })
+})
+
+describe('boardTodoStats', () => {
+  it('sums done/total items across todo cards on a board', () => {
+    const a = s().addCard(s().rootId, 'todo', { x: 0, y: 0 })
+    s().updateContent(a, {
+      items: [
+        { id: 't1', text: 'a', done: true },
+        { id: 't2', text: 'b', done: true },
+        { id: 't3', text: 'c', done: false },
+      ],
+    })
+    const b = s().addCard(s().rootId, 'todo', { x: 0, y: 0 })
+    s().updateContent(b, { items: [{ id: 't4', text: 'd', done: true }] })
+    expect(boardTodoStats(s(), s().rootId)).toEqual({ done: 3, total: 4 })
+  })
+
+  it('returns zeros when the board has no todo items', () => {
+    s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    expect(boardTodoStats(s(), s().rootId)).toEqual({ done: 0, total: 0 })
   })
 })
 

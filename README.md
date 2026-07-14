@@ -5,7 +5,28 @@ whiteboard tools, templates and live review sessions. Everything is stored in yo
 browser (IndexedDB); nothing leaves your machine except live sessions you start
 yourself.
 
-## Run it
+## Quick start — use it like an app
+
+You only need [Node.js](https://nodejs.org) installed (the LTS version is fine).
+Clone this repo or download it as a ZIP (green **Code** button → *Download ZIP*)
+and unpack it anywhere, then:
+
+- **Windows**: double-click **`start-folium.bat`**. The first run installs
+  dependencies and builds the app (give it a minute); after that it starts in a
+  couple of seconds. Your browser opens on Folium automatically, and the little
+  server **shuts itself down** about 20 seconds after you close the last Folium
+  tab — nothing keeps running in the background.
+  - Want a Desktop icon? Double-click **`create-shortcut.vbs`** once — it puts a
+    "Folium" shortcut (with the leaf icon, no console window) on your Desktop.
+  - If something ever gets stuck, **`stop-folium.bat`** force-stops the server.
+- **macOS / Linux**: run `node serve.mjs` in the folder — same behavior
+  (first-run install + build, opens your browser, exits when the last tab closes).
+
+Updating later: `git pull` (or unpack a newer ZIP over the folder) and launch —
+it notices the source changed and rebuilds itself before opening. Your boards
+are safe either way: they live in your browser, not in this folder.
+
+## Run it (development)
 
 ```bash
 npm install

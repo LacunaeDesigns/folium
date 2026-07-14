@@ -105,9 +105,43 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     }
   }
 
+  // shared by pointerup and by the "button already released" fallback below —
+  // finishes the drag exactly as a normal release would
+  const finishDrag = (g: NonNullable<typeof gesture.current>, clientX: number, clientY: number) => {
+    const dx = (clientX - g.startX) / zoom
+    const dy = (clientY - g.startY) / zoom
+    setDrag(null)
+    // dropping onto a column moves the cards into it (columns themselves can't nest)
+    const s = store.getState()
+    const droppable = g.ids.every((id) => s.cards[id] && s.cards[id].type !== 'column')
+    if (droppable) {
+      const drop = resolveCardDrop(clientX, clientY, g.ids)
+      if (drop?.kind === 'column') {
+        g.ids.forEach((id, i) => s.setCardColumn(id, drop.colId, drop.index + i))
+        return
+      }
+      if (drop?.kind === 'unsorted') {
+        g.ids.forEach((id) => s.updateCard(id, { inUnsorted: true }))
+        return
+      }
+    }
+    if (dx !== 0 || dy !== 0) store.getState().moveCards(g.ids, dx, dy)
+  }
+
   const onPointerMove = (e: React.PointerEvent) => {
     const g = gesture.current
     if (!g) return
+    // the primary button is no longer held — a multi-card drag can end up with
+    // the pointerup landing on a *different* selected card (each only reacts to
+    // the shared drag state, so only the one actually clicked tracks pointerup),
+    // which otherwise leaves this gesture stuck forever and re-triggers a drag
+    // the next time the cursor merely hovers this card. Finish it here instead.
+    if ((e.buttons & 1) === 0) {
+      gesture.current = null
+      if (g.dragging) finishDrag(g, e.clientX, e.clientY)
+      else if (!e.shiftKey) useUi.getState().setSelection([card.id])
+      return
+    }
     const dx = (e.clientX - g.startX) / zoom
     const dy = (e.clientY - g.startY) / zoom
     if (!g.dragging) {
@@ -134,27 +168,19 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     gesture.current = null
     if (!g) return
     if (g.dragging) {
-      const dx = (e.clientX - g.startX) / zoom
-      const dy = (e.clientY - g.startY) / zoom
-      setDrag(null)
-      // dropping onto a column moves the cards into it (columns themselves can't nest)
-      const s = store.getState()
-      const droppable = g.ids.every((id) => s.cards[id] && s.cards[id].type !== 'column')
-      if (droppable) {
-        const drop = resolveCardDrop(e.clientX, e.clientY, g.ids)
-        if (drop?.kind === 'column') {
-          g.ids.forEach((id, i) => s.setCardColumn(id, drop.colId, drop.index + i))
-          return
-        }
-        if (drop?.kind === 'unsorted') {
-          g.ids.forEach((id) => s.updateCard(id, { inUnsorted: true }))
-          return
-        }
-      }
-      if (dx !== 0 || dy !== 0) store.getState().moveCards(g.ids, dx, dy)
+      finishDrag(g, e.clientX, e.clientY)
     } else if (!e.shiftKey) {
       useUi.getState().setSelection([card.id])
     }
+  }
+
+  // the browser/OS aborted the gesture outright (e.g. losing capture) — discard
+  // rather than commit, so the card snaps back instead of jumping to wherever
+  // the pointer happened to be
+  const onPointerCancel = () => {
+    const g = gesture.current
+    gesture.current = null
+    if (g?.dragging) setDrag(null)
   }
 
   // --- drag-to-connect from an edge handle ---
@@ -167,12 +193,27 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     onConnectStart?.(card.id, ax, ay)
   }
   const onHandleMove = (e: React.PointerEvent) => {
-    if (connecting.current) onConnectMove?.(e.clientX, e.clientY)
+    if (!connecting.current) return
+    if ((e.buttons & 1) === 0) {
+      // button already released — pointerup was likely missed; finish here
+      // instead of leaving a pending line stuck to the cursor
+      connecting.current = false
+      onConnectEnd?.(e.clientX, e.clientY)
+      return
+    }
+    onConnectMove?.(e.clientX, e.clientY)
   }
   const onHandleUp = (e: React.PointerEvent) => {
     if (!connecting.current) return
     connecting.current = false
     onConnectEnd?.(e.clientX, e.clientY)
+  }
+  const onHandleCancel = () => {
+    if (!connecting.current) return
+    connecting.current = false
+    // off-screen coordinates guarantee no card is found, so this aborts
+    // without creating a connection
+    onConnectEnd?.(-999999, -999999)
   }
 
   // --- resize --- dirX/dirY: which edge each handle drives (-1 left/top, +1
@@ -205,6 +246,16 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     }
   }
 
+  const commitResize = () => {
+    const g = resizeGesture.current
+    resizeGesture.current = null
+    if (!g) return
+    setResizePreview((preview) => {
+      if (preview) store.getState().updateCard(card.id, { x: preview.x, y: preview.y, w: preview.w, h: preview.h })
+      return null
+    })
+  }
+
   const onResizeMove = (e: React.PointerEvent) => {
     const g = resizeGesture.current
     if (!g) return
@@ -223,16 +274,17 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
       if (g.dirY < 0) y = Math.round(g.startCardY + (g.startH - h)) // bottom edge anchored
     }
     setResizePreview({ w, h, x, y })
+    // button already released — pointerup was likely missed; commit this move
+    // instead of leaving the resize stuck
+    if ((e.buttons & 1) === 0) commitResize()
   }
 
-  const onResizeUp = () => {
-    const g = resizeGesture.current
+  const onResizeUp = () => commitResize()
+
+  const onResizeCancel = () => {
+    // discard rather than commit — reverts to the card's original size
     resizeGesture.current = null
-    if (!g) return
-    setResizePreview((preview) => {
-      if (preview) store.getState().updateCard(card.id, { x: preview.x, y: preview.y, w: preview.w, h: preview.h })
-      return null
-    })
+    setResizePreview(null)
   }
 
   const Body = getCardBody(card.type)
@@ -262,6 +314,7 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       onContextMenu={(e) => {
         // allow the native menu (spellcheck) inside editable fields; suppress it
         // elsewhere so the card's own context menu is the only one that shows
@@ -285,6 +338,7 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
             onPointerDown={onResizeDown(dirX, dirY)}
             onPointerMove={onResizeMove}
             onPointerUp={onResizeUp}
+            onPointerCancel={onResizeCancel}
           />
         ))}
       {!lineToolActive &&
@@ -296,6 +350,7 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
             onPointerDown={onHandleDown(ax, ay)}
             onPointerMove={onHandleMove}
             onPointerUp={onHandleUp}
+            onPointerCancel={onHandleCancel}
           />
         ))}
     </div>

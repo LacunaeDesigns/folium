@@ -83,6 +83,7 @@ export function NoteCard({ card, readOnly }: CardBodyProps) {
     ],
     content: (content.doc as object) ?? '',
     editable: false,
+    editorProps: { attributes: { spellcheck: 'true' } },
     onUpdate: ({ editor }) => commit(editor.getJSON()),
   })
 

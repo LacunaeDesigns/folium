@@ -50,6 +50,7 @@ export function CommentCard({ card, readOnly }: CardBodyProps) {
         placeholder="Write a comment…"
         value={content.text}
         readOnly={readOnly}
+        spellCheck
         rows={Math.max(1, Math.min(6, content.text.split('\n').length))}
         onChange={(e) => store.getState().updateContent(card.id, { text: e.target.value })}
       />

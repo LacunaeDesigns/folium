@@ -14,15 +14,22 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
   const update = (id: string, patch: Partial<TodoItem>) =>
     setItems(items.map((it) => (it.id === id ? { ...it, ...patch } : it)))
 
-  const addAfter = (id: string) => {
+  // split the item at the cursor: text before the caret stays, text after moves
+  // to a new item below (caret at the end → an empty new row, as before)
+  const splitAt = (id: string, cursor: number) => {
     const idx = items.findIndex((it) => it.id === id)
+    const cur = items[idx]
+    const before = cur.text.slice(0, cursor)
+    const after = cur.text.slice(cursor)
+    const fresh = { id: nanoid(6), text: after, done: false }
     const next = [...items]
-    const fresh = { id: nanoid(6), text: '', done: false }
+    next[idx] = { ...cur, text: before }
     next.splice(idx + 1, 0, fresh)
     setItems(next)
     requestAnimationFrame(() => {
-      const el = document.querySelector<HTMLInputElement>(`[data-todo-item="${fresh.id}"]`)
+      const el = document.querySelector<HTMLTextAreaElement>(`[data-todo-item="${fresh.id}"]`)
       el?.focus()
+      el?.setSelectionRange(0, 0)
     })
   }
 
@@ -68,6 +75,7 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
             data-todo-item={it.id}
             ref={autoGrow}
             rows={1}
+            spellCheck
             value={it.text}
             placeholder="To-do"
             readOnly={readOnly}
@@ -77,9 +85,11 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
             }}
             onKeyDown={(e) => {
               if (readOnly) return
-              if (e.key === 'Enter') {
+              // Enter splits the item at the caret into two tasks; Shift+Enter
+              // drops a line break within the item instead
+              if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
-                addAfter(it.id)
+                splitAt(it.id, (e.target as HTMLTextAreaElement).selectionStart ?? it.text.length)
               }
               // only a deliberate (non-repeated) backspace on an empty item removes
               // it, so holding backspace to clear text can't cascade-delete rows

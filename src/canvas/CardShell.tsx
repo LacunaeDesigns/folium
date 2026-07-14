@@ -123,6 +123,8 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
     dragging: boolean
     /** Alt held at drag start — duplicate the selection and drag the copies */
     alt: boolean
+    /** started on an input/textarea — a drag past the threshold cancels focus/text-selection */
+    fromFormField: boolean
     /** snap candidates + dragged bbox, measured once when the drag starts */
     targets?: WRect[]
     bbox?: WRect
@@ -150,14 +152,20 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       return
     }
 
-    // don't hijack pointer interactions inside editable content
+    // buttons/links/rich-text content/opt-outs never participate in a card drag —
+    // a checkbox or plain text field still can (see fromFormField below), so a
+    // click-and-move past the threshold drags the card instead of placing a
+    // cursor or selecting text, while a plain click still focuses/types/toggles
+    // exactly as before
     const target = e.target as HTMLElement
-    if (target.closest('input, textarea, button, a, [contenteditable="true"], .no-drag')) {
+    if (target.closest('button, a, [contenteditable="true"], .no-drag')) {
       return
     }
+    const fromFormField = !!target.closest('input, textarea')
 
     const ui = useUi.getState()
     if (e.shiftKey) {
+      if (fromFormField) return // preserve existing shift-click behavior on form fields
       ui.toggleSelect(card.id)
       return
     }
@@ -169,6 +177,7 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       ids: useUi.getState().selection,
       dragging: false,
       alt: e.altKey,
+      fromFormField,
     }
   }
 
@@ -220,6 +229,13 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       // capture only once a drag starts — capturing on pointerdown retargets the
       // ensuing click/dblclick to the shell, killing double-click on card bodies
       safeCapture(e.currentTarget as HTMLElement, e.pointerId)
+      // a drag that started on a checkbox/text field cancels its focus and any
+      // in-progress text selection, so moving the pointer repositions the card
+      // instead of continuing to select text
+      if (g.fromFormField) {
+        ;(document.activeElement as HTMLElement | null)?.blur()
+        window.getSelection()?.removeAllRanges()
+      }
       // alt-drag duplicates the selection and drags the copies, leaving originals put
       if (g.alt) {
         const dupIds = store.getState().duplicateCards(g.ids)
@@ -258,6 +274,9 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
         g.targets = targets
       }
     }
+    // once dragging from a form field, keep suppressing the browser's own
+    // text-selection-drag for the rest of the gesture
+    if (g.fromFormField) e.preventDefault()
     // smart-guide snapping (hold Ctrl to move freely)
     let guides: SnapGuides | null = null
     if (g.bbox && g.targets?.length && !e.ctrlKey) {

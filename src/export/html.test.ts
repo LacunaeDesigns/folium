@@ -66,10 +66,10 @@ describe('buildHtmlExport line rendering', () => {
     expect(html).toContain('marker-start')
     expect(html).toContain('marker-end')
     expect(html).toContain('colorIds')
-    // fan-out algorithm ported from LinesLayer.tsx
-    expect(html).toContain('sideOf')
-    expect(html).toContain('fanT')
-    expect(html).toContain('withFan')
+    // the fan-out algorithm was removed from LinesLayer.tsx (lines from a shared
+    // anchor must converge on the exact point); the export must mirror that
+    expect(html).not.toContain('fanT')
+    expect(html).not.toContain('withFan')
 
     // the fixture's line data must round-trip into the embedded JSON
     expect(html).toContain('"color":"#e6553f"')

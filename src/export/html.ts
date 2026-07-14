@@ -35,9 +35,11 @@ header .actions{display:flex;gap:8px;align-items:center}
 header button{font:inherit;font-size:12.5px;color:var(--soft);background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer}
 header button:hover{color:var(--ink)}
 h1.title{font-family:'Fraunces',Georgia,serif;font-size:22px;color:var(--ink);width:100%;text-align:center;padding:8px 0 2px}
-#viewport{position:relative;overflow:auto;height:calc(100vh - 92px)}
+#viewport{position:relative;overflow:auto;height:calc(100vh - 92px);cursor:grab}
+#viewport.panning{cursor:grabbing}
+#viewport.panning *{user-select:none}
 #world{position:relative;transform-origin:0 0}
-.card{position:absolute;background:var(--c-white);border-radius:4px;box-shadow:var(--shadow);font-size:13.5px;line-height:1.5}
+.card{position:absolute;background:var(--c-white);border-radius:4px;box-shadow:var(--shadow);font-size:13.5px;line-height:1.5;cursor:auto}
 .card.tp{background:transparent;box-shadow:none}
 .note{padding:10px 12px;border-radius:4px;word-break:break-word}
 .note h1{font-size:17px;margin:4px 0 8px}.note h2{font-size:15px;margin:4px 0 6px}
@@ -213,13 +215,6 @@ function edgeAnchor(r, ax, ay){
   if(Math.abs(dx)*r.h > Math.abs(dy)*r.w) return {x: dx>0?r.x+r.w:r.x, y:py};
   return {x:px, y: dy>0?r.y+r.h:r.y};
 }
-// which side a hand-placed (ax, ay) anchor resolves to, and its position along
-// that side — mirrors edgeAnchor's own edge pick so the two stay in sync
-function sideOf(r, ax, ay){
-  var px=r.x+ax*r.w, py=r.y+ay*r.h, dx=px-(r.x+r.w/2), dy=py-(r.y+r.h/2);
-  if(Math.abs(dx)*r.h > Math.abs(dy)*r.w) return {side: dx>0?'right':'left', t: ay};
-  return {side: dy>0?'bottom':'top', t: ax};
-}
 function render(){
   var board = boards[current];
   document.getElementById('btitle').textContent = board.title;
@@ -258,42 +253,6 @@ function render(){
     cards.forEach(function(c){ var el=world.querySelector('[data-card="'+c.id+'"]'); if(el) rects[c.id]={x:el.offsetLeft,y:el.offsetTop,w:el.offsetWidth,h:el.offsetHeight}; });
     var svg=document.getElementById('linesvg'); if(!svg) return;
     var lines = DATA.lines.filter(function(l){ return l.boardId===current; });
-    function centerOfEnd(end){ if(end.cardId){ var r=rects[end.cardId]; return r?{x:r.x+r.w/2,y:r.y+r.h/2}:null; } return {x:end.x-offX,y:end.y-offY}; }
-    // when several card-attached ends share the same card edge, spread their
-    // anchors along that edge instead of stacking — mirrors LinesLayer.tsx
-    var fanT = {};
-    (function(){
-      var groups = {};
-      lines.forEach(function(l){
-        ['from','to'].forEach(function(which){
-          var end = l[which];
-          if(!end.cardId || end.ax==null || end.ay==null) return;
-          var r = rects[end.cardId]; if(!r) return;
-          var s = sideOf(r, end.ax, end.ay);
-          var other = centerOfEnd(which==='from' ? l.to : l.from);
-          var sortKey = other ? (s.side==='top'||s.side==='bottom' ? other.x : other.y) : 0;
-          var key = end.cardId+'|'+s.side;
-          (groups[key] = groups[key] || []).push({lineId:l.id, which:which, sortKey:sortKey});
-        });
-      });
-      Object.keys(groups).forEach(function(key){
-        var arr = groups[key];
-        if(arr.length<=1) return;
-        arr.sort(function(a,b){ return (a.sortKey-b.sortKey) || (a.lineId+a.which).localeCompare(b.lineId+b.which); });
-        var margin=0.18;
-        arr.forEach(function(item,i){
-          fanT[item.lineId+':'+item.which] = margin + (1-2*margin)*(i/(arr.length-1));
-        });
-      });
-    })();
-    function withFan(end, lineId, which){
-      if(!end.cardId || end.ax==null || end.ay==null) return end;
-      var t = fanT[lineId+':'+which];
-      if(t==null) return end;
-      var r = rects[end.cardId]; if(!r) return end;
-      var s = sideOf(r, end.ax, end.ay);
-      return s.side==='top'||s.side==='bottom' ? {cardId:end.cardId, ax:t, ay:end.ay} : {cardId:end.cardId, ax:end.ax, ay:t};
-    }
     // one arrow marker per distinct line color in use, so markers inherit the
     // per-line stroke color (SVG markers don't cascade currentColor from the
     // referencing element, so a shared marker can't just recolor itself)
@@ -308,7 +267,7 @@ function render(){
     });
     defs += '</defs>';
     svg.innerHTML = defs + lines.map(function(l){
-      var fromEnd = withFan(l.from, l.id, 'from'), toEnd = withFan(l.to, l.id, 'to');
+      var fromEnd = l.from, toEnd = l.to;
       function pt(end, other){ if(end.cardId){ var r=rects[end.cardId]; if(!r) return null; if(!other) return {x:r.x+r.w/2,y:r.y+r.h/2}; if(end.ax!=null&&end.ay!=null) return edgeAnchor(r,end.ax,end.ay); return anchor(r,other); } return {x:end.x-offX,y:end.y-offY}; }
         var ca=pt(fromEnd,null), cb=pt(toEnd,null); if(!ca||!cb) return '';
         var a=pt(fromEnd,cb), b=pt(toEnd,ca);
@@ -340,6 +299,35 @@ document.addEventListener('click', function(e){
   }
 });
 function avatarPin(name){ return avatar(name); }
+// drag-to-pan, mirroring the app: grab the board and the content follows the
+// cursor. Left-drag pans only from empty background (so card text stays
+// selectable); middle-drag pans from anywhere.
+(function(){
+  var vp = document.getElementById('viewport');
+  var panG = null;
+  vp.addEventListener('pointerdown', function(e){
+    var onBackground = e.target === vp || e.target.id === 'world' || e.target.id === 'linesvg';
+    if(e.button !== 1 && !(e.button === 0 && onBackground)) return;
+    if(e.target.closest && e.target.closest('a, button, [data-pin]')) return;
+    e.preventDefault();
+    try { vp.setPointerCapture(e.pointerId); } catch(err) {}
+    panG = { x: e.clientX, y: e.clientY, sl: vp.scrollLeft, st: vp.scrollTop };
+    vp.classList.add('panning');
+  });
+  vp.addEventListener('pointermove', function(e){
+    if(!panG) return;
+    vp.scrollLeft = panG.sl - (e.clientX - panG.x);
+    vp.scrollTop = panG.st - (e.clientY - panG.y);
+  });
+  function endPan(e){
+    if(!panG) return;
+    panG = null;
+    vp.classList.remove('panning');
+    try { vp.releasePointerCapture(e.pointerId); } catch(err) {}
+  }
+  vp.addEventListener('pointerup', endPan);
+  vp.addEventListener('pointercancel', endPan);
+})();
 // ctrl/cmd+wheel zooms the board content (around the cursor) instead of the
 // browser page; plain wheel keeps native scrolling for panning
 document.getElementById('viewport').addEventListener('wheel', function(e){

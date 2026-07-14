@@ -153,12 +153,16 @@ export function LinesLayer({
   // the SVG sits at world origin inside the transformed canvas-world; measuring
   // against it (not the viewport + view.pan) keeps lines glued to cards while panning
   const svgRef = React.useRef<SVGSVGElement>(null)
-  // bump to re-measure after mount so lines attach to freshly-rendered cards
+  // Cards' DOM geometry (size/position) changes in the very same commit that
+  // resizes/zooms/drags them, so reading getBoundingClientRect() during *this*
+  // render sees the pre-commit layout — one render stale. useLayoutEffect runs
+  // synchronously right after commit (before paint), so bumping state there
+  // forces one more render that measures the already-committed DOM, with no
+  // visible flash of the stale position.
   const [, setTick] = React.useState(0)
-  React.useEffect(() => {
-    const t = requestAnimationFrame(() => setTick((v) => v + 1))
-    return () => cancelAnimationFrame(t)
-  }, [lines.length, drag])
+  React.useLayoutEffect(() => {
+    setTick((v) => v + 1)
+  }, [lines.length, drag, view.zoom])
 
   const rects = makeRectSource(svgRef.current, viewportEl, view.zoom)
 
@@ -167,7 +171,7 @@ export function LinesLayer({
   // them on the exact same point
   const fanT = new Map<string, number>() // `${lineId}:${which}` -> position along the edge
   {
-    const groups = new Map<string, { lineId: string; which: 'from' | 'to' }[]>()
+    const groups = new Map<string, { lineId: string; which: 'from' | 'to'; sortKey: number }[]>()
     for (const line of lines) {
       for (const which of ['from', 'to'] as const) {
         const end = which === 'from' ? line.from : line.to
@@ -175,15 +179,19 @@ export function LinesLayer({
         const r = rects.get(end.cardId)
         if (!r) continue
         const { side } = sideOf(r, end.ax, end.ay)
+        // order slots to match where each line's other end actually sits, so
+        // the fanned lines diverge cleanly instead of crossing near the source
+        const other = centerOf(which === 'from' ? line.to : line.from, rects)
+        const sortKey = other ? (side === 'top' || side === 'bottom' ? other.x : other.y) : 0
         const key = `${end.cardId}|${side}`
         const arr = groups.get(key) ?? []
-        arr.push({ lineId: line.id, which })
+        arr.push({ lineId: line.id, which, sortKey })
         groups.set(key, arr)
       }
     }
     for (const arr of groups.values()) {
       if (arr.length <= 1) continue
-      arr.sort((a, b) => (a.lineId + a.which).localeCompare(b.lineId + b.which))
+      arr.sort((a, b) => a.sortKey - b.sortKey || (a.lineId + a.which).localeCompare(b.lineId + b.which))
       const margin = 0.18
       arr.forEach((item, i) => {
         const t = margin + (1 - 2 * margin) * (i / (arr.length - 1))

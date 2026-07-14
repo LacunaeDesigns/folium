@@ -33,14 +33,22 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
     })
   }
 
-  const remove = (id: string) => {
-    if (items.length === 1) return
+  // Backspace at the very start of an item merges its text into the end of the
+  // previous item and removes this row (mirrors a normal text editor merging two
+  // paragraphs) — an empty item is just the degenerate case of this same merge
+  const mergeIntoPrevious = (id: string) => {
     const idx = items.findIndex((it) => it.id === id)
-    setItems(items.filter((it) => it.id !== id))
+    if (idx <= 0) return // no previous item to merge into
+    const cur = items[idx]
+    const prev = items[idx - 1]
+    const caretPos = prev.text.length
+    const next = items.filter((it) => it.id !== id)
+    next[idx - 1] = { ...prev, text: prev.text + cur.text }
+    setItems(next)
     requestAnimationFrame(() => {
-      const prev = items[Math.max(0, idx - 1)]
-      const el = document.querySelector<HTMLInputElement>(`[data-todo-item="${prev.id}"]`)
+      const el = document.querySelector<HTMLTextAreaElement>(`[data-todo-item="${prev.id}"]`)
       el?.focus()
+      el?.setSelectionRange(caretPos, caretPos)
     })
   }
 
@@ -85,17 +93,20 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
             }}
             onKeyDown={(e) => {
               if (readOnly) return
+              const ta = e.target as HTMLTextAreaElement
               // Enter splits the item at the caret into two tasks; Shift+Enter
               // drops a line break within the item instead
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
-                splitAt(it.id, (e.target as HTMLTextAreaElement).selectionStart ?? it.text.length)
+                splitAt(it.id, ta.selectionStart ?? it.text.length)
+                return
               }
-              // only a deliberate (non-repeated) backspace on an empty item removes
-              // it, so holding backspace to clear text can't cascade-delete rows
-              if (e.key === 'Backspace' && it.text === '' && !e.repeat) {
+              // a deliberate (non-repeated) backspace with the caret at the very
+              // start merges this item into the end of the previous one, same as
+              // backspacing at the start of a paragraph in a normal text editor
+              if (e.key === 'Backspace' && !e.repeat && ta.selectionStart === 0 && ta.selectionEnd === 0) {
                 e.preventDefault()
-                remove(it.id)
+                mergeIntoPrevious(it.id)
               }
             }}
           />

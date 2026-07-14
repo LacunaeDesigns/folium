@@ -46,8 +46,12 @@ export function PresentMode({ boardId }: { boardId: string }) {
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') exit()
-      else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      if (e.key === 'Escape') {
+        exit()
+        return
+      }
+      if (gestureRef.current) return
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         e.preventDefault()
         setIndex((i) => Math.min(cards.length - 1, i + 1))
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
@@ -64,8 +68,10 @@ export function PresentMode({ boardId }: { boardId: string }) {
     const list = cardsRef.current
     if (!stage || list.length === 0) return
     const card = list[Math.min(index, list.length - 1)]
+    window.clearTimeout(wheelIdleTimer.current)
+    setInteracting(false)
     setViewLocal(frameCard(card, stage.clientWidth, stage.clientHeight))
-  }, [index])
+  }, [index, cards.length])
 
   const clientToLocal = (clientX: number, clientY: number): Pt => {
     const r = stageRef.current!.getBoundingClientRect()
@@ -95,6 +101,11 @@ export function PresentMode({ boardId }: { boardId: string }) {
     setInteracting(false)
     if (!g || g.moved) return
     if (g.target) setIndex(Number(g.target.dataset.cardIndex))
+  }
+
+  const onStagePointerCancel = () => {
+    gestureRef.current = null
+    setInteracting(false)
   }
 
   const onWheel = (e: WheelEvent) => {
@@ -160,6 +171,7 @@ export function PresentMode({ boardId }: { boardId: string }) {
         onPointerDown={onStagePointerDown}
         onPointerMove={onStagePointerMove}
         onPointerUp={onStagePointerUp}
+        onPointerCancel={onStagePointerCancel}
       >
         <div
           className={'present-world' + (interacting ? ' no-transition' : '')}

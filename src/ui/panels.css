@@ -560,6 +560,9 @@
   transform-origin: 0 0;
   transition: transform 0.45s cubic-bezier(0.33, 1, 0.4, 1);
 }
+.present-world.no-transition {
+  transition: none;
+}
 .present-card {
   opacity: 0.35;
   transition: opacity 0.3s;

@@ -2,6 +2,7 @@ import React from 'react'
 import { useFolium } from '../store/context'
 import { boardCards } from '../store/selectors'
 import { useUi, BoardView } from '../store/uiStore'
+import { zoomAt, safeCapture, Pt } from '../canvas/coords'
 import { getCardBody } from '../cards/registry'
 import { Icon } from './Icons'
 import './panels.css'
@@ -22,6 +23,10 @@ export function frameCard(
   }
 }
 
+export function movedPastThreshold(dx: number, dy: number, threshold: number): boolean {
+  return Math.hypot(dx, dy) > threshold
+}
+
 export function PresentMode({ boardId }: { boardId: string }) {
   const cards = useFolium((s) =>
     boardCards(s, boardId).slice().sort((a, b) => a.y - b.y || a.x - b.x),
@@ -33,6 +38,9 @@ export function PresentMode({ boardId }: { boardId: string }) {
   const cardsRef = React.useRef(cards)
   cardsRef.current = cards
   const [view, setViewLocal] = React.useState<BoardView>({ zoom: 1, pan: { x: 0, y: 0 } })
+  const [interacting, setInteracting] = React.useState(false)
+  const gestureRef = React.useRef<{ startX: number; startY: number; panX: number; panY: number; moved: boolean } | null>(null)
+  const wheelIdleTimer = React.useRef<number | undefined>(undefined)
 
   const exit = React.useCallback(() => setPresentationMode(false), [setPresentationMode])
 
@@ -59,6 +67,64 @@ export function PresentMode({ boardId }: { boardId: string }) {
     setViewLocal(frameCard(card, stage.clientWidth, stage.clientHeight))
   }, [index])
 
+  const clientToLocal = (clientX: number, clientY: number): Pt => {
+    const r = stageRef.current!.getBoundingClientRect()
+    return { x: clientX - r.left, y: clientY - r.top }
+  }
+
+  const onStagePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.button !== 1) return
+    safeCapture(e.currentTarget as HTMLElement, e.pointerId)
+    gestureRef.current = { startX: e.clientX, startY: e.clientY, panX: view.pan.x, panY: view.pan.y, moved: false }
+    setInteracting(true)
+  }
+
+  const onStagePointerMove = (e: React.PointerEvent) => {
+    const g = gestureRef.current
+    if (!g) return
+    const dx = e.clientX - g.startX
+    const dy = e.clientY - g.startY
+    if (!g.moved && movedPastThreshold(dx, dy, 4)) g.moved = true
+    setViewLocal((v) => ({ zoom: v.zoom, pan: { x: g.panX + dx, y: g.panY + dy } }))
+  }
+
+  const onStagePointerUp = (e: React.PointerEvent) => {
+    const g = gestureRef.current
+    gestureRef.current = null
+    setInteracting(false)
+    if (!g || g.moved) return
+    const target = (e.target as HTMLElement).closest('[data-card-index]') as HTMLElement | null
+    if (target) setIndex(Number(target.dataset.cardIndex))
+  }
+
+  const onWheel = (e: WheelEvent) => {
+    setInteracting(true)
+    window.clearTimeout(wheelIdleTimer.current)
+    wheelIdleTimer.current = window.setTimeout(() => setInteracting(false), 150)
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
+      const local = clientToLocal(e.clientX, e.clientY)
+      const factor = Math.exp(-e.deltaY * 0.0015)
+      setViewLocal((v) => zoomAt(v, local.x, local.y, v.zoom * factor))
+    } else {
+      const dx = e.shiftKey ? e.deltaY : e.deltaX
+      const dy = e.shiftKey ? 0 : e.deltaY
+      setViewLocal((v) => ({ zoom: v.zoom, pan: { x: v.pan.x - dx, y: v.pan.y - dy } }))
+    }
+  }
+  const onWheelRef = React.useRef(onWheel)
+  onWheelRef.current = onWheel
+
+  // native non-passive listener — React's synthetic wheel can't preventDefault the
+  // browser's ctrl+wheel page zoom (mirrors src/canvas/Canvas.tsx)
+  React.useEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const h = (e: WheelEvent) => onWheelRef.current(e)
+    el.addEventListener('wheel', h, { passive: false })
+    return () => el.removeEventListener('wheel', h)
+  }, [])
+
   if (cards.length === 0) {
     return (
       <div className="present-overlay" data-board-theme={appTheme}>
@@ -72,9 +138,15 @@ export function PresentMode({ boardId }: { boardId: string }) {
 
   return (
     <div className="present-overlay" data-board-theme={appTheme}>
-      <div className="present-stage" ref={stageRef}>
+      <div
+        className="present-stage"
+        ref={stageRef}
+        onPointerDown={onStagePointerDown}
+        onPointerMove={onStagePointerMove}
+        onPointerUp={onStagePointerUp}
+      >
         <div
-          className="present-world"
+          className={'present-world' + (interacting ? ' no-transition' : '')}
           style={{ transform: `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})` }}
         >
           {cards.map((c, i) => {
@@ -84,8 +156,8 @@ export function PresentMode({ boardId }: { boardId: string }) {
                 key={c.id}
                 className={'card-shell present-card' + (i === index ? ' focus' : '')}
                 data-type={c.type}
+                data-card-index={i}
                 style={{ left: c.x, top: c.y, width: c.w, height: c.h, zIndex: c.z }}
-                onClick={() => setIndex(i)}
               >
                 <Body card={c} readOnly />
               </div>

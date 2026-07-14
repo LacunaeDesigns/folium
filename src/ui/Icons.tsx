@@ -44,6 +44,7 @@ export type IconName =
   | 'eraser'
   | 'frame'
   | 'heading'
+  | 'help'
 
 const paths: Record<IconName, React.ReactNode> = {
   note: (
@@ -302,6 +303,13 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M5 4.5v15" />
       <path d="M19 4.5v15" />
       <path d="M5 12h14" />
+    </>
+  ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M9.3 9.5a2.7 2.7 0 0 1 5.3.7c0 1.8-2.4 2-2.4 3.6" />
+      <circle cx="12" cy="16.7" r="0.15" fill="currentColor" stroke="currentColor" strokeWidth="1.6" />
     </>
   ),
 }

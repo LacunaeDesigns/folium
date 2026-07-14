@@ -19,6 +19,7 @@ export function TopBar({
   onSettings,
   onTemplates,
   onLive,
+  onHelp,
   liveActive,
   rightExtra,
 }: {
@@ -32,6 +33,7 @@ export function TopBar({
   onSettings: () => void
   onTemplates: () => void
   onLive: () => void
+  onHelp: () => void
   liveActive?: boolean
   rightExtra?: React.ReactNode
 }) {
@@ -104,6 +106,9 @@ export function TopBar({
           </button>
           <button className="icon-btn" title="Settings" onClick={onSettings}>
             <Icon name="settings" />
+          </button>
+          <button className="icon-btn" title="Help" onClick={onHelp}>
+            <Icon name="help" />
           </button>
         </div>
       </div>

@@ -9,6 +9,7 @@ import { TemplateGallery } from './ui/TemplateGallery'
 import { ExportMenu } from './ui/ExportMenu'
 import { PresentMode } from './ui/PresentMode'
 import { LiveSessionPanel } from './ui/LiveSessionPanel'
+import { HelpPanel } from './ui/HelpPanel'
 import { useLive } from './live/host'
 import { useSync, linkFolder, unlinkFolder, reconnect, syncNow } from './store/sync'
 import { relTime } from './cards/CommentCard'
@@ -209,6 +210,7 @@ export default function App() {
   const [menu, setMenu] = React.useState<'view' | 'settings' | 'export' | 'live' | null>(null)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
   const [photosOpen, setPhotosOpen] = React.useState(false)
+  const [helpOpen, setHelpOpen] = React.useState(false)
   const liveActive = useLive((s) => s.active)
 
   useShortcuts()
@@ -265,6 +267,7 @@ export default function App() {
           onSettings={() => setMenu(menu === 'settings' ? null : 'settings')}
           onTemplates={() => setTemplatesOpen(true)}
           onLive={() => setMenu(menu === 'live' ? null : 'live')}
+          onHelp={() => setHelpOpen(true)}
           liveActive={liveActive}
           rightExtra={
             <span className="menu-anchor">
@@ -298,6 +301,7 @@ export default function App() {
         <PexelsPanel boardId={currentBoardId} onClose={() => setPhotosOpen(false)} />
       )}
       {presentationMode && <PresentMode boardId={currentBoardId} />}
+      {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
     </div>
   )
 }

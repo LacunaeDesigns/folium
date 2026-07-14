@@ -1,13 +1,13 @@
 import React from 'react'
 import { CardBodyProps } from './registry'
 import { FrameContent } from '../model/types'
-import { useAtlas, useAtlasStore } from '../store/context'
+import { useFolium, useFoliumStore } from '../store/context'
 import { frameMemberCount } from '../store/selectors'
 
 export function FrameCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as FrameContent
-  const store = useAtlasStore()
-  const count = useAtlas((s) => frameMemberCount(s, card.id))
+  const store = useFoliumStore()
+  const count = useFolium((s) => frameMemberCount(s, card.id))
 
   return (
     <div className="frame-card">

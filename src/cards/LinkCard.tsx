@@ -1,7 +1,7 @@
 import React from 'react'
 import { CardBodyProps } from './registry'
 import { LinkContent } from '../model/types'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { Icon } from '../ui/Icons'
 
 export function youtubeId(url: string): string | null {
@@ -46,7 +46,7 @@ function domainOf(url: string): string {
 
 export function LinkCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as LinkContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const [draft, setDraft] = React.useState('')
 
   const commitUrl = (raw: string) => {

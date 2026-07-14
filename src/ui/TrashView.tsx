@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAtlas, useAtlasStore } from '../store/context'
+import { useFolium, useFoliumStore } from '../store/context'
 import { trashedCards } from '../store/selectors'
 import { cardText } from '../store/search'
 import { useUi } from '../store/uiStore'
@@ -23,9 +23,9 @@ const TYPE_ICON: Record<string, IconName> = {
 }
 
 export function TrashView() {
-  const store = useAtlasStore()
-  const items = useAtlas((s) => trashedCards(s))
-  const boards = useAtlas((s) => s.boards)
+  const store = useFoliumStore()
+  const items = useFolium((s) => trashedCards(s))
+  const boards = useFolium((s) => s.boards)
   const setTrashOpen = useUi((s) => s.setTrashOpen)
 
   return (

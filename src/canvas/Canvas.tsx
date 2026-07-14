@@ -3,7 +3,7 @@ import { CardType, LineEnd } from '../model/types'
 import { LinesLayer } from './LinesLayer'
 import { InkLayer } from './InkLayer'
 import { StickerPanel } from './StickerPanel'
-import { useAtlas, useAtlasStore, useDb } from '../store/context'
+import { useFolium, useFoliumStore, useDb } from '../store/context'
 import { putBlob, getBlob } from '../store/persist'
 import { collectClip } from '../store/store'
 import { getClipboard, setClipboard, hasClipboard } from '../store/clipboard'
@@ -23,10 +23,10 @@ interface CtxMenu {
 }
 
 export function Canvas({ boardId }: { boardId: string }) {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const db = useDb()
-  const cards = useAtlas((s) => boardCards(s, boardId))
-  const board = useAtlas((s) => s.boards[boardId])
+  const cards = useFolium((s) => boardCards(s, boardId))
+  const board = useFolium((s) => s.boards[boardId])
   const globalShowGrid = useUi((s) => s.showGrid)
   const gridShown = board?.gridHidden === undefined ? globalShowGrid : !board.gridHidden
   const view = useUi((s) => s.views[boardId] ?? DEFAULT_VIEW)
@@ -396,7 +396,7 @@ export function Canvas({ boardId }: { boardId: string }) {
       void importFiles(e.dataTransfer.files, world)
       return
     }
-    const tool = e.dataTransfer.getData('application/x-atlasnote-tool') as ToolId
+    const tool = e.dataTransfer.getData('application/x-folium-tool') as ToolId
     if (!tool) return
     e.preventDefault()
     placeAt(tool, world)
@@ -521,8 +521,8 @@ export function Canvas({ boardId }: { boardId: string }) {
       else if (op === 'fit') fitToContent()
       else if (op === 'fit-selection') fitToSelection()
     }
-    window.addEventListener('atlas:view', onView)
-    return () => window.removeEventListener('atlas:view', onView)
+    window.addEventListener('folium:view', onView)
+    return () => window.removeEventListener('folium:view', onView)
   })
 
   const menuAction = (fn: () => void) => () => {
@@ -610,7 +610,7 @@ export function Canvas({ boardId }: { boardId: string }) {
       onDoubleClick={onDoubleClick}
       onDragOver={(e) => {
         if (
-          e.dataTransfer.types.includes('application/x-atlasnote-tool') ||
+          e.dataTransfer.types.includes('application/x-folium-tool') ||
           e.dataTransfer.types.includes('Files')
         )
           e.preventDefault()

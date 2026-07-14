@@ -1,6 +1,6 @@
 import React from 'react'
 import { Card } from '../model/types'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { SnapGuides, useUi } from '../store/uiStore'
 import { getCardBody } from '../cards/registry'
 import { safeCapture } from './coords'
@@ -108,7 +108,7 @@ const RESIZE_CORNERS: [string, number, number][] = [
 ]
 
 export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolActive, onLineAnchor, onConnectStart, onConnectMove, onConnectEnd }: CardShellProps) {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   // per-card boolean selectors so selecting card A doesn't re-render card B
   const isSelected = useUi((s) => s.selection.includes(card.id))
   const isSolo = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)

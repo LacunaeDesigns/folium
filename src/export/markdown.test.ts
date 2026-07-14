@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createAtlasStore } from '../store/store'
+import { createFoliumStore } from '../store/store'
 import { boardToMarkdown, tiptapToMarkdown } from './markdown'
 import { noteDoc, todoItems } from '../templates/builder'
 
@@ -26,7 +26,7 @@ describe('tiptapToMarkdown', () => {
 
 describe('boardToMarkdown', () => {
   it('renders board title, todos, tables and nested boards', () => {
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const s = store.getState()
     s.renameBoard(s.rootId, 'Root Board')
     s.addCard(s.rootId, 'todo', {
@@ -55,7 +55,7 @@ describe('boardToMarkdown', () => {
   })
 
   it('renders a chart card as a data table', () => {
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const s = store.getState()
     s.addCard(s.rootId, 'chart', {
       x: 0,

@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { createAtlasStore, AtlasStore, collectClip } from './store'
+import { createFoliumStore, FoliumStore, collectClip } from './store'
 import { boardCards, columnCards, breadcrumbs, boardCardCount, trashedCards, boardTodoStats } from './selectors'
 import { HeadingContent, NoteContent, StickyContent, TodoContent } from '../model/types'
 
-let store: AtlasStore
+let store: FoliumStore
 const s = () => store.getState()
 
 beforeEach(() => {
-  store = createAtlasStore()
+  store = createFoliumStore()
 })
 
 describe('initial document', () => {

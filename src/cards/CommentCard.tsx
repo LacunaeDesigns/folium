@@ -2,7 +2,7 @@ import React from 'react'
 import { nanoid } from 'nanoid'
 import { CardBodyProps } from './registry'
 import { CommentContent, CommentReply } from '../model/types'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { getUserName } from '../store/settings'
 
 export function relTime(ts: number): string {
@@ -27,7 +27,7 @@ export function Avatar({ name }: { name: string }) {
 
 export function CommentCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as CommentContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const [reply, setReply] = React.useState('')
 
   const addReply = () => {

@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid'
 import { Card, CommentContent, DocState, ImageContent, ImagePin } from '../model/types'
-import { AtlasStore } from '../store/store'
+import { FoliumStore } from '../store/store'
 
 export type LiveMsg =
   | { t: 'hello'; name: string }
@@ -41,7 +41,7 @@ function clamp01(v: number): number {
 }
 
 /** Apply a reviewer message to the host store. Malformed input is ignored. */
-export function applyLiveMsg(store: AtlasStore, msg: LiveMsg): void {
+export function applyLiveMsg(store: FoliumStore, msg: LiveMsg): void {
   if (!msg || typeof msg !== 'object') return
   const s = store.getState()
   try {

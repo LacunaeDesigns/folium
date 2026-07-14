@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { nanoid } from 'nanoid'
-import { createAtlasStore } from './store'
+import { createFoliumStore } from './store'
 import {
   openDb,
   saveDoc,
@@ -15,7 +15,7 @@ import {
 import { saveBoardAsTemplate } from './templates'
 import { DocState, Template } from '../model/types'
 
-function docOf(store: ReturnType<typeof createAtlasStore>) {
+function docOf(store: ReturnType<typeof createFoliumStore>) {
   const s = store.getState()
   return { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines }
 }
@@ -23,7 +23,7 @@ function docOf(store: ReturnType<typeof createAtlasStore>) {
 describe('document persistence', () => {
   it('round-trips a document through IndexedDB', async () => {
     const db = openDb('test-' + nanoid(6))
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const st = store.getState()
     const { boardId } = st.createBoard(st.rootId, 'Work')
     const a = store.getState().addCard(boardId, 'note', { x: 5, y: 6 })
@@ -43,7 +43,7 @@ describe('document persistence', () => {
 
   it('save is a full replace — deleted entities disappear', async () => {
     const db = openDb('test-' + nanoid(6))
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const id = store.getState().addCard(store.getState().rootId, 'note', { x: 0, y: 0 })
     await saveDoc(db, docOf(store))
     store.getState().trashCards([id])
@@ -67,10 +67,10 @@ function readBlobText(blob: Blob): Promise<string> {
 describe('blob storage', () => {
   it('round-trips a blob', async () => {
     const db = openDb('test-' + nanoid(6))
-    const id = await putBlob(db, new Blob(['hello atlas'], { type: 'text/plain' }))
+    const id = await putBlob(db, new Blob(['hello folium'], { type: 'text/plain' }))
     const back = await getBlob(db, id)
     expect(back).toBeDefined()
-    expect(await readBlobText(back!)).toBe('hello atlas')
+    expect(await readBlobText(back!)).toBe('hello folium')
   })
 
   it('deleteBlob removes it', async () => {
@@ -84,10 +84,10 @@ describe('blob storage', () => {
 describe('backup import persistence (regression: review finding #1)', () => {
   it('importBackup persists the imported doc so a reload does not revert it', async () => {
     const { exportBackup, importBackup } = await import('../export/json')
-    const { createAtlasStore } = await import('./store')
+    const { createFoliumStore } = await import('./store')
 
     // source doc with a card
-    const src = createAtlasStore()
+    const src = createFoliumStore()
     src.getState().addCard(src.getState().rootId, 'sticky', { x: 1, y: 2, content: { text: 'from backup' } as never })
     const srcDoc = {
       rootId: src.getState().rootId,
@@ -100,7 +100,7 @@ describe('backup import persistence (regression: review finding #1)', () => {
 
     // target: different db + store; import, then simulate reload via loadDoc
     const dbB = openDb('test-' + nanoid(6))
-    const target = createAtlasStore()
+    const target = createFoliumStore()
     await importBackup(dbB, target, json)
     const reloaded = await loadDoc(dbB)
     expect(reloaded).not.toBeNull()
@@ -110,10 +110,10 @@ describe('backup import persistence (regression: review finding #1)', () => {
 
   it('importBackup rejects backups missing cards/lines without touching the db', async () => {
     const { importBackup } = await import('../export/json')
-    const { createAtlasStore } = await import('./store')
+    const { createFoliumStore } = await import('./store')
     const db = openDb('test-' + nanoid(6))
     await putBlob(db, new Blob(['keep me']))
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const bad = JSON.stringify({ app: 'atlasnote', version: 1, doc: { rootId: 'x', boards: { x: {} } }, blobs: [], templates: [] })
     await expect(importBackup(db, store, bad)).rejects.toThrow()
     expect(await db.blobs.count()).toBe(1) // blobs untouched on rejection
@@ -130,7 +130,7 @@ async function flushAsync(turns = 5): Promise<void> {
 describe('blob garbage collection', () => {
   it('trashing an image card does not gc its blob', async () => {
     const db = openDb('test-' + nanoid(6))
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const blobId = await putBlob(db, new Blob(['img']))
     const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
 
@@ -143,7 +143,7 @@ describe('blob garbage collection', () => {
 
   it('gcBlobs deletes a blob once its card is permanently deleted via emptyTrash', async () => {
     const db = openDb('test-' + nanoid(6))
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const blobId = await putBlob(db, new Blob(['img']))
     const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
 
@@ -157,7 +157,7 @@ describe('blob garbage collection', () => {
 
   it('bindBlobGc automatically gcs a blob after emptyTrash completes', async () => {
     const db = openDb('test-' + nanoid(6))
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const blobId = await putBlob(db, new Blob(['img']))
     const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
     const unsub = bindBlobGc(store, db)
@@ -175,7 +175,7 @@ describe('blob garbage collection', () => {
 
   it('a blob referenced by a saved template survives emptyTrash gc', async () => {
     const db = openDb('test-' + nanoid(6))
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const blobId = await putBlob(db, new Blob(['img']))
     const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
     await saveBoardAsTemplate(db, docOf(store), store.getState().rootId, 'My template')

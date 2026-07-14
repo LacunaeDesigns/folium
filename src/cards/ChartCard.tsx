@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { CardBodyProps } from './registry'
 import { ChartContent, ChartKind, BOARD_COLORS } from '../model/types'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { useUi } from '../store/uiStore'
 import { renderChartSvg, rowsToChartData } from '../charts/renderChart'
 
@@ -9,7 +9,7 @@ const KINDS: ChartKind[] = ['bar', 'line', 'pie', 'donut']
 
 export function ChartCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as ChartContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const selected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
   const [editing, setEditing] = useState(false)
   const rows = content.rows

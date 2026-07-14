@@ -1,14 +1,14 @@
 import React from 'react'
 import { CardBodyProps } from './registry'
 import { HeadingContent } from '../model/types'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { useUi } from '../store/uiStore'
 
 const LEVELS = [1, 2, 3] as const
 
 export function HeadingCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as HeadingContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const selected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
 
   return (

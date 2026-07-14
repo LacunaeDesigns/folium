@@ -1,6 +1,6 @@
 import Peer, { DataConnection } from 'peerjs'
 import { create } from 'zustand'
-import { AtlasStore } from '../store/store'
+import { FoliumStore } from '../store/store'
 import { applyLiveMsg, collectSyncCards, LiveMsg } from './protocol'
 import { getUserName } from '../store/settings'
 
@@ -41,7 +41,7 @@ let unsubStore: (() => void) | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 
 /** Boards visible to reviewers: subtree of the session board. */
-function sessionBoards(store: AtlasStore, rootBoardId: string): string[] {
+function sessionBoards(store: FoliumStore, rootBoardId: string): string[] {
   const state = store.getState()
   const out = [rootBoardId]
   for (let i = 0; i < out.length; i++) {
@@ -61,19 +61,19 @@ function broadcast(msg: LiveMsg): void {
   }
 }
 
-function sendSync(store: AtlasStore): void {
+function sendSync(store: FoliumStore): void {
   const boardId = useLive.getState().boardId
   if (!boardId) return
   const cards = collectSyncCards(store.getState(), sessionBoards(store, boardId))
   broadcast({ t: 'cards-sync', cards })
 }
 
-function scheduleSync(store: AtlasStore): void {
+function scheduleSync(store: FoliumStore): void {
   if (syncTimer) clearTimeout(syncTimer)
   syncTimer = setTimeout(() => sendSync(store), 250)
 }
 
-export function startLiveSession(store: AtlasStore, boardId: string, attempt = 0): void {
+export function startLiveSession(store: FoliumStore, boardId: string, attempt = 0): void {
   stopLiveSession()
   const code = genCode()
   useLive.setState({ active: true, status: 'starting', code, boardId, error: null, peers: [] })

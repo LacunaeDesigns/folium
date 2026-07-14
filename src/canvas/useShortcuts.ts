@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { collectClip } from '../store/store'
 import { setClipboard } from '../store/clipboard'
 import { boardCards } from '../store/selectors'
@@ -16,7 +16,7 @@ function isTyping(): boolean {
 }
 
 export function useShortcuts() {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -96,12 +96,12 @@ export function useShortcuts() {
       // Shift+1: fit board, Shift+2: zoom to selection (Figma muscle memory)
       if (e.shiftKey && !mod && (e.key === '1' || e.key === '!')) {
         e.preventDefault()
-        window.dispatchEvent(new CustomEvent('atlas:view', { detail: { op: 'fit' } }))
+        window.dispatchEvent(new CustomEvent('folium:view', { detail: { op: 'fit' } }))
         return
       }
       if (e.shiftKey && !mod && (e.key === '2' || e.key === '@')) {
         e.preventDefault()
-        window.dispatchEvent(new CustomEvent('atlas:view', { detail: { op: 'fit-selection' } }))
+        window.dispatchEvent(new CustomEvent('folium:view', { detail: { op: 'fit-selection' } }))
         return
       }
       if (e.key.startsWith('Arrow')) {

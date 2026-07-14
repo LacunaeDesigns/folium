@@ -1,6 +1,6 @@
 import { DocState, Template } from '../model/types'
-import { AtlasDb, saveDoc } from '../store/persist'
-import { AtlasStore } from '../store/store'
+import { FoliumDb, saveDoc } from '../store/persist'
+import { FoliumStore } from '../store/store'
 
 interface BackupBlob {
   id: string
@@ -35,7 +35,7 @@ function b64ToBuf(b64: string): ArrayBuffer {
   return bytes.buffer
 }
 
-export async function exportBackup(db: AtlasDb, doc: DocState, userName: string): Promise<string> {
+export async function exportBackup(db: FoliumDb, doc: DocState, userName: string): Promise<string> {
   const blobRows = await db.blobs.toArray()
   const templates = await db.templates.toArray()
   const backup: Backup = {
@@ -72,7 +72,7 @@ export function parseBackup(text: string): Backup {
 }
 
 /** Write a (validated) backup into the db + store, replacing everything. */
-export async function applyBackup(db: AtlasDb, store: AtlasStore, backup: Backup): Promise<void> {
+export async function applyBackup(db: FoliumDb, store: FoliumStore, backup: Backup): Promise<void> {
   await db.blobs.clear()
   await db.blobs.bulkPut(backup.blobs.map((b) => ({ id: b.id, type: b.type, buf: b64ToBuf(b.b64) })))
   await db.templates.clear()
@@ -83,7 +83,7 @@ export async function applyBackup(db: AtlasDb, store: AtlasStore, backup: Backup
 }
 
 /** Replaces the entire document, blobs and user templates from backup text. */
-export async function importBackup(db: AtlasDb, store: AtlasStore, text: string): Promise<void> {
+export async function importBackup(db: FoliumDb, store: FoliumStore, text: string): Promise<void> {
   // validate BEFORE touching the db — a rejected import must leave everything intact
   await applyBackup(db, store, parseBackup(text))
 }

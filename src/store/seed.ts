@@ -1,8 +1,8 @@
-import { AtlasStore } from './store'
+import { FoliumStore } from './store'
 import { noteDoc, todoItems } from '../templates/builder'
 
 /** First-run welcome content on the Home board. */
-export function seedWelcome(store: AtlasStore): void {
+export function seedWelcome(store: FoliumStore): void {
   const s = store.getState()
   const home = s.rootId
 

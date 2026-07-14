@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { parseMarkdown } from './markdown'
 import { importMarkdownBoard } from './importBoard'
-import { createAtlasStore } from '../store/store'
+import { createFoliumStore } from '../store/store'
 import { tiptapText } from '../store/search'
 import { boardCards } from '../store/selectors'
 import { TodoContent, TableContent, LinkContent, ImageContent, NoteContent } from '../model/types'
@@ -69,7 +69,7 @@ describe('parseMarkdown', () => {
 
 describe('importMarkdownBoard', () => {
   it('creates a new board with cards for each block', () => {
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const s = store.getState()
     const md = [
       '# Imported Board',
@@ -107,7 +107,7 @@ describe('importMarkdownBoard', () => {
   })
 
   it('falls back to the filename when there is no h1', () => {
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const boardId = importMarkdownBoard(store, store.getState().rootId, 'My Board Export.md', 'just a paragraph')
     expect(store.getState().boards[boardId].title).toBe('My Board Export')
   })

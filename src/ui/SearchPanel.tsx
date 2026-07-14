@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { searchAll, SearchHit } from '../store/search'
 import { useUi } from '../store/uiStore'
 import { Icon, IconName } from './Icons'
@@ -42,7 +42,7 @@ export function focusCard(boardId: string, cardId: string | undefined, cardPos?:
 }
 
 export function SearchPanel() {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const setSearchOpen = useUi((s) => s.setSearchOpen)
   const [query, setQuery] = React.useState('')
   const [hits, setHits] = React.useState<SearchHit[]>([])

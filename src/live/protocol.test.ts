@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { createAtlasStore, AtlasStore } from '../store/store'
+import { createFoliumStore, FoliumStore } from '../store/store'
 import { applyLiveMsg, collectSyncCards, LiveMsg } from './protocol'
 import { CommentContent, ImageContent } from '../model/types'
 
-let store: AtlasStore
+let store: FoliumStore
 const s = () => store.getState()
 
 beforeEach(() => {
-  store = createAtlasStore()
+  store = createFoliumStore()
 })
 
 describe('applyLiveMsg', () => {

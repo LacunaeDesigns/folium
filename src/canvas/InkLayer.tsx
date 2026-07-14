@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { BoardView, useUi } from '../store/uiStore'
 import { Icon } from '../ui/Icons'
 import { Pt } from './coords'
@@ -44,7 +44,7 @@ export function InkLayer({
   view: BoardView
   viewportEl: HTMLElement | null
 }) {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const draw = useUi((s) => s.draw)
   const setDraw = useUi((s) => s.setDraw)
   const [strokes, setStrokes] = React.useState<Stroke[]>([])

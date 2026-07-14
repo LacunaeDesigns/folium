@@ -1,48 +1,48 @@
 import React from 'react'
 import { useStore } from 'zustand'
-import { AtlasState, AtlasStore, createAtlasStore } from './store'
-import { AtlasDb, bindAutosave, bindBlobGc, loadDoc, openDb } from './persist'
+import { FoliumState, FoliumStore, createFoliumStore } from './store'
+import { FoliumDb, bindAutosave, bindBlobGc, loadDoc, openDb } from './persist'
 import { loadSettings } from './settings'
 import { createTabSync } from './tabSync'
 
-interface AtlasContextValue {
-  store: AtlasStore
-  db: AtlasDb
+interface FoliumContextValue {
+  store: FoliumStore
+  db: FoliumDb
 }
 
-const AtlasContext = React.createContext<AtlasContextValue | null>(null)
+const FoliumContext = React.createContext<FoliumContextValue | null>(null)
 
-export function AtlasProvider({
+export function FoliumProvider({
   store,
   db,
   children,
-}: AtlasContextValue & { children: React.ReactNode }) {
-  return <AtlasContext.Provider value={{ store, db }}>{children}</AtlasContext.Provider>
+}: FoliumContextValue & { children: React.ReactNode }) {
+  return <FoliumContext.Provider value={{ store, db }}>{children}</FoliumContext.Provider>
 }
 
-export function useAtlasContext(): AtlasContextValue {
-  const ctx = React.useContext(AtlasContext)
-  if (!ctx) throw new Error('useAtlasContext outside AtlasProvider')
+export function useFoliumContext(): FoliumContextValue {
+  const ctx = React.useContext(FoliumContext)
+  if (!ctx) throw new Error('useFoliumContext outside FoliumProvider')
   return ctx
 }
 
-export function useAtlas<T>(selector: (s: AtlasState) => T): T {
-  return useStore(useAtlasContext().store, selector)
+export function useFolium<T>(selector: (s: FoliumState) => T): T {
+  return useStore(useFoliumContext().store, selector)
 }
 
-export function useAtlasStore(): AtlasStore {
-  return useAtlasContext().store
+export function useFoliumStore(): FoliumStore {
+  return useFoliumContext().store
 }
 
-export function useDb(): AtlasDb {
-  return useAtlasContext().db
+export function useDb(): FoliumDb {
+  return useFoliumContext().db
 }
 
-export async function bootAtlas(): Promise<AtlasContextValue> {
+export async function bootFolium(): Promise<FoliumContextValue> {
   const db = openDb()
   const doc = await loadDoc(db)
   await loadSettings(db)
-  const store = createAtlasStore(doc ?? undefined)
+  const store = createFoliumStore(doc ?? undefined)
   if (!doc) {
     const { seedWelcome } = await import('./seed')
     seedWelcome(store)

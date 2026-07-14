@@ -1,4 +1,4 @@
-import { AtlasDb, getSetting, setSetting } from './persist'
+import { FoliumDb, getSetting, setSetting } from './persist'
 
 export type AppTheme = 'light' | 'dark' | 'system'
 
@@ -26,29 +26,29 @@ export function getShowGrid(): boolean {
   return showGrid
 }
 
-export async function loadSettings(db: AtlasDb): Promise<void> {
+export async function loadSettings(db: FoliumDb): Promise<void> {
   userName = await getSetting(db, 'userName', 'You')
   pexelsKey = await getSetting(db, 'pexelsApiKey', '')
   appTheme = await getSetting(db, 'appTheme', 'light')
   showGrid = await getSetting(db, 'showGrid', true)
 }
 
-export async function saveAppTheme(db: AtlasDb, theme: AppTheme): Promise<void> {
+export async function saveAppTheme(db: FoliumDb, theme: AppTheme): Promise<void> {
   appTheme = theme
   await setSetting(db, 'appTheme', theme)
 }
 
-export async function saveShowGrid(db: AtlasDb, show: boolean): Promise<void> {
+export async function saveShowGrid(db: FoliumDb, show: boolean): Promise<void> {
   showGrid = show
   await setSetting(db, 'showGrid', show)
 }
 
-export async function saveUserName(db: AtlasDb, name: string): Promise<void> {
+export async function saveUserName(db: FoliumDb, name: string): Promise<void> {
   userName = name.trim() || 'You'
   await setSetting(db, 'userName', userName)
 }
 
-export async function savePexelsKey(db: AtlasDb, key: string): Promise<void> {
+export async function savePexelsKey(db: FoliumDb, key: string): Promise<void> {
   pexelsKey = key.trim()
   await setSetting(db, 'pexelsApiKey', pexelsKey)
 }

@@ -9,12 +9,12 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { CardBodyProps } from './registry'
 import { NoteContent, NOTE_COLORS } from '../model/types'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { useEditing, useDebouncedCommit } from './useEditing'
 import { Icon } from '../ui/Icons'
 
 function FormatBar({ editor, noteId, bg }: { editor: Editor; noteId: string; bg: string }) {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const btn = (
     label: React.ReactNode,
     action: () => void,
@@ -67,7 +67,7 @@ function FormatBar({ editor, noteId, bg }: { editor: Editor; noteId: string; bg:
 
 export function NoteCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as NoteContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const [editing, setEditing] = useEditing(card.id)
   const commit = useDebouncedCommit((doc) => store.getState().updateContent(card.id, { doc }))
 

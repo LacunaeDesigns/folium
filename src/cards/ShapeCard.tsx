@@ -1,7 +1,7 @@
 import React from 'react'
 import { CardBodyProps } from './registry'
 import { ShapeContent, ShapeKind } from '../model/types'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { useUi } from '../store/uiStore'
 
 const SHAPE_COLORS = ['blue', 'green', 'yellow', 'orange', 'red', 'purple', 'gray'] as const
@@ -24,7 +24,7 @@ function ShapeSvg({ kind, fill }: { kind: ShapeKind; fill: string }) {
 
 export function ShapeCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as ShapeContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const selected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
 
   return (

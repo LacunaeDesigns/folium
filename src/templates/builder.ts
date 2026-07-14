@@ -1,4 +1,4 @@
-import { AtlasState, cloneBoardSubtree, createAtlasStore } from '../store/store'
+import { FoliumState, cloneBoardSubtree, createFoliumStore } from '../store/store'
 import { Template, TodoItem } from '../model/types'
 import { nanoid } from 'nanoid'
 
@@ -36,9 +36,9 @@ export interface TemplateMetaInput {
  */
 export function buildTemplate(
   meta: TemplateMetaInput,
-  build: (s: AtlasState, boardId: string) => void,
+  build: (s: FoliumState, boardId: string) => void,
 ): Template {
-  const store = createAtlasStore()
+  const store = createFoliumStore()
   const st = store.getState()
   const { boardId } = st.createBoard(st.rootId, meta.name)
   build(store.getState(), boardId)

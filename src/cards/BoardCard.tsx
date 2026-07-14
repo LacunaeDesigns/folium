@@ -2,7 +2,7 @@ import React from 'react'
 import { CardBodyProps } from './registry'
 import { BoardCardContent, BOARD_COLORS } from '../model/types'
 import { BOARD_BACKGROUNDS } from '../model/backgrounds'
-import { useAtlas, useAtlasStore } from '../store/context'
+import { useFolium, useFoliumStore } from '../store/context'
 import { boardCardCount, boardTodoStats } from '../store/selectors'
 import { useUi } from '../store/uiStore'
 import { Icon, IconName } from '../ui/Icons'
@@ -11,13 +11,13 @@ export const BOARD_ICONS: IconName[] = ['board', 'note', 'image', 'todo', 'draw'
 
 export function BoardCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as BoardCardContent
-  const store = useAtlasStore()
-  const board = useAtlas((s) => s.boards[content.boardId])
-  const count = useAtlas((s) => (board ? boardCardCount(s, content.boardId) : 0))
+  const store = useFoliumStore()
+  const board = useFolium((s) => s.boards[content.boardId])
+  const count = useFolium((s) => (board ? boardCardCount(s, content.boardId) : 0))
   // primitive selectors so the fresh {done,total} object doesn't defeat
   // zustand's identity check and re-render on every unrelated store change
-  const todoDone = useAtlas((s) => (board ? boardTodoStats(s, content.boardId).done : 0))
-  const todoTotal = useAtlas((s) => (board ? boardTodoStats(s, content.boardId).total : 0))
+  const todoDone = useFolium((s) => (board ? boardTodoStats(s, content.boardId).done : 0))
+  const todoTotal = useFolium((s) => (board ? boardTodoStats(s, content.boardId).total : 0))
   const isSelected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
   const [pickerOpen, setPickerOpen] = React.useState(false)
 

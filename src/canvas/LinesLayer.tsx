@@ -1,6 +1,6 @@
 import React from 'react'
 import { Line, LineEnd } from '../model/types'
-import { useAtlas, useAtlasStore } from '../store/context'
+import { useFolium, useFoliumStore } from '../store/context'
 import { linesOnBoard } from '../store/selectors'
 import { BoardView, useUi } from '../store/uiStore'
 import { Icon } from '../ui/Icons'
@@ -113,8 +113,8 @@ export function LinesLayer({
   /** world cursor position for pending preview */
   cursor: Pt | null
 }) {
-  const store = useAtlasStore()
-  const lines = useAtlas((s) => linesOnBoard(s, boardId))
+  const store = useFoliumStore()
+  const lines = useFolium((s) => linesOnBoard(s, boardId))
   const selectedLine = useUi((s) => s.selectedLine)
   const [labelEdit, setLabelEdit] = React.useState<string | null>(null)
   const [endDrag, setEndDragState] = React.useState<{ lineId: string; which: 'from' | 'to'; pt: Pt } | null>(null)

@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAtlas, useAtlasStore } from '../store/context'
+import { useFolium, useFoliumStore } from '../store/context'
 import { unsortedCards } from '../store/selectors'
 import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { getCardBody } from '../cards/registry'
@@ -9,7 +9,7 @@ import { safeCapture } from '../canvas/coords'
 import './panels.css'
 
 function TrayItem({ card }: { card: Card }) {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const [dragXY, setDragXY] = React.useState<{ x: number; y: number } | null>(null)
   const gesture = React.useRef<{ startX: number; startY: number; dragging: boolean } | null>(null)
   const Body = getCardBody(card.type)
@@ -69,8 +69,8 @@ function TrayItem({ card }: { card: Card }) {
 }
 
 export function UnsortedTray({ boardId }: { boardId: string }) {
-  const store = useAtlasStore()
-  const items = useAtlas((s) => unsortedCards(s, boardId))
+  const store = useFoliumStore()
+  const items = useFolium((s) => unsortedCards(s, boardId))
   const open = useUi((s) => s.unsortedOpen)
   const setOpen = useUi((s) => s.setUnsortedOpen)
   const [quick, setQuick] = React.useState('')

@@ -14,7 +14,7 @@ import { HelpPanel } from './ui/HelpPanel'
 import { useLive } from './live/host'
 import { useSync, linkFolder, unlinkFolder, reconnect, syncNow } from './store/sync'
 import { relTime } from './cards/CommentCard'
-import { useAtlas, useAtlasStore, useDb } from './store/context'
+import { useFolium, useFoliumStore, useDb } from './store/context'
 import { breadcrumbs } from './store/selectors'
 import {
   saveUserName,
@@ -37,7 +37,7 @@ function ViewMenu({ onClose }: { onClose: () => void }) {
   const db = useDb()
   const appTheme = useUi((s) => s.appTheme)
   const fire = (op: string) => {
-    window.dispatchEvent(new CustomEvent('atlas:view', { detail: { op } }))
+    window.dispatchEvent(new CustomEvent('folium:view', { detail: { op } }))
     onClose()
   }
   return (
@@ -221,12 +221,12 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
 }
 
 export default function App() {
-  const store = useAtlasStore()
-  const rootId = useAtlas((s) => s.rootId)
+  const store = useFoliumStore()
+  const rootId = useFolium((s) => s.rootId)
   const currentBoardId = useUi((s) => s.currentBoardId) ?? rootId
-  const board = useAtlas((s) => s.boards[currentBoardId])
-  const crumbs = useAtlas((s) => breadcrumbs(s, currentBoardId))
-  const renameBoard = useAtlas((s) => s.renameBoard)
+  const board = useFolium((s) => s.boards[currentBoardId])
+  const crumbs = useFolium((s) => breadcrumbs(s, currentBoardId))
+  const renameBoard = useFolium((s) => s.renameBoard)
   const activeTool = useUi((s) => s.activeTool)
   const setTool = useUi((s) => s.setTool)
   const setBoard = useUi((s) => s.setBoard)

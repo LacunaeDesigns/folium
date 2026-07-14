@@ -1,11 +1,11 @@
 import React from 'react'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 import { startLiveSession, stopLiveSession, useLive } from '../live/host'
 import { Icon } from './Icons'
 import './panels.css'
 
 export function LiveSessionPanel({ boardId }: { boardId: string }) {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const live = useLive()
   const [copied, setCopied] = React.useState(false)
 

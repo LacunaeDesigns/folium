@@ -2,11 +2,11 @@ import React from 'react'
 import { nanoid } from 'nanoid'
 import { CardBodyProps } from './registry'
 import { TodoContent, TodoItem } from '../model/types'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 
 export function TodoCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as TodoContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const items = content.items
 
   const setItems = (next: TodoItem[]) => store.getState().updateContent(card.id, { items: next })

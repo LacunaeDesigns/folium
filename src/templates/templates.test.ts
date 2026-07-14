@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createAtlasStore } from '../store/store'
+import { createFoliumStore } from '../store/store'
 import { BUILTIN_TEMPLATES } from './builtins'
 import { boardCards, breadcrumbs } from '../store/selectors'
 
@@ -41,7 +41,7 @@ describe('built-in templates', () => {
   })
 
   it('instantiating grafts a fresh subtree under the parent board', () => {
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const s = store.getState()
     const t = BUILTIN_TEMPLATES.find((x) => x.name === 'Portfolio Review')!
     const newBoardId = s.graftSnapshot(t.snapshot, s.rootId, { x: 100, y: 100 })
@@ -58,7 +58,7 @@ describe('built-in templates', () => {
   })
 
   it('instantiating twice produces disjoint ids', () => {
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const s = store.getState()
     const t = BUILTIN_TEMPLATES.find((x) => x.name === 'Brainstorm')!
     const b1 = s.graftSnapshot(t.snapshot, s.rootId, { x: 0, y: 0 })
@@ -74,7 +74,7 @@ describe('built-in templates', () => {
   })
 
   it('nested boards inside templates are re-created with correct parents', () => {
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const s = store.getState()
     const t = BUILTIN_TEMPLATES.find((x) => x.name === 'World Building')!
     const rootBoard = s.graftSnapshot(t.snapshot, s.rootId, { x: 0, y: 0 })

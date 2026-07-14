@@ -87,7 +87,8 @@ Tests: `npm test` (Vitest).
 ## Data
 
 All data lives in the browser profile that opened the app (IndexedDB,
-`atlasnote` database). Use Export → *Back up all data (JSON)* for backups and
+`atlasnote` database — a legacy name kept so data from earlier versions survives).
+Use Export → *Back up all data (JSON)* for backups and
 *Import backup* to restore or migrate.
 
 ## Cross-machine sync (detail)

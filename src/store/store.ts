@@ -25,7 +25,7 @@ export interface CardClip {
   lines: Line[]
 }
 
-export interface AtlasState extends DocState {
+export interface FoliumState extends DocState {
   addCard(
     boardId: string,
     type: CardType,
@@ -71,7 +71,7 @@ export interface AtlasState extends DocState {
 
 type DocSlice = DocState
 
-export type AtlasStore = StoreApi<AtlasState> & {
+export type FoliumStore = StoreApi<FoliumState> & {
   temporal: StoreApi<TemporalState<DocSlice>>
 }
 
@@ -303,10 +303,10 @@ export function collectClip(state: DocState, ids: string[]): CardClip | null {
   })
 }
 
-export function createAtlasStore(initial?: DocState): AtlasStore {
+export function createFoliumStore(initial?: DocState): FoliumStore {
   const doc = initial ?? emptyDoc()
 
-  return createStore<AtlasState>()(
+  return createStore<FoliumState>()(
     temporal(
       (set, get) => ({
         ...doc,
@@ -835,5 +835,5 @@ export function createAtlasStore(initial?: DocState): AtlasStore {
         limit: 100,
       },
     ),
-  ) as AtlasStore
+  ) as FoliumStore
 }

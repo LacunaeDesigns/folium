@@ -1,7 +1,7 @@
 import React from 'react'
 import { CardBodyProps } from './registry'
 import { SwatchContent } from '../model/types'
-import { useAtlasStore } from '../store/context'
+import { useFoliumStore } from '../store/context'
 
 function isLight(hex: string): boolean {
   const m = hex.replace('#', '')
@@ -14,7 +14,7 @@ function isLight(hex: string): boolean {
 
 export function SwatchCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as SwatchContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
 
   return (
     <div className="swatch-card">

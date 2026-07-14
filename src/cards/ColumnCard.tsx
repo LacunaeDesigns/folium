@@ -1,7 +1,7 @@
 import React from 'react'
 import { CardBodyProps, getCardBody } from './registry'
 import { Card, ColumnContent } from '../model/types'
-import { useAtlas, useAtlasStore } from '../store/context'
+import { useFolium, useFoliumStore } from '../store/context'
 import { columnCards } from '../store/selectors'
 import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { Icon } from '../ui/Icons'
@@ -9,7 +9,7 @@ import { safeCapture } from '../canvas/coords'
 import { resolveCardDrop } from '../canvas/dropTarget'
 
 function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const selected = useUi((s) => s.selection.includes(card.id))
   const [dragXY, setDragXY] = React.useState<{ x: number; y: number } | null>(null)
   const gesture = React.useRef<{ startX: number; startY: number; dragging: boolean } | null>(null)
@@ -87,8 +87,8 @@ function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
 
 export function ColumnCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as ColumnContent
-  const store = useAtlasStore()
-  const members = useAtlas((s) => columnCards(s, card.id))
+  const store = useFoliumStore()
+  const members = useFolium((s) => columnCards(s, card.id))
 
   return (
     <div className="column-card">

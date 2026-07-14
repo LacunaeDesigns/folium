@@ -1,5 +1,5 @@
 import React from 'react'
-import { useDb, useAtlasStore } from '../store/context'
+import { useDb, useFoliumStore } from '../store/context'
 import { useUi, DEFAULT_VIEW } from '../store/uiStore'
 import { getPexelsKey } from '../store/settings'
 import { searchPexels, fetchPexelsBlob, PexelsPhoto } from '../integrations/pexels'
@@ -11,7 +11,7 @@ type Status = 'idle' | 'loading' | 'error' | 'empty'
 
 export function PexelsPanel({ boardId, onClose }: { boardId: string; onClose: () => void }) {
   const db = useDb()
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const [query, setQuery] = React.useState('')
   const [photos, setPhotos] = React.useState<PexelsPhoto[]>([])
   const [page, setPage] = React.useState(1)

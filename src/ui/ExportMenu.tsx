@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAtlasStore, useDb } from '../store/context'
+import { useFoliumStore, useDb } from '../store/context'
 import { collectBoardExport, downloadFile, safeFilename } from '../export/collect'
 import { buildHtmlExport } from '../export/html'
 import { boardToMarkdown } from '../export/markdown'
@@ -12,7 +12,7 @@ import { useUi } from '../store/uiStore'
 import { Icon } from './Icons'
 
 export function ExportMenu({ boardId, onClose }: { boardId: string; onClose: () => void }) {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const db = useDb()
   const importRef = React.useRef<HTMLInputElement>(null)
   const [busy, setBusy] = React.useState<string | null>(null)

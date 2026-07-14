@@ -112,7 +112,7 @@ export function Toolbar({
       }}
       draggable
       onDragStart={(e) => {
-        e.dataTransfer.setData('application/x-atlasnote-tool', t.id)
+        e.dataTransfer.setData('application/x-folium-tool', t.id)
         e.dataTransfer.effectAllowed = 'copy'
       }}
       title={t.label}

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { nanoid } from 'nanoid'
-import { createAtlasStore } from './store'
+import { createFoliumStore } from './store'
 import { openDb, saveDoc, loadDoc } from './persist'
 import { createTabSync } from './tabSync'
 
@@ -51,7 +51,7 @@ class EchoingBroadcastChannel extends FakeBroadcastChannel {
   }
 }
 
-function docOf(store: ReturnType<typeof createAtlasStore>) {
+function docOf(store: ReturnType<typeof createFoliumStore>) {
   const s = store.getState()
   return { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines }
 }
@@ -72,7 +72,7 @@ describe('createTabSync: feature detection', () => {
   it('no-ops silently when BroadcastChannel is unavailable', () => {
     ;(globalThis as { BroadcastChannel: unknown }).BroadcastChannel = undefined
     const db = openDb('test-' + nanoid(6))
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const sync = createTabSync(store, db)
     expect(sync.isPaused()).toBe(false)
     expect(() => sync.onWrite(Date.now())).not.toThrow()
@@ -85,8 +85,8 @@ describe('createTabSync: message routing between two fake tabs', () => {
     const dbName = 'test-' + nanoid(6)
     const dbA = openDb(dbName)
     const dbB = openDb(dbName)
-    const storeA = createAtlasStore()
-    const storeB = createAtlasStore()
+    const storeA = createFoliumStore()
+    const storeB = createFoliumStore()
     const syncA = createTabSync(storeA, dbA)
     const syncB = createTabSync(storeB, dbB)
 
@@ -108,8 +108,8 @@ describe('createTabSync: message routing between two fake tabs', () => {
     const dbName = 'test-' + nanoid(6)
     const dbA = openDb(dbName)
     const dbB = openDb(dbName)
-    const storeA = createAtlasStore()
-    const storeB = createAtlasStore()
+    const storeA = createFoliumStore()
+    const storeB = createFoliumStore()
     const syncA = createTabSync(storeA, dbA)
     const syncB = createTabSync(storeB, dbB)
 
@@ -139,7 +139,7 @@ describe('createTabSync: echo suppression', () => {
   it('ignores a doc-written message that carries this tab’s own id', async () => {
     ;(globalThis as { BroadcastChannel: unknown }).BroadcastChannel = EchoingBroadcastChannel
     const db = openDb('test-' + nanoid(6))
-    const store = createAtlasStore()
+    const store = createFoliumStore()
     const sync = createTabSync(store, db)
 
     const cardId = store.getState().addCard(store.getState().rootId, 'note', { x: 0, y: 0 })
@@ -162,8 +162,8 @@ describe('createTabSync: pause during apply', () => {
     const dbName = 'test-' + nanoid(6)
     const dbA = openDb(dbName)
     const dbB = openDb(dbName)
-    const storeA = createAtlasStore()
-    const storeB = createAtlasStore()
+    const storeA = createFoliumStore()
+    const storeB = createFoliumStore()
     const syncA = createTabSync(storeA, dbA)
     const syncB = createTabSync(storeB, dbB)
 
@@ -190,8 +190,8 @@ describe('createTabSync: pause during apply', () => {
     const dbName = 'test-' + nanoid(6)
     const dbA = openDb(dbName)
     const dbB = openDb(dbName)
-    const storeA = createAtlasStore()
-    const storeB = createAtlasStore()
+    const storeA = createFoliumStore()
+    const storeB = createFoliumStore()
     const syncA = createTabSync(storeA, dbA)
     const syncB = createTabSync(storeB, dbB)
 

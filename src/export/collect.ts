@@ -1,5 +1,5 @@
 import { Board, Card, DocState, Line } from '../model/types'
-import { AtlasDb, getBlob } from '../store/persist'
+import { FoliumDb, getBlob } from '../store/persist'
 
 export interface ExportBundle {
   rootBoardId: string
@@ -39,7 +39,7 @@ const MAX_INLINE_BLOB = 16 * 1024 * 1024
 export async function collectBoardExport(
   state: DocState,
   boardId: string,
-  db: AtlasDb,
+  db: FoliumDb,
 ): Promise<ExportBundle> {
   const boardIds = subtreeBoards(state, boardId)
   const boardSet = new Set(boardIds)

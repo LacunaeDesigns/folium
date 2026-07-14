@@ -9,13 +9,13 @@ import '@fontsource/fraunces/700.css'
 import './styles/tokens.css'
 import './styles/global.css'
 import App from './App'
-import { AtlasProvider, bootAtlas } from './store/context'
+import { FoliumProvider, bootFolium } from './store/context'
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
-bootAtlas().then(({ store, db }) => {
+bootFolium().then(({ store, db }) => {
   if (import.meta.env.DEV) {
-    ;(window as unknown as Record<string, unknown>).__atlas = { store, db }
+    ;(window as unknown as Record<string, unknown>).__folium = { store, db }
     void Promise.all([
       import('./export/collect'),
       import('./export/html'),
@@ -25,7 +25,7 @@ bootAtlas().then(({ store, db }) => {
       import('./export/json'),
       import('./store/folderSync'),
     ]).then(([collect, html, md, viewer, peerRaw, json, fsync]) => {
-      Object.assign((window as unknown as { __atlas: object }).__atlas, {
+      Object.assign((window as unknown as { __folium: object }).__folium, {
         collectBoardExport: collect.collectBoardExport,
         buildHtmlExport: html.buildHtmlExport,
         boardToMarkdown: md.boardToMarkdown,
@@ -42,9 +42,9 @@ bootAtlas().then(({ store, db }) => {
   }
   root.render(
     <React.StrictMode>
-      <AtlasProvider store={store} db={db}>
+      <FoliumProvider store={store} db={db}>
         <App />
-      </AtlasProvider>
+      </FoliumProvider>
     </React.StrictMode>,
   )
 })

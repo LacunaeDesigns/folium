@@ -1,7 +1,7 @@
 import Dexie, { Table } from 'dexie'
 import { nanoid } from 'nanoid'
 import { DocState, Template } from '../model/types'
-import { AtlasStore } from './store'
+import { FoliumStore } from './store'
 
 interface DocRow extends DocState {
   id: string
@@ -26,7 +26,7 @@ interface HandleRow {
 }
 
 /** NOTE: the Dexie database keeps its original 'atlasnote' id so pre-rebrand data survives. */
-export class AtlasDb extends Dexie {
+export class FoliumDb extends Dexie {
   doc!: Table<DocRow, string>
   blobs!: Table<BlobRow, string>
   templates!: Table<Template, string>
@@ -46,15 +46,15 @@ export class AtlasDb extends Dexie {
   }
 }
 
-export function openDb(name = 'atlasnote'): AtlasDb {
-  return new AtlasDb(name)
+export function openDb(name = 'atlasnote'): FoliumDb {
+  return new FoliumDb(name)
 }
 
-export async function saveDoc(db: AtlasDb, doc: DocState): Promise<void> {
+export async function saveDoc(db: FoliumDb, doc: DocState): Promise<void> {
   await db.doc.put({ id: 'doc', ...doc })
 }
 
-export async function loadDoc(db: AtlasDb): Promise<DocState | null> {
+export async function loadDoc(db: FoliumDb): Promise<DocState | null> {
   const row = await db.doc.get('doc')
   if (!row) return null
   const { id: _id, ...doc } = row
@@ -72,20 +72,20 @@ function blobToBuffer(blob: Blob): Promise<ArrayBuffer> {
   })
 }
 
-export async function putBlob(db: AtlasDb, blob: Blob): Promise<string> {
+export async function putBlob(db: FoliumDb, blob: Blob): Promise<string> {
   const id = nanoid(12)
   const buf = await blobToBuffer(blob)
   await db.blobs.put({ id, buf, type: blob.type })
   return id
 }
 
-export async function getBlob(db: AtlasDb, id: string): Promise<Blob | undefined> {
+export async function getBlob(db: FoliumDb, id: string): Promise<Blob | undefined> {
   const row = await db.blobs.get(id)
   if (!row) return undefined
   return new Blob([row.buf], { type: row.type })
 }
 
-export async function deleteBlob(db: AtlasDb, id: string): Promise<void> {
+export async function deleteBlob(db: FoliumDb, id: string): Promise<void> {
   await db.blobs.delete(id)
 }
 
@@ -123,7 +123,7 @@ export function computeReferencedBlobIds(
 }
 
 /** Delete every stored blob not referenced by a card or a saved template. Returns the deleted ids. */
-export async function gcBlobs(db: AtlasDb, state: DocState): Promise<string[]> {
+export async function gcBlobs(db: FoliumDb, state: DocState): Promise<string[]> {
   const [allIdsRaw, templates] = await Promise.all([
     db.blobs.toCollection().primaryKeys(),
     db.templates.toArray(),
@@ -142,7 +142,7 @@ export async function gcBlobs(db: AtlasDb, state: DocState): Promise<string[]> {
  * covers emptyTrash and any future single-card permanent-delete path without needing to
  * know which action caused it. Returns an unsubscribe function.
  */
-export function bindBlobGc(store: AtlasStore, db: AtlasDb): () => void {
+export function bindBlobGc(store: FoliumStore, db: FoliumDb): () => void {
   return store.subscribe((state, prevState) => {
     for (const id in prevState.cards) {
       if (!(id in state.cards)) {
@@ -153,27 +153,27 @@ export function bindBlobGc(store: AtlasStore, db: AtlasDb): () => void {
   })
 }
 
-export async function getSetting<T>(db: AtlasDb, key: string, fallback: T): Promise<T> {
+export async function getSetting<T>(db: FoliumDb, key: string, fallback: T): Promise<T> {
   const row = await db.settings.get(key)
   return row ? (row.value as T) : fallback
 }
 
-export async function setSetting(db: AtlasDb, key: string, value: unknown): Promise<void> {
+export async function setSetting(db: FoliumDb, key: string, value: unknown): Promise<void> {
   await db.settings.put({ key, value })
 }
 
 const SYNC_HANDLE_KEY = 'syncDir'
 
-export async function saveSyncHandle(db: AtlasDb, handle: FileSystemDirectoryHandle): Promise<void> {
+export async function saveSyncHandle(db: FoliumDb, handle: FileSystemDirectoryHandle): Promise<void> {
   await db.handles.put({ key: SYNC_HANDLE_KEY, handle })
 }
 
-export async function loadSyncHandle(db: AtlasDb): Promise<FileSystemDirectoryHandle | null> {
+export async function loadSyncHandle(db: FoliumDb): Promise<FileSystemDirectoryHandle | null> {
   const row = await db.handles.get(SYNC_HANDLE_KEY)
   return row?.handle ?? null
 }
 
-export async function clearSyncHandle(db: AtlasDb): Promise<void> {
+export async function clearSyncHandle(db: FoliumDb): Promise<void> {
   await db.handles.delete(SYNC_HANDLE_KEY)
 }
 
@@ -186,7 +186,7 @@ export interface AutosaveHooks {
 }
 
 /** Debounced autosave: persists the doc slice on every store change. Returns unsubscribe. */
-export function bindAutosave(store: AtlasStore, db: AtlasDb, delay = 600, hooks: AutosaveHooks = {}): () => void {
+export function bindAutosave(store: FoliumStore, db: FoliumDb, delay = 600, hooks: AutosaveHooks = {}): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null
   const write = () => {
     const s = store.getState()

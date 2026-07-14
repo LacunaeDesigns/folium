@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import { AtlasStore } from '../store/store'
+import { FoliumStore } from '../store/store'
 import { parseMarkdown, ParsedBlock } from './markdown'
 
 const COLS = 3
@@ -28,7 +28,7 @@ function estimateHeight(block: ParsedBlock): number {
  * Returns the new board id.
  */
 export function importMarkdownBoard(
-  store: AtlasStore,
+  store: FoliumStore,
   parentBoardId: string,
   filename: string,
   md: string,

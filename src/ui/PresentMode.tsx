@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAtlas } from '../store/context'
+import { useFolium } from '../store/context'
 import { boardCards } from '../store/selectors'
 import { useUi } from '../store/uiStore'
 import { getCardBody } from '../cards/registry'
@@ -7,7 +7,7 @@ import { Icon } from './Icons'
 import './panels.css'
 
 export function PresentMode({ boardId }: { boardId: string }) {
-  const cards = useAtlas((s) =>
+  const cards = useFolium((s) =>
     boardCards(s, boardId).slice().sort((a, b) => a.y - b.y || a.x - b.x),
   )
   const appTheme = useUi((s) => s.appTheme)

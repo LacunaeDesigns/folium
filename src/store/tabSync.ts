@@ -7,8 +7,8 @@
  * keeps its own (newer) state and will broadcast it in turn once it autosaves. Latest edit
  * wins, matching the folder-sync merge philosophy in folderSync.ts.
  */
-import { AtlasDb, loadDoc } from './persist'
-import { AtlasStore } from './store'
+import { FoliumDb, loadDoc } from './persist'
+import { FoliumStore } from './store'
 
 export const CHANNEL_NAME = 'folium-tab-sync'
 
@@ -41,7 +41,7 @@ const noopTabSync: TabSync = {
  * Wires up cross-tab sync for `store`/`db`. Returns hooks meant to be passed straight into
  * `bindAutosave`'s `onWrite`/`isPaused`, plus a `dispose` to tear the channel down.
  */
-export function createTabSync(store: AtlasStore, db: AtlasDb): TabSync {
+export function createTabSync(store: FoliumStore, db: FoliumDb): TabSync {
   if (!hasBroadcastChannel()) return noopTabSync
 
   const tabId = crypto.randomUUID()

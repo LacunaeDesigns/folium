@@ -2,7 +2,7 @@ import React from 'react'
 import { nanoid } from 'nanoid'
 import { CardBodyProps } from './registry'
 import { ImageContent, ImagePin, CommentReply } from '../model/types'
-import { useAtlasStore, useDb } from '../store/context'
+import { useFoliumStore, useDb } from '../store/context'
 import { putBlob } from '../store/persist'
 import { useBlobUrl } from './blobUrl'
 import { Icon } from '../ui/Icons'
@@ -75,7 +75,7 @@ function PinPopover({
 
 export function ImageCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as ImageContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const db = useDb()
   const blobUrl = useBlobUrl(content.blobId)
   const src = content.blobId ? blobUrl : content.url || null
@@ -145,7 +145,7 @@ function ImageView({
   onImgLoad: (e: React.SyntheticEvent<HTMLImageElement>) => void
 }) {
   const content = card.content as ImageContent
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const isSelected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
   const [pinMode, setPinMode] = React.useState(false)
   const [openPin, setOpenPin] = React.useState<string | null>(null)

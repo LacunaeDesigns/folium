@@ -1,16 +1,16 @@
 import { nanoid } from 'nanoid'
 import { DocState, Template } from '../model/types'
-import { AtlasDb } from './persist'
+import { FoliumDb } from './persist'
 import { cloneBoardSubtree } from './store'
 import { BUILTIN_TEMPLATES } from '../templates/builtins'
 
-export async function listTemplates(db: AtlasDb): Promise<Template[]> {
+export async function listTemplates(db: FoliumDb): Promise<Template[]> {
   const user = await db.templates.toArray()
   return [...BUILTIN_TEMPLATES, ...user.sort((a, b) => a.name.localeCompare(b.name))]
 }
 
 export async function saveBoardAsTemplate(
-  db: AtlasDb,
+  db: FoliumDb,
   state: DocState,
   boardId: string,
   name: string,
@@ -36,6 +36,6 @@ export async function saveBoardAsTemplate(
   return template
 }
 
-export async function deleteUserTemplate(db: AtlasDb, id: string): Promise<void> {
+export async function deleteUserTemplate(db: FoliumDb, id: string): Promise<void> {
   await db.templates.delete(id)
 }

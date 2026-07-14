@@ -144,9 +144,9 @@ svg.lines text{font-size:12px;fill:var(--soft);paint-order:stroke;stroke:var(--b
   <h1 class="title" id="btitle"></h1>
 </header>
 <div id="viewport"><div id="world"></div></div>
-<script id="atlas-data" type="application/json">${json}</script>
+<script id="folium-data" type="application/json">${json}</script>
 <script>
-var DATA = JSON.parse(document.getElementById('atlas-data').textContent);
+var DATA = JSON.parse(document.getElementById('folium-data').textContent);
 var boards = {}; DATA.boards.forEach(function(b){ boards[b.id] = b; });
 var current = DATA.rootBoardId;
 var zoom = 1;

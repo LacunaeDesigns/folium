@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { AtlasDb, clearSyncHandle, getSetting, loadSyncHandle, saveSyncHandle, setSetting } from './persist'
-import { AtlasStore } from './store'
+import { FoliumDb, clearSyncHandle, getSetting, loadSyncHandle, saveSyncHandle, setSetting } from './persist'
+import { FoliumStore } from './store'
 import { getUserName } from './settings'
 import { applyBackup, exportBackup, parseBackup } from '../export/json'
 import {
@@ -30,8 +30,8 @@ export const useSync = create<SyncUiState>(() => ({
   error: null,
 }))
 
-let db: AtlasDb | null = null
-let store: AtlasStore | null = null
+let db: FoliumDb | null = null
+let store: FoliumStore | null = null
 let handle: FileSystemDirectoryHandle | null = null
 let pushTimer: ReturnType<typeof setTimeout> | null = null
 const PUSH_DELAY = 1500
@@ -99,8 +99,8 @@ async function reconcile(): Promise<'loaded' | 'pushed'> {
 }
 
 /** Wire folder sync at boot. Reconnects silently if a handle was persisted and still permitted. */
-export async function initFolderSync(atlasStore: AtlasStore, database: AtlasDb): Promise<void> {
-  store = atlasStore
+export async function initFolderSync(foliumStore: FoliumStore, database: FoliumDb): Promise<void> {
+  store = foliumStore
   db = database
   if (!FS_SUPPORTED) {
     useSync.setState({ status: 'unsupported' })

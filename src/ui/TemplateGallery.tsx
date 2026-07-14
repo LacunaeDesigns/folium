@@ -1,6 +1,6 @@
 import React from 'react'
 import { Template } from '../model/types'
-import { useAtlasStore, useDb } from '../store/context'
+import { useFoliumStore, useDb } from '../store/context'
 import { deleteUserTemplate, listTemplates, saveBoardAsTemplate } from '../store/templates'
 import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { Icon } from './Icons'
@@ -44,7 +44,7 @@ function TemplatePreview({ t }: { t: Template }) {
 }
 
 export function TemplateGallery({ boardId, onClose }: { boardId: string; onClose: () => void }) {
-  const store = useAtlasStore()
+  const store = useFoliumStore()
   const db = useDb()
   const [templates, setTemplates] = React.useState<Template[]>([])
   const [saveName, setSaveName] = React.useState('')

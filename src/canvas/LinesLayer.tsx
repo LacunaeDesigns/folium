@@ -165,10 +165,24 @@ export function LinesLayer({
   // synchronously right after commit (before paint), so bumping state there
   // forces one more render that measures the already-committed DOM, with no
   // visible flash of the stale position.
+  //
+  // This runs after every commit (no dependency array) rather than only when
+  // `drag`/`zoom`/`lines.length` change: a plain drag-and-drop's card-move commit
+  // doesn't reliably touch any of those three (depends on how React batches the
+  // drag-end state update against the store commit), so gating on them left some
+  // drops permanently one render stale until an unrelated re-render (e.g. panning)
+  // happened to measure fresh DOM. The ref guards against looping — it only ever
+  // schedules one catch-up render per real commit.
+  const caughtUpRef = React.useRef(false)
   const [, setTick] = React.useState(0)
   React.useLayoutEffect(() => {
+    if (caughtUpRef.current) {
+      caughtUpRef.current = false
+      return
+    }
+    caughtUpRef.current = true
     setTick((v) => v + 1)
-  }, [lines.length, drag, view.zoom])
+  })
 
   const rects = makeRectSource(svgRef.current, viewportEl, view.zoom)
 

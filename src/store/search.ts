@@ -53,6 +53,8 @@ export function cardText(card: Card): string {
       return [c.title, ...c.rows.flat()].join(' ')
     case 'frame':
       return c.title
+    case 'heading':
+      return c.text
     case 'board':
     case 'ink':
       return ''

@@ -121,3 +121,25 @@ describe('buildHtmlExport frame rendering', () => {
     expect(html).toContain('frame:1') // TP (transparent) map entry
   })
 })
+
+describe('buildHtmlExport heading rendering', () => {
+  it('renders a heading card with its level as a CSS class, and the fixture round-trips into the embedded JSON', () => {
+    const bundle = makeBundle([])
+    const heading: Card = {
+      ...bundle.cards[0],
+      id: 'h1',
+      type: 'heading',
+      content: { kind: 'heading', text: 'Chapter One', level: 2 },
+    }
+    bundle.cards.push(heading)
+    const html = buildHtmlExport(bundle)
+
+    // static JS-source fragments the viewer script uses to render a heading card
+    expect(html).toContain("case 'heading'")
+    expect(html).toContain('class="headingc h')
+    expect(html).toContain('.headingc.h2{')
+    // the fixture's card data must round-trip into the embedded JSON
+    expect(html).toContain('"text":"Chapter One"')
+    expect(html).toContain('"level":2')
+  })
+})

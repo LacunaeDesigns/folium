@@ -130,6 +130,8 @@ function cardToMarkdown(state: DocState, card: Card, depth: number): string {
     case 'frame':
       // members stay top-level cards (frame doesn't own layout) — just a section label
       return `${'#'.repeat(Math.min(6, depth + 2))} ${c.title || 'Frame'}`
+    case 'heading':
+      return `${'#'.repeat(Math.min(6, c.level + 1))} ${c.text}`
   }
 }
 

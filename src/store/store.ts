@@ -124,6 +124,8 @@ export function defaultContent(type: CardType): CardContent {
       }
     case 'frame':
       return { kind: 'frame', title: '' }
+    case 'heading':
+      return { kind: 'heading', text: '', level: 1 }
   }
 }
 

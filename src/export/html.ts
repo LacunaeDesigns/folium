@@ -55,6 +55,7 @@ h1.title{font-family:'Fraunces',Georgia,serif;font-size:22px;color:var(--ink);wi
 .linkc .lt{color:var(--orange);font-weight:600;display:block;text-decoration:none;margin-top:2px}
 .linkc .ld{font-size:12.5px;color:var(--soft)}
 .linkc img.th{width:100%;display:block;border-radius:4px 4px 0 0}
+.linkc .mapsth{display:flex;align-items:center;justify-content:center;height:110px;background:var(--accent-soft,#e0ece4);color:var(--accent);border-radius:4px 4px 0 0}
 figure.img{margin:0;background:var(--chrome);border-radius:4px;overflow:hidden;box-shadow:var(--shadow)}
 figure.img .wrap{position:relative}
 figure.img img{width:100%;display:block}
@@ -97,6 +98,10 @@ table.tbl tr:first-child{background:var(--yellow);font-weight:700}
 .shape .tx{position:absolute;inset:30% 18%;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:500;font-size:13px;color:#33373b}
 .framec{box-sizing:border-box;width:100%;height:100%;border:1.5px dashed var(--accent);border-radius:6px;background:rgba(47,109,90,.04);padding:6px 10px}
 .framec .fh{display:inline-block;font-weight:600;font-size:13px;color:var(--accent)}
+.headingc{font-family:'Fraunces',Georgia,serif;font-weight:700;color:var(--ink);width:100%;word-break:break-word}
+.headingc.h1{font-size:28px;line-height:1.2}
+.headingc.h2{font-size:22px;line-height:1.25}
+.headingc.h3{font-size:17px;line-height:1.3}
 svg.lines{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 svg.lines path{stroke:var(--soft);stroke-width:2;fill:none}
 svg.lines text{font-size:12px;fill:var(--soft);paint-order:stroke;stroke:var(--bg);stroke-width:4px}
@@ -168,6 +173,7 @@ function renderDoc(node){
 }
 function blobSrc(c){ return c.blobId ? (DATA.blobs[c.blobId]||'') : (c.url||''); }
 function ytId(url){ var m=(url||'').match(/(?:youtube\\.com\\/(?:watch\\?(?:.*&)?v=|shorts\\/|embed\\/)|youtu\\.be\\/)([\\w-]{11})/); return m?m[1]:null; }
+function mapsUrl(url){ return /google\\.com\\/maps|maps\\.google\\.com|goo\\.gl\\/maps|maps\\.app\\.goo\\.gl/i.test(url||''); }
 function fmtSize(b){ if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
 function pinsHtml(c, cardId){
   return (c.pins||[]).map(function(p,i){
@@ -179,7 +185,7 @@ function cardBody(card){
   switch(c.kind){
     case 'note': return '<div class="note" style="background:var(--c-'+(c.bg||'white')+')"><div class="'+(c.bg==='dark'?'bgc-dark':'')+'">'+renderDoc(c.doc)+'</div></div>';
     case 'todo': return '<div class="todo">'+(c.title?'<div class="tt">'+esc(c.title)+'</div>':'')+c.items.map(function(it){return '<div class="it'+(it.done?' done':'')+'">'+(it.done?'☑':'☐')+' <span>'+esc(it.text)+'</span></div>';}).join('')+'</div>';
-    case 'link': { var y=ytId(c.url); return '<div class="linkc">'+(y?'<a href="'+safeUrl(c.url)+'" target="_blank"><img class="th" src="https://img.youtube.com/vi/'+y+'/hqdefault.jpg"></a>':'')+'<div class="lb"><a class="lu" href="'+esc(c.url)+'" target="_blank">'+esc(c.url)+'</a><a class="lt" href="'+esc(c.url)+'" target="_blank">'+esc(c.title||c.url)+'</a>'+(c.description?'<div class="ld">'+esc(c.description)+'</div>':'')+'</div></div>'; }
+    case 'link': { var y=ytId(c.url); var isMap=!y&&mapsUrl(c.url); var thumb=y?'<a href="'+safeUrl(c.url)+'" target="_blank"><img class="th" src="https://img.youtube.com/vi/'+y+'/hqdefault.jpg"></a>':(isMap?'<a class="th mapsth" href="'+safeUrl(c.url)+'" target="_blank" title="Open in Maps"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="6.5"/><path d="M12 16.5V21"/></svg></a>':''); return '<div class="linkc">'+thumb+'<div class="lb"><a class="lu" href="'+esc(c.url)+'" target="_blank">'+esc(c.url)+'</a><a class="lt" href="'+esc(c.url)+'" target="_blank">'+esc(c.title||c.url)+'</a>'+(c.description?'<div class="ld">'+esc(c.description)+'</div>':'')+'</div></div>'; }
     case 'image': { var src=blobSrc(c); return '<figure class="img"><div class="wrap">'+(src?'<img src="'+safeUrl(src)+'">':'<div class="empty">image missing</div>')+pinsHtml(c, card.id)+'</div>'+(c.caption?'<figcaption>'+esc(c.caption)+'</figcaption>':'')+'</figure>'; }
     case 'file': { var src2=blobSrc(c); var media=''; if(src2&&c.mime.indexOf('video/')===0) media='<video controls src="'+safeUrl(src2)+'"></video>'; if(src2&&c.mime.indexOf('audio/')===0) media='<audio controls src="'+safeUrl(src2)+'"></audio>'; var ext=(c.name.split('.').pop()||'FILE').toUpperCase().slice(0,4); return '<div class="filec">'+media+'<div class="row"><div class="badge">'+esc(ext)+'</div><div><div class="nm">'+esc(c.name)+'</div><div class="sz">'+(src2?'<a download="'+esc(c.name)+'" href="'+safeUrl(src2)+'">Download</a> · ':'')+fmtSize(c.size)+'</div></div></div></div>'; }
     case 'board': { var b=boards[c.boardId]; if(!b) return ''; var n=DATA.cards.filter(function(k){return k.boardId===c.boardId;}).length; return '<div class="boardc" data-board="'+b.id+'"><div class="tile" style="background:'+esc(b.color)+'">▦</div><div class="bn">'+esc(b.title)+'</div><div class="bc">'+n+' cards</div></div>'; }
@@ -192,10 +198,11 @@ function cardBody(card){
     case 'shape': { var col='var(--c-'+(c.fill||'blue')+')'; var sh=''; if(c.shape==='ellipse') sh='<ellipse cx="50" cy="50" rx="48" ry="48" fill="'+col+'"/>'; else if(c.shape==='diamond') sh='<polygon points="50,2 98,50 50,98 2,50" fill="'+col+'"/>'; else sh='<rect x="2" y="2" width="96" height="96" rx="6" fill="'+col+'"/>'; return '<div class="shape"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'+sh+'</svg><div class="tx">'+esc(c.text)+'</div></div>'; }
     case 'ink': { var paths=(c.strokes||[]).map(function(s){ var d=''; for(var i=0;i+1<s.points.length;i+=2){ d+=(i===0?'M ':' L ')+s.points[i]+' '+s.points[i+1]; } return '<path d="'+d+'" stroke="'+esc(s.color)+'" stroke-width="'+s.width+'" fill="none" stroke-linecap="round"/>'; }).join(''); return '<svg style="display:block;width:100%;height:100%" viewBox="0 0 '+c.natW+' '+c.natH+'" preserveAspectRatio="none">'+paths+'</svg>'; }
     case 'frame': return '<div class="framec"><div class="fh">'+esc(c.title||'Frame')+'</div></div>';
+    case 'heading': return '<div class="headingc h'+c.level+'">'+esc(c.text)+'</div>';
   }
   return '';
 }
-var TP = {sticky:1,shape:1,ink:1,board:1,swatch:1,comment:1,column:1,image:1,frame:1};
+var TP = {sticky:1,shape:1,ink:1,board:1,swatch:1,comment:1,column:1,image:1,frame:1,heading:1};
 function anchor(r, other){
   var cx=r.x+r.w/2, cy=r.y+r.h/2, dx=other.x-cx, dy=other.y-cy;
   if(Math.abs(dx)*r.h > Math.abs(dy)*r.w) return {x: dx>0?r.x+r.w:r.x, y:cy};

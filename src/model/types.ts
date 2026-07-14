@@ -28,6 +28,7 @@ export type CardType =
   | 'ink'
   | 'chart'
   | 'frame'
+  | 'heading'
 
 export interface TodoItem {
   id: string
@@ -151,6 +152,12 @@ export interface FrameContent {
   title: string
 }
 
+export interface HeadingContent {
+  kind: 'heading'
+  text: string
+  level: 1 | 2 | 3
+}
+
 export type CardContent =
   | NoteContent
   | TodoContent
@@ -167,6 +174,7 @@ export type CardContent =
   | InkContent
   | ChartContent
   | FrameContent
+  | HeadingContent
 
 export interface Card {
   id: string
@@ -277,4 +285,5 @@ export const DEFAULT_CARD_SIZE: Record<CardType, { w: number; h?: number }> = {
   ink: { w: 200, h: 120 },
   chart: { w: 300 },
   frame: { w: 480, h: 320 },
+  heading: { w: 360 },
 }

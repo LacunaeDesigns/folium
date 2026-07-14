@@ -14,6 +14,7 @@ import { ShapeCard } from './ShapeCard'
 import { InkCard } from './InkCard'
 import { ChartCard } from './ChartCard'
 import { FrameCard } from './FrameCard'
+import { HeadingCard } from './HeadingCard'
 import './cards.css'
 
 registerCardBody('note', NoteCard)
@@ -31,3 +32,4 @@ registerCardBody('shape', ShapeCard)
 registerCardBody('ink', InkCard)
 registerCardBody('chart', ChartCard)
 registerCardBody('frame', FrameCard)
+registerCardBody('heading', HeadingCard)

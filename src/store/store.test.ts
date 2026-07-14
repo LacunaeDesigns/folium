@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createAtlasStore, AtlasStore, collectClip } from './store'
 import { boardCards, columnCards, breadcrumbs, boardCardCount, trashedCards, boardTodoStats } from './selectors'
-import { NoteContent, StickyContent, TodoContent } from '../model/types'
+import { HeadingContent, NoteContent, StickyContent, TodoContent } from '../model/types'
 
 let store: AtlasStore
 const s = () => store.getState()
@@ -61,6 +61,25 @@ describe('cards', () => {
     const b = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
     s().bringToFront(a)
     expect(s().cards[a].z).toBeGreaterThan(s().cards[b].z)
+  })
+})
+
+describe('heading', () => {
+  it('addCard defaults to level 1 with empty text', () => {
+    const id = s().addCard(s().rootId, 'heading', { x: 0, y: 0 })
+    const c = s().cards[id].content as HeadingContent
+    expect(c.kind).toBe('heading')
+    expect(c.level).toBe(1)
+    expect(c.text).toBe('')
+  })
+
+  it('updateContent changes text and level independently', () => {
+    const id = s().addCard(s().rootId, 'heading', { x: 0, y: 0 })
+    s().updateContent(id, { text: 'Chapter One' })
+    s().updateContent(id, { level: 2 })
+    const c = s().cards[id].content as HeadingContent
+    expect(c.text).toBe('Chapter One')
+    expect(c.level).toBe(2)
   })
 })
 

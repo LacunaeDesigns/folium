@@ -20,6 +20,7 @@ export type ToolId =
   | 'draw'
   | 'chart'
   | 'frame'
+  | 'heading'
 
 interface ToolDef {
   id: ToolId
@@ -44,6 +45,7 @@ const MORE_TOOLS: ToolDef[] = [
   { id: 'shape', icon: 'shape', label: 'Shape' },
   { id: 'chart', icon: 'chart', label: 'Chart' },
   { id: 'frame', icon: 'frame', label: 'Frame' },
+  { id: 'heading', icon: 'heading', label: 'Heading' },
 ]
 
 const MEDIA_TOOLS: ToolDef[] = [

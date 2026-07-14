@@ -257,6 +257,7 @@ export function Canvas({ boardId }: { boardId: string }) {
         image: 'image',
         chart: 'chart',
         frame: 'frame',
+        heading: 'heading',
       }
       const type = typeMap[tool]
       if (!type) return
@@ -708,6 +709,7 @@ export function Canvas({ boardId }: { boardId: string }) {
                 ['note', 'note'],
                 ['link', 'link'],
                 ['todo', 'to-do'],
+                ['heading', 'heading'],
               ] as const).map(([t, label]) => (
                 <button key={t} className="menu-item" onClick={menuAction(() => createAt(t))}>
                   <Icon name={t} size={15} /> New {label}

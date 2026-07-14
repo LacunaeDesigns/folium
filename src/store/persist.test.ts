@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import { nanoid } from 'nanoid'
 import { createAtlasStore } from './store'
-import { openDb, saveDoc, loadDoc, putBlob, getBlob, deleteBlob } from './persist'
+import {
+  openDb,
+  saveDoc,
+  loadDoc,
+  putBlob,
+  getBlob,
+  deleteBlob,
+  gcBlobs,
+  bindBlobGc,
+  computeReferencedBlobIds,
+} from './persist'
+import { saveBoardAsTemplate } from './templates'
+import { DocState, Template } from '../model/types'
 
 function docOf(store: ReturnType<typeof createAtlasStore>) {
   const s = store.getState()
@@ -105,5 +117,146 @@ describe('backup import persistence (regression: review finding #1)', () => {
     const bad = JSON.stringify({ app: 'atlasnote', version: 1, doc: { rootId: 'x', boards: { x: {} } }, blobs: [], templates: [] })
     await expect(importBackup(db, store, bad)).rejects.toThrow()
     expect(await db.blobs.count()).toBe(1) // blobs untouched on rejection
+  })
+})
+
+/** wait a few event-loop turns for a fire-and-forget async op to settle */
+async function flushAsync(turns = 5): Promise<void> {
+  for (let i = 0; i < turns; i++) {
+    await new Promise((r) => setTimeout(r, 0))
+  }
+}
+
+describe('blob garbage collection', () => {
+  it('trashing an image card does not gc its blob', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createAtlasStore()
+    const blobId = await putBlob(db, new Blob(['img']))
+    const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
+
+    store.getState().trashCards([id])
+    const deleted = await gcBlobs(db, docOf(store))
+
+    expect(deleted).toEqual([])
+    expect(await getBlob(db, blobId)).toBeDefined()
+  })
+
+  it('gcBlobs deletes a blob once its card is permanently deleted via emptyTrash', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createAtlasStore()
+    const blobId = await putBlob(db, new Blob(['img']))
+    const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
+
+    store.getState().trashCards([id])
+    store.getState().emptyTrash()
+    const deleted = await gcBlobs(db, docOf(store))
+
+    expect(deleted).toEqual([blobId])
+    expect(await getBlob(db, blobId)).toBeUndefined()
+  })
+
+  it('bindBlobGc automatically gcs a blob after emptyTrash completes', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createAtlasStore()
+    const blobId = await putBlob(db, new Blob(['img']))
+    const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
+    const unsub = bindBlobGc(store, db)
+
+    store.getState().trashCards([id])
+    await flushAsync()
+    expect(await getBlob(db, blobId)).toBeDefined() // trash alone never triggers gc
+
+    store.getState().emptyTrash()
+    await flushAsync()
+    expect(await getBlob(db, blobId)).toBeUndefined()
+
+    unsub()
+  })
+
+  it('a blob referenced by a saved template survives emptyTrash gc', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createAtlasStore()
+    const blobId = await putBlob(db, new Blob(['img']))
+    const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
+    await saveBoardAsTemplate(db, docOf(store), store.getState().rootId, 'My template')
+
+    store.getState().trashCards([id])
+    store.getState().emptyTrash()
+    const deleted = await gcBlobs(db, docOf(store))
+
+    expect(deleted).toEqual([])
+    expect(await getBlob(db, blobId)).toBeDefined()
+  })
+})
+
+describe('computeReferencedBlobIds', () => {
+  const baseCard = {
+    boardId: 'root',
+    type: 'image' as const,
+    x: 0,
+    y: 0,
+    w: 1,
+    z: 0,
+    colId: null,
+    colIndex: 0,
+    inUnsorted: false,
+    createdAt: 0,
+  }
+
+  it('counts live and trashed cards as references, and flags the rest as orphaned', () => {
+    const state: DocState = {
+      rootId: 'root',
+      boards: {},
+      cards: {
+        a: {
+          ...baseCard,
+          id: 'a',
+          trashed: false,
+          content: { kind: 'image', blobId: 'keep-live', url: '', caption: '', naturalW: 0, naturalH: 0, pins: [] },
+        },
+        b: {
+          ...baseCard,
+          id: 'b',
+          type: 'file',
+          trashed: true,
+          content: { kind: 'file', blobId: 'keep-trashed', name: '', size: 0, mime: '' },
+        },
+      },
+      lines: {},
+    }
+    const referenced = computeReferencedBlobIds(state, [], ['keep-live', 'keep-trashed', 'orphan'])
+    expect(referenced.has('keep-live')).toBe(true)
+    expect(referenced.has('keep-trashed')).toBe(true)
+    expect(referenced.has('orphan')).toBe(false)
+  })
+
+  it('conservatively keeps a candidate id textually present in a saved template', () => {
+    const state: DocState = { rootId: 'root', boards: {}, cards: {}, lines: {} }
+    const templates: Template[] = [
+      {
+        id: 't1',
+        name: 'T',
+        category: 'x',
+        description: '',
+        builtIn: false,
+        snapshot: {
+          rootBoardId: 'r',
+          boards: [],
+          cards: [
+            {
+              ...baseCard,
+              id: 'c1',
+              boardId: 'r',
+              trashed: false,
+              content: { kind: 'image', blobId: 'tmpl-blob', url: '', caption: '', naturalW: 0, naturalH: 0, pins: [] },
+            },
+          ],
+          lines: [],
+        },
+      },
+    ]
+    const referenced = computeReferencedBlobIds(state, templates, ['tmpl-blob', 'orphan'])
+    expect(referenced.has('tmpl-blob')).toBe(true)
+    expect(referenced.has('orphan')).toBe(false)
   })
 })

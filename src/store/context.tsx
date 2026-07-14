@@ -1,7 +1,7 @@
 import React from 'react'
 import { useStore } from 'zustand'
 import { AtlasState, AtlasStore, createAtlasStore } from './store'
-import { AtlasDb, bindAutosave, loadDoc, openDb } from './persist'
+import { AtlasDb, bindAutosave, bindBlobGc, loadDoc, openDb } from './persist'
 import { loadSettings } from './settings'
 
 interface AtlasContextValue {
@@ -48,6 +48,7 @@ export async function bootAtlas(): Promise<AtlasContextValue> {
     store.temporal.getState().clear()
   }
   bindAutosave(store, db)
+  bindBlobGc(store, db)
   // folder sync (optional, opt-in): reconnect a linked folder and pull newer remote data
   try {
     const { initFolderSync } = await import('./sync')

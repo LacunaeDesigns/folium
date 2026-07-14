@@ -11,3 +11,10 @@ dist
 
 # Playwright MCP browser-tooling debug logs
 .playwright-mcp/
+
+.claude/
+.checkpoint/
+.superpowers/
+.env
+.env.*
+docs/superpowers/

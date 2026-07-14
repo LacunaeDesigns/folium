@@ -75,9 +75,10 @@ Folium stores everything locally in IndexedDB by default. To carry boards betwee
 your own machines:
 
 1. Put a folder inside a service that syncs across your devices — OneDrive,
-   Dropbox, iCloud Drive, or Syncthing all work. (You can also point it at the
-   Ariadne vault, but that syncs on git's cadence and bloats history, so a
-   cloud-synced folder is smoother.)
+   Google Drive, Dropbox, iCloud Drive, or Syncthing all work; any folder that
+   gets mirrored to your other machines is fair game. (A git repo works too, but
+   it syncs on commit cadence and bloats history, so a cloud-synced folder is
+   smoother.)
 2. In Folium: **Settings (gear) → Cross-machine sync → Link a folder…** and pick
    that folder. Folium writes `folium-workspace.json` there and keeps it current
    on every change.
@@ -86,8 +87,9 @@ your own machines:
    or overwrite it with the local boards.
 
 Notes and limits:
-- Chrome/Edge only (uses the File System Access API). Other browsers keep working
-  locally; the sync section shows a note instead.
+- **Chrome/Edge only** — this feature relies on the File System Access API, which
+  those browsers implement and others don't. Other browsers keep working locally;
+  the sync section shows a note instead of the folder picker.
 - Designed for **sequential** use — edit on one machine, then another. Last save
   wins by timestamp. Editing the same board on two machines at once isn't safe
   (same as two browser tabs).
@@ -95,3 +97,31 @@ Notes and limits:
   in Settings.
 - The whole workspace (including images, base64-encoded) is written on each save,
   so very large image collections make a large file.
+
+## Bring your own Pexels key
+
+The image picker can search [Pexels](https://www.pexels.com/) stock photos. Get
+a free API key at [pexels.com/api](https://www.pexels.com/api/) and paste it into
+**Settings → Pexels**. The key is stored only in your browser's local IndexedDB —
+it's never synced (including via cross-machine sync) or sent anywhere except
+Pexels' own API. Without a key, everything else in Folium works as normal; you
+just won't see stock-photo search results.
+
+## Browser support
+
+Folium is built and tested against current **Chrome** and **Edge**. Other
+Chromium-based browsers should work for core features. Cross-machine sync
+specifically requires the File System Access API (Chrome/Edge only — see above).
+Firefox and Safari aren't actively tested and may be missing features.
+
+## License
+
+[PolyForm Noncommercial 1.0.0](LICENSE) — free for any noncommercial
+purpose; commercial use or redistribution requires a separate license from
+the author.
+
+## Contributing
+
+Bug fixes and small features are welcome as PRs. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for dev setup and what's expected before you
+open one.

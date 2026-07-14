@@ -13,23 +13,26 @@ interface WorldRects {
   get(cardId: string): Rect | null
 }
 
-/** Measure a card's world rect from the DOM (accounts for live drag transforms). */
-function makeRectSource(viewportEl: HTMLElement | null, view: BoardView): WorldRects {
+/** Measure a card's world rect from the DOM (accounts for live drag transforms).
+ *  Positions are measured RELATIVE to the transformed world origin (originEl, the
+ *  lines layer itself, which sits at world 0,0), so the pan cancels out — measuring
+ *  against the untransformed viewport minus view.pan drifts by a frame while panning. */
+function makeRectSource(originEl: Element | null, viewportEl: HTMLElement | null, zoom: number): WorldRects {
   const cache = new Map<string, Rect | null>()
+  const origin = originEl?.getBoundingClientRect()
   return {
     get(cardId: string) {
       if (cache.has(cardId)) return cache.get(cardId)!
       let rect: Rect | null = null
-      if (viewportEl) {
+      if (origin && viewportEl) {
         const el = viewportEl.querySelector(`[data-card-id="${cardId}"]`)
         if (el) {
           const r = (el as HTMLElement).getBoundingClientRect()
-          const vp = viewportEl.getBoundingClientRect()
           rect = {
-            x: (r.left - vp.left - view.pan.x) / view.zoom,
-            y: (r.top - vp.top - view.pan.y) / view.zoom,
-            w: r.width / view.zoom,
-            h: r.height / view.zoom,
+            x: (r.left - origin.left) / zoom,
+            y: (r.top - origin.top) / zoom,
+            w: r.width / zoom,
+            h: r.height / zoom,
           }
         }
       }
@@ -39,10 +42,38 @@ function makeRectSource(viewportEl: HTMLElement | null, view: BoardView): WorldR
   }
 }
 
+// Attach to the side the user dropped the end on (ax, ay normalized), at that
+// position along the edge — not the auto-picked facing edge.
+function edgeAnchor(r: Rect, ax: number, ay: number): Pt {
+  const px = r.x + ax * r.w
+  const py = r.y + ay * r.h
+  const dx = px - (r.x + r.w / 2)
+  const dy = py - (r.y + r.h / 2)
+  if (Math.abs(dx) * r.h > Math.abs(dy) * r.w) {
+    return { x: dx > 0 ? r.x + r.w : r.x, y: py }
+  }
+  return { x: px, y: dy > 0 ? r.y + r.h : r.y }
+}
+
+type Side = 'top' | 'right' | 'bottom' | 'left'
+
+// which side a hand-placed (ax, ay) anchor resolves to, and its position along
+// that side — mirrors edgeAnchor's own edge pick so the two stay in sync
+function sideOf(r: Rect, ax: number, ay: number): { side: Side; t: number } {
+  const px = r.x + ax * r.w
+  const py = r.y + ay * r.h
+  const dx = px - (r.x + r.w / 2)
+  const dy = py - (r.y + r.h / 2)
+  if (Math.abs(dx) * r.h > Math.abs(dy) * r.w) return { side: dx > 0 ? 'right' : 'left', t: ay }
+  return { side: dy > 0 ? 'bottom' : 'top', t: ax }
+}
+
 function endPoint(end: LineEnd, rects: WorldRects, toward: Pt): Pt | null {
   if ('cardId' in end) {
     const r = rects.get(end.cardId)
     if (!r) return null
+    // a hand-placed end sticks to the side it was dropped on
+    if (end.ax != null && end.ay != null) return edgeAnchor(r, end.ax, end.ay)
     const cx = r.x + r.w / 2
     const cy = r.y + r.h / 2
     const dx = toward.x - cx
@@ -119,6 +150,9 @@ export function LinesLayer({
     bodyDragRef.current = v
     setBodyDragState(v)
   }
+  // the SVG sits at world origin inside the transformed canvas-world; measuring
+  // against it (not the viewport + view.pan) keeps lines glued to cards while panning
+  const svgRef = React.useRef<SVGSVGElement>(null)
   // bump to re-measure after mount so lines attach to freshly-rendered cards
   const [, setTick] = React.useState(0)
   React.useEffect(() => {
@@ -126,14 +160,51 @@ export function LinesLayer({
     return () => cancelAnimationFrame(t)
   }, [lines.length, drag])
 
-  const rects = makeRectSource(viewportEl, view)
+  const rects = makeRectSource(svgRef.current, viewportEl, view.zoom)
+
+  // when several lines land on the same card edge (e.g. dragged from the same
+  // connect-handle), spread their anchors along that edge instead of stacking
+  // them on the exact same point
+  const fanT = new Map<string, number>() // `${lineId}:${which}` -> position along the edge
+  {
+    const groups = new Map<string, { lineId: string; which: 'from' | 'to' }[]>()
+    for (const line of lines) {
+      for (const which of ['from', 'to'] as const) {
+        const end = which === 'from' ? line.from : line.to
+        if (!('cardId' in end) || end.ax == null || end.ay == null) continue
+        const r = rects.get(end.cardId)
+        if (!r) continue
+        const { side } = sideOf(r, end.ax, end.ay)
+        const key = `${end.cardId}|${side}`
+        const arr = groups.get(key) ?? []
+        arr.push({ lineId: line.id, which })
+        groups.set(key, arr)
+      }
+    }
+    for (const arr of groups.values()) {
+      if (arr.length <= 1) continue
+      arr.sort((a, b) => (a.lineId + a.which).localeCompare(b.lineId + b.which))
+      const margin = 0.18
+      arr.forEach((item, i) => {
+        const t = margin + (1 - 2 * margin) * (i / (arr.length - 1))
+        fanT.set(`${item.lineId}:${item.which}`, t)
+      })
+    }
+  }
+  const withFan = (end: LineEnd, lineId: string, which: 'from' | 'to'): LineEnd => {
+    if (!('cardId' in end) || end.ax == null || end.ay == null) return end
+    const t = fanT.get(`${lineId}:${which}`)
+    if (t == null) return end
+    const r = rects.get(end.cardId)
+    if (!r) return end
+    const { side } = sideOf(r, end.ax, end.ay)
+    return side === 'top' || side === 'bottom' ? { ...end, ax: t } : { ...end, ay: t }
+  }
 
   const toWorld = (clientX: number, clientY: number): Pt => {
-    const vp = viewportEl!.getBoundingClientRect()
-    return {
-      x: (clientX - vp.left - view.pan.x) / view.zoom,
-      y: (clientY - vp.top - view.pan.y) / view.zoom,
-    }
+    const o = svgRef.current?.getBoundingClientRect()
+    if (!o) return { x: 0, y: 0 }
+    return { x: (clientX - o.left) / view.zoom, y: (clientY - o.top) / view.zoom }
   }
 
   const onEndPointerDown = (line: Line, which: 'from' | 'to') => (e: React.PointerEvent) => {
@@ -158,13 +229,23 @@ export function LinesLayer({
     if (!cur) return
     const { lineId, which } = cur
     setEndDrag(null)
-    // attach to a card if released over one
+    // attach to a card if released over one, remembering where on the card the
+    // end was dropped so it sticks to that side
     const stack = document.elementsFromPoint(e.clientX, e.clientY)
     let end: LineEnd = toWorld(e.clientX, e.clientY)
     for (const el of stack) {
       const shell = (el as HTMLElement).closest?.('[data-card-id]')
       if (shell) {
-        end = { cardId: shell.getAttribute('data-card-id')! }
+        const cardId = shell.getAttribute('data-card-id')!
+        const r = rects.get(cardId)
+        if (r && r.w && r.h) {
+          const w = toWorld(e.clientX, e.clientY)
+          const ax = Math.min(1, Math.max(0, (w.x - r.x) / r.w))
+          const ay = Math.min(1, Math.max(0, (w.y - r.y) / r.h))
+          end = { cardId, ax, ay }
+        } else {
+          end = { cardId }
+        }
         break
       }
     }
@@ -217,8 +298,16 @@ export function LinesLayer({
   const renderLine = (line: Line) => {
     const dragging = endDrag?.lineId === line.id ? endDrag : null
     const dragBody = bodyDrag?.lineId === line.id ? bodyDrag : null
-    const fromEnd: LineEnd = dragging?.which === 'from' ? dragging.pt : dragBody ? dragBody.from : line.from
-    const toEnd: LineEnd = dragging?.which === 'to' ? dragging.pt : dragBody ? dragBody.to : line.to
+    const fromEnd: LineEnd = dragging?.which === 'from'
+      ? dragging.pt
+      : dragBody
+        ? dragBody.from
+        : withFan(line.from, line.id, 'from')
+    const toEnd: LineEnd = dragging?.which === 'to'
+      ? dragging.pt
+      : dragBody
+        ? dragBody.to
+        : withFan(line.to, line.id, 'to')
 
     const cFrom = centerOf(fromEnd, rects)
     const cTo = centerOf(toEnd, rects)
@@ -287,18 +376,18 @@ export function LinesLayer({
           <foreignObject x={mid.x - 115} y={mid.y + 12} width={240} height={36} className="line-toolbar-fo">
             <div className="line-toolbar no-drag" onPointerDown={(e) => e.stopPropagation()}>
               <button
-                className={line.arrowEnd ? 'on' : ''}
-                title="Arrow at end"
-                onClick={() => store.getState().updateLine(line.id, { arrowEnd: !line.arrowEnd })}
-              >
-                →
-              </button>
-              <button
                 className={line.arrowStart ? 'on' : ''}
-                title="Arrow at start"
+                title="Arrowhead at start"
                 onClick={() => store.getState().updateLine(line.id, { arrowStart: !line.arrowStart })}
               >
-                ←
+                ⟵
+              </button>
+              <button
+                className={line.arrowEnd ? 'on' : ''}
+                title="Arrowhead at end"
+                onClick={() => store.getState().updateLine(line.id, { arrowEnd: !line.arrowEnd })}
+              >
+                ⟶
               </button>
               <button
                 title="Straight / curved"
@@ -384,7 +473,7 @@ export function LinesLayer({
   }
 
   return (
-    <svg className="lines-layer">
+    <svg className="lines-layer" ref={svgRef}>
       <defs>
         <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="context-stroke" strokeWidth="1.8" strokeLinecap="round" />

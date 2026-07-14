@@ -51,6 +51,48 @@ export function Canvas({ boardId }: { boardId: string }) {
     useUi.getState().setSelectedLine(id)
   }
 
+  // drag-to-connect from a card's edge handle: reuse the pending-line preview,
+  // finish by dropping onto another card (snapping to a nearby edge-center)
+  const connectFrom = React.useRef<LineEnd | null>(null)
+  const onConnectStart = (cardId: string, ax: number, ay: number) => {
+    const from: LineEnd = { cardId, ax, ay }
+    connectFrom.current = from
+    setPendingLineFrom(from)
+  }
+  const onConnectMove = (clientX: number, clientY: number) => {
+    if (!connectFrom.current) return
+    const local = clientToLocal(clientX, clientY)
+    setCursorWorld(screenToWorld(view, local.x, local.y))
+  }
+  const onConnectEnd = (clientX: number, clientY: number) => {
+    const from = connectFrom.current
+    connectFrom.current = null
+    setPendingLineFrom(null)
+    setCursorWorld(null)
+    if (!from || !('cardId' in from)) return
+    let shell: HTMLElement | null = null
+    for (const el of document.elementsFromPoint(clientX, clientY)) {
+      const s = (el as HTMLElement).closest?.('[data-card-id]') as HTMLElement | null
+      if (s) { shell = s; break }
+    }
+    if (!shell) return
+    const targetId = shell.getAttribute('data-card-id')!
+    if (targetId === from.cardId) return
+    const r = shell.getBoundingClientRect()
+    let ax = Math.min(1, Math.max(0, (clientX - r.left) / r.width))
+    let ay = Math.min(1, Math.max(0, (clientY - r.top) / r.height))
+    // snap the anchor to the nearest edge-center if the drop landed close to one
+    for (const [cxN, cyN] of [[0.5, 0], [0.5, 1], [0, 0.5], [1, 0.5]]) {
+      if (Math.hypot(clientX - (r.left + cxN * r.width), clientY - (r.top + cyN * r.height)) < 26) {
+        ax = cxN
+        ay = cyN
+        break
+      }
+    }
+    const id = store.getState().addLine(boardId, from, { cardId: targetId, ax, ay })
+    useUi.getState().setSelectedLine(id)
+  }
+
   const panGesture = React.useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
   const marqueeGesture = React.useRef<{ startX: number; startY: number } | null>(null)
   // ref mirror of `marquee` — pointer events can all land between renders
@@ -495,6 +537,9 @@ export function Canvas({ boardId }: { boardId: string }) {
               if (!pendingLineFrom) setPendingLineFrom({ cardId })
               else completeLine({ cardId })
             }}
+            onConnectStart={onConnectStart}
+            onConnectMove={onConnectMove}
+            onConnectEnd={onConnectEnd}
           />
         ))}
       </div>

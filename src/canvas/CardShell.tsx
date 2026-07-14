@@ -21,17 +21,40 @@ interface CardShellProps {
   /** notify parent a card edge was targeted by the line tool */
   lineToolActive?: boolean
   onLineAnchor?: (cardId: string) => void
+  /** drag-to-connect from an edge handle (ax, ay = normalized handle position) */
+  onConnectStart?: (cardId: string, ax: number, ay: number) => void
+  onConnectMove?: (clientX: number, clientY: number) => void
+  onConnectEnd?: (clientX: number, clientY: number) => void
 }
 
 const DRAG_THRESHOLD = 8
 
-export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolActive, onLineAnchor }: CardShellProps) {
+// edge-center connection handles: [css class, ax, ay]
+const CONNECT_HANDLES: [string, number, number][] = [
+  ['ch-top', 0.5, 0],
+  ['ch-right', 1, 0.5],
+  ['ch-bottom', 0.5, 1],
+  ['ch-left', 0, 0.5],
+]
+
+// boards connect as a single unit — one handle at the centre instead of 4 edge ones
+const BOARD_CONNECT_HANDLES: [string, number, number][] = [['ch-center', 0.5, 0.5]]
+
+// four resize corners: [css class, dirX, dirY]
+const RESIZE_CORNERS: [string, number, number][] = [
+  ['rc-tl', -1, -1],
+  ['rc-tr', 1, -1],
+  ['rc-bl', -1, 1],
+  ['rc-br', 1, 1],
+]
+
+export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolActive, onLineAnchor, onConnectStart, onConnectMove, onConnectEnd }: CardShellProps) {
   const store = useAtlasStore()
   const selection = useUi((s) => s.selection)
   const isSelected = selection.includes(card.id)
   const isDragging = !!drag && drag.ids.includes(card.id)
 
-  const [resizePreview, setResizePreview] = React.useState<{ w: number; h?: number } | null>(null)
+  const [resizePreview, setResizePreview] = React.useState<{ w: number; h?: number; x: number; y: number } | null>(null)
 
   const gesture = React.useRef<{
     startX: number
@@ -46,6 +69,9 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     if (e.button === 1) return // middle = pan, let canvas handle
     e.stopPropagation()
     if (e.button === 2) {
+      // right-clicking inside an editable field should open the browser's native
+      // menu (spellcheck suggestions, cut/copy/paste), not the card menu
+      if ((e.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) return
       if (!useUi.getState().selection.includes(card.id)) useUi.getState().setSelection([card.id])
       onContextMenu(card.id, e.clientX, e.clientY)
       return
@@ -131,38 +157,72 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     }
   }
 
-  // --- resize ---
+  // --- drag-to-connect from an edge handle ---
+  const connecting = React.useRef(false)
+  const onHandleDown = (ax: number, ay: number) => (e: React.PointerEvent) => {
+    e.stopPropagation()
+    if (e.button !== 0) return
+    safeCapture(e.currentTarget as HTMLElement, e.pointerId)
+    connecting.current = true
+    onConnectStart?.(card.id, ax, ay)
+  }
+  const onHandleMove = (e: React.PointerEvent) => {
+    if (connecting.current) onConnectMove?.(e.clientX, e.clientY)
+  }
+  const onHandleUp = (e: React.PointerEvent) => {
+    if (!connecting.current) return
+    connecting.current = false
+    onConnectEnd?.(e.clientX, e.clientY)
+  }
+
+  // --- resize --- dirX/dirY: which edge each handle drives (-1 left/top, +1
+  // right/bottom, 0 fixed); the opposite edge stays anchored, so a corner drag
+  // resizes diagonally and repositions the card as needed.
   const resizeGesture = React.useRef<{
     startX: number
     startY: number
     startW: number
     startH?: number
-    corner: boolean
+    startCardX: number
+    startCardY: number
+    dirX: number
+    dirY: number
   } | null>(null)
 
-  const onResizeDown = (corner: boolean) => (e: React.PointerEvent) => {
+  const onResizeDown = (dirX: number, dirY: number) => (e: React.PointerEvent) => {
     e.stopPropagation()
     if (e.button !== 0) return
-    const el = e.currentTarget as HTMLElement
-    safeCapture(el, e.pointerId)
+    safeCapture(e.currentTarget as HTMLElement, e.pointerId)
     resizeGesture.current = {
       startX: e.clientX,
       startY: e.clientY,
       startW: card.w,
       startH: card.h,
-      corner,
+      startCardX: card.x,
+      startCardY: card.y,
+      dirX,
+      dirY,
     }
   }
 
   const onResizeMove = (e: React.PointerEvent) => {
     const g = resizeGesture.current
     if (!g) return
-    const w = Math.max(120, Math.round(g.startW + (e.clientX - g.startX) / zoom))
-    const h =
-      g.corner && g.startH !== undefined
-        ? Math.max(60, Math.round(g.startH + (e.clientY - g.startY) / zoom))
-        : g.startH
-    setResizePreview({ w, h })
+    const dx = (e.clientX - g.startX) / zoom
+    const dy = (e.clientY - g.startY) / zoom
+    let w = g.startW
+    let h = g.startH
+    let x = g.startCardX
+    let y = g.startCardY
+    if (g.dirX !== 0) {
+      w = Math.max(120, Math.round(g.startW + g.dirX * dx))
+      if (g.dirX < 0) x = Math.round(g.startCardX + (g.startW - w)) // right edge anchored
+    }
+    if (g.dirY !== 0 && g.startH !== undefined) {
+      h = Math.max(60, Math.round(g.startH + g.dirY * dy))
+      if (g.dirY < 0) y = Math.round(g.startCardY + (g.startH - h)) // bottom edge anchored
+    }
+    setResizePreview({ w, h, x, y })
   }
 
   const onResizeUp = () => {
@@ -170,7 +230,7 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     resizeGesture.current = null
     if (!g) return
     setResizePreview((preview) => {
-      if (preview) store.getState().resizeCard(card.id, preview.w, preview.h)
+      if (preview) store.getState().updateCard(card.id, { x: preview.x, y: preview.y, w: preview.w, h: preview.h })
       return null
     })
   }
@@ -180,8 +240,8 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
   const h = resizePreview?.h ?? card.h
 
   const style: React.CSSProperties = {
-    left: card.x,
-    top: card.y,
+    left: resizePreview?.x ?? card.x,
+    top: resizePreview?.y ?? card.y,
     width: w,
     height: h,
     zIndex: card.z,
@@ -202,27 +262,42 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onContextMenu={(e) => e.preventDefault()}
+      onContextMenu={(e) => {
+        // allow the native menu (spellcheck) inside editable fields; suppress it
+        // elsewhere so the card's own context menu is the only one that shows
+        if (!(e.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) e.preventDefault()
+      }}
+      // cards move via pointer events, so suppress native HTML5 drag (dragging
+      // selected text or an image would otherwise show a ghost that follows the
+      // cursor); the rich-text editor keeps its own drag for node reordering
+      onDragStart={(e) => {
+        if (!(e.target as HTMLElement).closest?.('.ProseMirror')) e.preventDefault()
+      }}
     >
       <Body card={card} />
-      {isSelected && selection.length === 1 && (
-        <>
+      {isSelected &&
+        selection.length === 1 &&
+        card.type !== 'board' &&
+        RESIZE_CORNERS.map(([cls, dirX, dirY]) => (
           <div
-            className="resize-handle edge"
-            onPointerDown={onResizeDown(false)}
+            key={cls}
+            className={'resize-handle corner ' + cls}
+            onPointerDown={onResizeDown(dirX, dirY)}
             onPointerMove={onResizeMove}
             onPointerUp={onResizeUp}
           />
-          {card.h !== undefined && (
-            <div
-              className="resize-handle corner"
-              onPointerDown={onResizeDown(true)}
-              onPointerMove={onResizeMove}
-              onPointerUp={onResizeUp}
-            />
-          )}
-        </>
-      )}
+        ))}
+      {!lineToolActive &&
+        (card.type === 'board' ? BOARD_CONNECT_HANDLES : CONNECT_HANDLES).map(([cls, ax, ay]) => (
+          <div
+            key={cls}
+            className={'connect-handle ' + cls}
+            title="Drag to connect"
+            onPointerDown={onHandleDown(ax, ay)}
+            onPointerMove={onHandleMove}
+            onPointerUp={onHandleUp}
+          />
+        ))}
     </div>
   )
 }

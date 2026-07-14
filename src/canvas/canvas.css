@@ -72,24 +72,45 @@
   z-index: 5;
 }
 
-.resize-handle.edge {
-  right: -5px;
-  top: 0;
-  bottom: 0;
-  width: 10px;
-  cursor: ew-resize;
-}
-
 .resize-handle.corner {
-  right: -6px;
-  bottom: -6px;
-  width: 14px;
-  height: 14px;
-  cursor: nwse-resize;
+  width: 13px;
+  height: 13px;
   background: var(--bg-chrome);
   border: 1.5px solid var(--selection);
   border-radius: 3px;
+  z-index: 7;
 }
+.resize-handle.rc-tl { left: -6px; top: -6px; cursor: nwse-resize; }
+.resize-handle.rc-tr { right: -6px; top: -6px; cursor: nesw-resize; }
+.resize-handle.rc-bl { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.resize-handle.rc-br { right: -6px; bottom: -6px; cursor: nwse-resize; }
+
+/* drag-to-connect handles at each edge centre; only interactive on hover */
+.connect-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bg-chrome);
+  border: 2px solid var(--accent);
+  opacity: 0;
+  transition: opacity 0.12s;
+  pointer-events: none;
+  cursor: crosshair;
+  z-index: 6;
+}
+.card-shell:hover .connect-handle {
+  opacity: 1;
+  pointer-events: all;
+}
+.connect-handle:hover {
+  background: var(--accent);
+}
+.ch-top { left: 50%; top: 0; transform: translate(-50%, -50%); }
+.ch-bottom { left: 50%; top: 100%; transform: translate(-50%, -50%); }
+.ch-left { left: 0; top: 50%; transform: translate(-50%, -50%); }
+.ch-right { left: 100%; top: 50%; transform: translate(-50%, -50%); }
+.ch-center { left: 50%; top: 50%; transform: translate(-50%, -50%); }
 
 .marquee {
   position: absolute;

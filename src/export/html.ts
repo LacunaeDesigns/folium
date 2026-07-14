@@ -197,6 +197,11 @@ function anchor(r, other){
   if(Math.abs(dx)*r.h > Math.abs(dy)*r.w) return {x: dx>0?r.x+r.w:r.x, y:cy};
   return {x:cx, y: dy>0?r.y+r.h:r.y};
 }
+function edgeAnchor(r, ax, ay){
+  var px=r.x+ax*r.w, py=r.y+ay*r.h, dx=px-(r.x+r.w/2), dy=py-(r.y+r.h/2);
+  if(Math.abs(dx)*r.h > Math.abs(dy)*r.w) return {x: dx>0?r.x+r.w:r.x, y:py};
+  return {x:px, y: dy>0?r.y+r.h:r.y};
+}
 function render(){
   var board = boards[current];
   document.getElementById('btitle').textContent = board.title;
@@ -235,7 +240,7 @@ function render(){
     var lines = DATA.lines.filter(function(l){ return l.boardId===current; });
     svg.innerHTML = '<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="var(--soft)" stroke-width="1.8"/></marker></defs>' +
       lines.map(function(l){
-        function pt(end, other){ if(end.cardId){ var r=rects[end.cardId]; if(!r) return null; return other?anchor(r,other):{x:r.x+r.w/2,y:r.y+r.h/2}; } return {x:end.x-offX,y:end.y-offY}; }
+        function pt(end, other){ if(end.cardId){ var r=rects[end.cardId]; if(!r) return null; if(!other) return {x:r.x+r.w/2,y:r.y+r.h/2}; if(end.ax!=null&&end.ay!=null) return edgeAnchor(r,end.ax,end.ay); return anchor(r,other); } return {x:end.x-offX,y:end.y-offY}; }
         var ca=pt(l.from,null), cb=pt(l.to,null); if(!ca||!cb) return '';
         var a=pt(l.from,cb), b=pt(l.to,ca);
         var mx=(a.x+b.x)/2, my=(a.y+b.y)/2, cxp=mx-(b.y-a.y)*l.curve, cyp=my+(b.x-a.x)*l.curve;

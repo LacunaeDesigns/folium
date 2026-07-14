@@ -180,7 +180,10 @@ export interface Card {
   content: CardContent
 }
 
-export type LineEnd = { cardId: string } | { x: number; y: number }
+// A card-attached end may carry a normalized drop anchor (ax, ay in 0..1): the
+// spot the user dragged the end onto, so it attaches to that side instead of the
+// auto-picked facing edge. Absent ax/ay → auto (line-tool default).
+export type LineEnd = { cardId: string; ax?: number; ay?: number } | { x: number; y: number }
 
 export interface Line {
   id: string

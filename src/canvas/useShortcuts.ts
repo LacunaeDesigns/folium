@@ -44,7 +44,7 @@ export function useShortcuts() {
 
       if (isTyping()) return
 
-      if (e.key === 'Delete' || e.key === 'Backspace') {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !e.repeat) {
         if (ui.selectedLine) {
           e.preventDefault()
           store.getState().deleteLine(ui.selectedLine)

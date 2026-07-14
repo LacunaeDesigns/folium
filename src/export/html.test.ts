@@ -42,6 +42,22 @@ function makeBundle(lines: Line[]): ExportBundle {
   }
 }
 
+describe('buildHtmlExport board background', () => {
+  it('sets data-bg from the board and embeds the matching pattern CSS', () => {
+    const bundle = makeBundle([])
+    bundle.boards[0] = { ...bundle.boards[0], background: 'ruled' }
+    const html = buildHtmlExport(bundle)
+
+    expect(html).toContain("document.body.setAttribute('data-bg', board.background||'default')")
+    expect(html).toContain('[data-bg=ruled] #viewport')
+  })
+
+  it('defaults to "default" when the board has no background set', () => {
+    const html = buildHtmlExport(makeBundle([]))
+    expect(html).toContain("document.body.setAttribute('data-bg', board.background||'default')")
+  })
+})
+
 describe('buildHtmlExport line rendering', () => {
   it('mirrors the live renderer: per-line color/width/dash, arrowStart, and color-keyed markers', () => {
     const line: Line = {

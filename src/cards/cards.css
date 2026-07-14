@@ -573,6 +573,16 @@
   background: var(--accent-soft);
   color: var(--accent);
 }
+.picker-bg {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+}
+.picker-bg.on {
+  outline: 2px solid var(--selection);
+  outline-offset: 1px;
+}
 .picker-label {
   font-size: 11px;
   color: var(--ink-faint);

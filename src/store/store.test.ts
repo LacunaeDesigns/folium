@@ -265,6 +265,15 @@ describe('clipboard copy/paste', () => {
   })
 })
 
+describe('board meta', () => {
+  it('setBoardMeta sets and clears a board background', () => {
+    s().setBoardMeta(s().rootId, { background: 'sage' })
+    expect(s().boards[s().rootId].background).toBe('sage')
+    s().setBoardMeta(s().rootId, { background: undefined })
+    expect(s().boards[s().rootId].background).toBeUndefined()
+  })
+})
+
 describe('nested boards', () => {
   it('createBoard makes a child board plus a board card on the parent', () => {
     const { boardId, cardId } = s().createBoard(s().rootId, 'Work')

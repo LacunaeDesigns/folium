@@ -83,6 +83,43 @@ textarea {
   background-image: none;
 }
 
+/* Wave 2: per-board canvas backgrounds. data-board-bg carries Board.background
+   (unset = default paper above). The tints just swap the paper/dot colors, so
+   the no-grid toggle still hides their dots like it does on the default; the
+   three patterns are a deliberate per-board choice and ignore that toggle —
+   picking "Ruled" shouldn't vanish when the dot-grid preference is off. */
+.app-canvas[data-board-bg='sage'] { --bg-canvas: #eef1e8; --bg-canvas-dot: #dbe3d1; }
+.app-canvas[data-board-bg='sand'] { --bg-canvas: #f0e6d3; --bg-canvas-dot: #ddcfae; }
+.app-canvas[data-board-bg='blush'] { --bg-canvas: #f5e8e2; --bg-canvas-dot: #e3cec4; }
+.app-canvas[data-board-bg='slate'] { --bg-canvas: #ecedf0; --bg-canvas-dot: #d6d9de; }
+[data-board-theme='dark'] .app-canvas[data-board-bg='sage'],
+:root[data-theme='dark'] .app-canvas[data-board-bg='sage'] { --bg-canvas: #1e2620; --bg-canvas-dot: #303c2c; }
+[data-board-theme='dark'] .app-canvas[data-board-bg='sand'],
+:root[data-theme='dark'] .app-canvas[data-board-bg='sand'] { --bg-canvas: #2a2416; --bg-canvas-dot: #3f3620; }
+[data-board-theme='dark'] .app-canvas[data-board-bg='blush'],
+:root[data-theme='dark'] .app-canvas[data-board-bg='blush'] { --bg-canvas: #2c2019; --bg-canvas-dot: #402d23; }
+[data-board-theme='dark'] .app-canvas[data-board-bg='slate'],
+:root[data-theme='dark'] .app-canvas[data-board-bg='slate'] { --bg-canvas: #22242b; --bg-canvas-dot: #363944; }
+
+.app-canvas[data-board-bg='dots'] {
+  background-image: radial-gradient(var(--bg-canvas-dot) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+.app-canvas[data-board-bg='ruled'] {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 27px,
+    var(--bg-canvas-dot) 27px,
+    var(--bg-canvas-dot) 28px
+  );
+}
+.app-canvas[data-board-bg='grid'] {
+  background-image: linear-gradient(to right, var(--bg-canvas-dot) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--bg-canvas-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
 /* generic menu / popover */
 .menu-pop {
   position: absolute;

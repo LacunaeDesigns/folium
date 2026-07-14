@@ -339,7 +339,10 @@ export default function App() {
           onOpenPhotos={() => setPhotosOpen(true)}
         />
       </nav>
-      <main className={'app-canvas' + (gridShown ? '' : ' no-grid')}>
+      <main
+        className={'app-canvas' + (gridShown ? '' : ' no-grid')}
+        data-board-bg={board.background ?? ''}
+      >
         <Canvas boardId={currentBoardId} />
         <UnsortedTray boardId={currentBoardId} />
         {trashOpen && <TrashView />}

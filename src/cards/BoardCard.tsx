@@ -1,6 +1,7 @@
 import React from 'react'
 import { CardBodyProps } from './registry'
 import { BoardCardContent, BOARD_COLORS } from '../model/types'
+import { BOARD_BACKGROUNDS } from '../model/backgrounds'
 import { useAtlas, useAtlasStore } from '../store/context'
 import { boardCardCount, boardTodoStats } from '../store/selectors'
 import { useUi } from '../store/uiStore'
@@ -88,6 +89,19 @@ export function BoardCard({ card, readOnly }: CardBodyProps) {
               >
                 <Icon name={ic} size={15} />
               </button>
+            ))}
+          </div>
+          <div className="picker-row">
+            {BOARD_BACKGROUNDS.map((bg) => (
+              <button
+                key={bg.id}
+                className={'picker-bg' + ((board.background ?? 'default') === bg.id ? ' on' : '')}
+                style={{ background: bg.swatch }}
+                title={bg.label}
+                onClick={() =>
+                  store.getState().setBoardMeta(board.id, { background: bg.id === 'default' ? undefined : bg.id })
+                }
+              />
             ))}
           </div>
         </div>

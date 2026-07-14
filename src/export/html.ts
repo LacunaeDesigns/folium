@@ -18,11 +18,24 @@ export function buildHtmlExport(bundle: ExportBundle, extraScript = ''): string 
 <title>${escapeHtml(title)} — Folium</title>
 <style>
 :root{
-  --bg:#f3eee3;--chrome:#fbf8f0;--border:#e2dac6;--ink:#2c2a23;--soft:#6e6857;--faint:#a49b84;
+  --bg:#f3eee3;--bg-dot:#d9d0bb;--chrome:#fbf8f0;--border:#e2dac6;--ink:#2c2a23;--soft:#6e6857;--faint:#a49b84;
   --accent:#2f6d5a;--orange:#b4622d;--yellow:#f5e3a3;--shadow:0 1px 2px rgba(74,64,41,.1),0 2px 6px rgba(74,64,41,.08);
   --c-white:#fffdf7;--c-gray:#ede8da;--c-yellow:#f5e3a3;--c-orange:#f2c99a;--c-red:#eeafa2;--c-green:#c8dfc0;--c-blue:#becfdd;--c-purple:#d4c4dd;--c-dark:#3a372e;
 }
-[data-theme=dark]{--bg:#26231c;--chrome:#1c1a15;--border:#383327;--ink:#e9e4d6;--soft:#a59d88;--faint:#6f6851;--accent:#5aa88e;--orange:#d08a53;--c-white:#2e2b23;--c-gray:#38342a}
+[data-theme=dark]{--bg:#26231c;--bg-dot:#3d382b;--chrome:#1c1a15;--border:#383327;--ink:#e9e4d6;--soft:#a59d88;--faint:#6f6851;--accent:#5aa88e;--orange:#d08a53;--c-white:#2e2b23;--c-gray:#38342a}
+/* Wave 2: per-board canvas backgrounds — mirrors .app-canvas[data-board-bg]
+   in src/styles/global.css. data-bg is set on <body> from board.background. */
+[data-bg=sage]{--bg:#eef1e8;--bg-dot:#dbe3d1}
+[data-bg=sand]{--bg:#f0e6d3;--bg-dot:#ddcfae}
+[data-bg=blush]{--bg:#f5e8e2;--bg-dot:#e3cec4}
+[data-bg=slate]{--bg:#ecedf0;--bg-dot:#d6d9de}
+[data-theme=dark][data-bg=sage]{--bg:#1e2620;--bg-dot:#303c2c}
+[data-theme=dark][data-bg=sand]{--bg:#2a2416;--bg-dot:#3f3620}
+[data-theme=dark][data-bg=blush]{--bg:#2c2019;--bg-dot:#402d23}
+[data-theme=dark][data-bg=slate]{--bg:#22242b;--bg-dot:#363944}
+[data-bg=dots] #viewport{background-image:radial-gradient(var(--bg-dot) 1.2px,transparent 1.2px);background-size:24px 24px}
+[data-bg=ruled] #viewport{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,var(--bg-dot) 27px,var(--bg-dot) 28px)}
+[data-bg=grid] #viewport{background-image:linear-gradient(to right,var(--bg-dot) 1px,transparent 1px),linear-gradient(to bottom,var(--bg-dot) 1px,transparent 1px);background-size:24px 24px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Karla,-apple-system,'Segoe UI',sans-serif;font-size:14px;color:var(--ink);background:var(--bg)}
 header{position:sticky;top:0;background:var(--chrome);border-bottom:1px solid var(--border);padding:10px 18px;z-index:50;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -219,6 +232,7 @@ function render(){
   var board = boards[current];
   document.getElementById('btitle').textContent = board.title;
   document.body.setAttribute('data-theme', board.theme==='dark'?'dark':'light');
+  document.body.setAttribute('data-bg', board.background||'default');
   document.getElementById('stamp').textContent = 'Exported ' + new Date(DATA.exportedAt).toLocaleDateString() + ' · Folium';
   // breadcrumbs within the export
   var trail=[]; var cur=board;

@@ -12,6 +12,8 @@ export interface Board {
   createdAt: number
   /** per-board override for the canvas dot grid; undefined = follow the global preference */
   gridHidden?: boolean
+  /** per-board canvas background id (see model/backgrounds.ts); undefined = default paper */
+  background?: string
 }
 
 export type CardType =

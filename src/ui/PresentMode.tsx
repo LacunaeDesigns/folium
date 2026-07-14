@@ -1,10 +1,26 @@
 import React from 'react'
 import { useFolium } from '../store/context'
 import { boardCards } from '../store/selectors'
-import { useUi } from '../store/uiStore'
+import { useUi, BoardView } from '../store/uiStore'
 import { getCardBody } from '../cards/registry'
 import { Icon } from './Icons'
 import './panels.css'
+
+export function frameCard(
+  card: { x: number; y: number; w: number; h?: number },
+  vw: number,
+  vh: number,
+): BoardView {
+  const cardH = card.h ?? Math.min(500, Math.max(160, card.w * 0.8))
+  const zoom = Math.min((vw * 0.7) / card.w, (vh * 0.7) / cardH, 1.6)
+  return {
+    zoom,
+    pan: {
+      x: vw / 2 - (card.x + card.w / 2) * zoom,
+      y: vh / 2 - (card.y + cardH / 2) * zoom,
+    },
+  }
+}
 
 export function PresentMode({ boardId }: { boardId: string }) {
   const cards = useFolium((s) =>
@@ -14,6 +30,9 @@ export function PresentMode({ boardId }: { boardId: string }) {
   const setPresentationMode = useUi((s) => s.setPresentationMode)
   const [index, setIndex] = React.useState(0)
   const stageRef = React.useRef<HTMLDivElement>(null)
+  const cardsRef = React.useRef(cards)
+  cardsRef.current = cards
+  const [view, setViewLocal] = React.useState<BoardView>({ zoom: 1, pan: { x: 0, y: 0 } })
 
   const exit = React.useCallback(() => setPresentationMode(false), [setPresentationMode])
 
@@ -32,6 +51,14 @@ export function PresentMode({ boardId }: { boardId: string }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [cards.length, exit])
 
+  React.useLayoutEffect(() => {
+    const stage = stageRef.current
+    const list = cardsRef.current
+    if (!stage || list.length === 0) return
+    const card = list[Math.min(index, list.length - 1)]
+    setViewLocal(frameCard(card, stage.clientWidth, stage.clientHeight))
+  }, [index])
+
   if (cards.length === 0) {
     return (
       <div className="present-overlay" data-board-theme={appTheme}>
@@ -43,21 +70,12 @@ export function PresentMode({ boardId }: { boardId: string }) {
     )
   }
 
-  const card = cards[Math.min(index, cards.length - 1)]
-  const stage = stageRef.current
-  const vw = stage?.clientWidth ?? window.innerWidth
-  const vh = stage?.clientHeight ?? window.innerHeight
-  const cardH = card.h ?? Math.min(500, Math.max(160, card.w * 0.8))
-  const scale = Math.min((vw * 0.7) / card.w, (vh * 0.7) / cardH, 1.6)
-  const tx = vw / 2 - (card.x + card.w / 2) * scale
-  const ty = vh / 2 - (card.y + cardH / 2) * scale
-
   return (
     <div className="present-overlay" data-board-theme={appTheme}>
       <div className="present-stage" ref={stageRef}>
         <div
           className="present-world"
-          style={{ transform: `translate(${tx}px, ${ty}px) scale(${scale})` }}
+          style={{ transform: `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})` }}
         >
           {cards.map((c, i) => {
             const Body = getCardBody(c.type)

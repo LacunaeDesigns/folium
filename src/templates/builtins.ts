@@ -1,5 +1,6 @@
 import { Template } from '../model/types'
 import { buildTemplate, noteDoc, todoItems } from './builder'
+import { EXTRA_TEMPLATES } from './builtins-extra'
 
 const storyboard = buildTemplate(
   {
@@ -321,4 +322,5 @@ export const BUILTIN_TEMPLATES: Template[] = [
   moodboard,
   projectPlan,
   brainstorm,
+  ...EXTRA_TEMPLATES,
 ]

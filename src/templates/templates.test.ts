@@ -14,6 +14,20 @@ describe('built-in templates', () => {
       'Moodboard',
       'Project Plan',
       'Brainstorm',
+      'Literature Review',
+      'Essay Outline',
+      'Story & Plot Board',
+      'Weekly Planner',
+      'Kanban Sprint',
+      'Meeting Notes Hub',
+      'Goal Tracker',
+      'KPI Dashboard',
+      'Decision Matrix',
+      'Sprint Retrospective',
+      'Trip Planner',
+      'Event Planner',
+      'Recipe Collection',
+      'Reading List',
     ]) {
       expect(names).toContain(required)
     }

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Card } from '../model/types'
 import { useAtlasStore } from '../store/context'
-import { useUi } from '../store/uiStore'
+import { SnapGuides, useUi } from '../store/uiStore'
 import { getCardBody } from '../cards/registry'
 import { safeCapture } from './coords'
 import { resolveCardDrop } from './dropTarget'
@@ -10,6 +10,65 @@ export interface DragState {
   ids: string[]
   dx: number
   dy: number
+}
+
+interface WRect {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+/** how close (in screen px) a card edge must be to another card's edge to snap */
+const SNAP_SCREEN_PX = 6
+
+/** Snap a dragged bounding box against static card rects: if any edge/center of
+ *  the moved bbox lands within threshold of a target's edge/center, nudge dx/dy
+ *  so they coincide, and describe guide lines (world coords) for the overlay. */
+function snapDelta(
+  bbox: WRect,
+  targets: WRect[],
+  dx: number,
+  dy: number,
+  th: number,
+): { dx: number; dy: number; guides: SnapGuides | null } {
+  const mx = bbox.x + dx
+  const my = bbox.y + dy
+  const candX = [mx, mx + bbox.w / 2, mx + bbox.w]
+  const candY = [my, my + bbox.h / 2, my + bbox.h]
+  let bestX: { adj: number; at: number; t: WRect } | null = null
+  let bestY: { adj: number; at: number; t: WRect } | null = null
+  for (const t of targets) {
+    for (const tx of [t.x, t.x + t.w / 2, t.x + t.w]) {
+      for (const cx of candX) {
+        const d = tx - cx
+        if (Math.abs(d) <= th && (!bestX || Math.abs(d) < Math.abs(bestX.adj))) bestX = { adj: d, at: tx, t }
+      }
+    }
+    for (const ty of [t.y, t.y + t.h / 2, t.y + t.h]) {
+      for (const cy of candY) {
+        const d = ty - cy
+        if (Math.abs(d) <= th && (!bestY || Math.abs(d) < Math.abs(bestY.adj))) bestY = { adj: d, at: ty, t }
+      }
+    }
+  }
+  const sdx = dx + (bestX?.adj ?? 0)
+  const sdy = dy + (bestY?.adj ?? 0)
+  if (!bestX && !bestY) return { dx, dy, guides: null }
+  const fx = bbox.x + sdx
+  const fy = bbox.y + sdy
+  return {
+    dx: sdx,
+    dy: sdy,
+    guides: {
+      v: bestX
+        ? { x: bestX.at, y1: Math.min(fy, bestX.t.y), y2: Math.max(fy + bbox.h, bestX.t.y + bestX.t.h) }
+        : null,
+      h: bestY
+        ? { y: bestY.at, x1: Math.min(fx, bestY.t.x), x2: Math.max(fx + bbox.w, bestY.t.x + bestY.t.w) }
+        : null,
+    },
+  }
 }
 
 interface CardShellProps {
@@ -48,10 +107,11 @@ const RESIZE_CORNERS: [string, number, number][] = [
   ['rc-br', 1, 1],
 ]
 
-export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolActive, onLineAnchor, onConnectStart, onConnectMove, onConnectEnd }: CardShellProps) {
+export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolActive, onLineAnchor, onConnectStart, onConnectMove, onConnectEnd }: CardShellProps) {
   const store = useAtlasStore()
-  const selection = useUi((s) => s.selection)
-  const isSelected = selection.includes(card.id)
+  // per-card boolean selectors so selecting card A doesn't re-render card B
+  const isSelected = useUi((s) => s.selection.includes(card.id))
+  const isSolo = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
   const isDragging = !!drag && drag.ids.includes(card.id)
 
   const [resizePreview, setResizePreview] = React.useState<{ w: number; h?: number; x: number; y: number } | null>(null)
@@ -63,6 +123,13 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
     dragging: boolean
     /** Alt held at drag start — duplicate the selection and drag the copies */
     alt: boolean
+    /** snap candidates + dragged bbox, measured once when the drag starts */
+    targets?: WRect[]
+    bbox?: WRect
+    /** last applied (possibly snapped) deltas — the commit must use these, not
+     *  raw pointer deltas, or the card would jump off its snapped position */
+    lastDx?: number
+    lastDy?: number
   } | null>(null)
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -108,8 +175,11 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
   // shared by pointerup and by the "button already released" fallback below —
   // finishes the drag exactly as a normal release would
   const finishDrag = (g: NonNullable<typeof gesture.current>, clientX: number, clientY: number) => {
-    const dx = (clientX - g.startX) / zoom
-    const dy = (clientY - g.startY) / zoom
+    // commit the last previewed (snapped) deltas so the drop lands exactly
+    // where the preview showed it
+    const dx = g.lastDx ?? (clientX - g.startX) / zoom
+    const dy = g.lastDy ?? (clientY - g.startY) / zoom
+    useUi.getState().setSnapGuides(null)
     setDrag(null)
     // dropping onto a column moves the cards into it (columns themselves can't nest)
     const s = store.getState()
@@ -142,8 +212,8 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
       else if (!e.shiftKey) useUi.getState().setSelection([card.id])
       return
     }
-    const dx = (e.clientX - g.startX) / zoom
-    const dy = (e.clientY - g.startY) / zoom
+    let dx = (e.clientX - g.startX) / zoom
+    let dy = (e.clientY - g.startY) / zoom
     if (!g.dragging) {
       if (Math.hypot(e.clientX - g.startX, e.clientY - g.startY) < DRAG_THRESHOLD) return
       g.dragging = true
@@ -159,7 +229,46 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
         }
         g.alt = false
       }
+      // measure snap candidates once per drag: every other top-level card on
+      // the canvas (world coords), plus the dragged selection's bounding box
+      const worldEl = (e.currentTarget as HTMLElement).closest('.canvas-world') as HTMLElement | null
+      if (worldEl) {
+        const o = worldEl.getBoundingClientRect()
+        const toW = (r: DOMRect): WRect => ({
+          x: (r.left - o.left) / zoom,
+          y: (r.top - o.top) / zoom,
+          w: r.width / zoom,
+          h: r.height / zoom,
+        })
+        const targets: WRect[] = []
+        let bx1 = Infinity, by1 = Infinity, bx2 = -Infinity, by2 = -Infinity
+        for (const el of Array.from(worldEl.querySelectorAll<HTMLElement>(':scope > .card-shell[data-card-id]'))) {
+          const r = toW(el.getBoundingClientRect())
+          if (g.ids.includes(el.getAttribute('data-card-id')!)) {
+            bx1 = Math.min(bx1, r.x)
+            by1 = Math.min(by1, r.y)
+            bx2 = Math.max(bx2, r.x + r.w)
+            by2 = Math.max(by2, r.y + r.h)
+            continue
+          }
+          if (el.dataset.type === 'ink') continue // full-canvas overlay, not a snap target
+          targets.push(r)
+        }
+        if (bx1 < Infinity) g.bbox = { x: bx1, y: by1, w: bx2 - bx1, h: by2 - by1 }
+        g.targets = targets
+      }
     }
+    // smart-guide snapping (hold Ctrl to move freely)
+    let guides: SnapGuides | null = null
+    if (g.bbox && g.targets?.length && !e.ctrlKey) {
+      const snapped = snapDelta(g.bbox, g.targets, dx, dy, SNAP_SCREEN_PX / zoom)
+      dx = snapped.dx
+      dy = snapped.dy
+      guides = snapped.guides
+    }
+    useUi.getState().setSnapGuides(guides)
+    g.lastDx = dx
+    g.lastDy = dy
     setDrag({ ids: g.ids, dx, dy })
   }
 
@@ -180,7 +289,10 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
   const onPointerCancel = () => {
     const g = gesture.current
     gesture.current = null
-    if (g?.dragging) setDrag(null)
+    if (g?.dragging) {
+      useUi.getState().setSnapGuides(null)
+      setDrag(null)
+    }
   }
 
   // --- drag-to-connect from an edge handle ---
@@ -328,8 +440,7 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
       }}
     >
       <Body card={card} />
-      {isSelected &&
-        selection.length === 1 &&
+      {isSolo &&
         card.type !== 'board' &&
         RESIZE_CORNERS.map(([cls, dirX, dirY]) => (
           <div
@@ -355,4 +466,4 @@ export function CardShell({ card, zoom, drag, setDrag, onContextMenu, lineToolAc
         ))}
     </div>
   )
-}
+})

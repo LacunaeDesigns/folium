@@ -42,6 +42,9 @@ function ViewMenu({ onClose }: { onClose: () => void }) {
       <button className="menu-item" onClick={() => fire('fit')}>
         <Icon name="fit" size={15} /> Fit to content
       </button>
+      <button className="menu-item" onClick={() => fire('fit-selection')}>
+        <Icon name="fit" size={15} /> Zoom to selection
+      </button>
       <div className="menu-sep" />
       <button
         className="menu-item"

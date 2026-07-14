@@ -15,6 +15,12 @@ export interface DrawSettings {
   eraser: boolean
 }
 
+/** live alignment guides shown while dragging cards (world coordinates) */
+export interface SnapGuides {
+  v: { x: number; y1: number; y2: number } | null
+  h: { y: number; x1: number; x2: number } | null
+}
+
 interface UiState {
   currentBoardId: string | null
   selection: string[]
@@ -30,6 +36,7 @@ interface UiState {
   presentationMode: boolean
   /** app-wide appearance, applied to <html>; independent of per-board themes */
   appTheme: 'light' | 'dark'
+  snapGuides: SnapGuides | null
 
   setBoard(id: string): void
   setSelection(ids: string[]): void
@@ -44,6 +51,7 @@ interface UiState {
   setUnsortedOpen(open: boolean): void
   setPresentationMode(on: boolean): void
   setAppTheme(theme: 'light' | 'dark'): void
+  setSnapGuides(g: SnapGuides | null): void
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -58,6 +66,7 @@ export const useUi = create<UiState>((set) => ({
   unsortedOpen: false,
   presentationMode: false,
   appTheme: 'light',
+  snapGuides: null,
 
   setBoard: (id) => {
     set({ currentBoardId: id, selection: [], selectedLine: null, activeTool: null, trashOpen: false })
@@ -82,4 +91,5 @@ export const useUi = create<UiState>((set) => ({
   setUnsortedOpen: (open) => set({ unsortedOpen: open }),
   setPresentationMode: (on) => set({ presentationMode: on }),
   setAppTheme: (theme) => set({ appTheme: theme }),
+  setSnapGuides: (g) => set({ snapGuides: g }),
 }))

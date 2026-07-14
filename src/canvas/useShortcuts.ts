@@ -93,6 +93,17 @@ export function useShortcuts() {
         ui.setTrashOpen(false)
         return
       }
+      // Shift+1: fit board, Shift+2: zoom to selection (Figma muscle memory)
+      if (e.shiftKey && !mod && (e.key === '1' || e.key === '!')) {
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('atlas:view', { detail: { op: 'fit' } }))
+        return
+      }
+      if (e.shiftKey && !mod && (e.key === '2' || e.key === '@')) {
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('atlas:view', { detail: { op: 'fit-selection' } }))
+        return
+      }
       if (e.key.startsWith('Arrow')) {
         if (ui.selection.length === 0) return
         e.preventDefault()

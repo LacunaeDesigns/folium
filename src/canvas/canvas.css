@@ -112,6 +112,26 @@
 .ch-right { left: 100%; top: 50%; transform: translate(-50%, -50%); }
 .ch-center { left: 50%; top: 50%; transform: translate(-50%, -50%); }
 
+/* smart alignment guides shown while dragging (world coords, so they scale) */
+.snap-guide {
+  position: absolute;
+  border-left: 1px solid var(--accent);
+  border-top: 1px solid var(--accent);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* compact context-menu row (align buttons) */
+.menu-row {
+  display: flex;
+}
+.menu-row .menu-item {
+  flex: 1;
+  text-align: center;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
 .marquee {
   position: absolute;
   border: 1px solid var(--selection);

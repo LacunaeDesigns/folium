@@ -29,6 +29,7 @@ export function Canvas({ boardId }: { boardId: string }) {
   const setView = useUi((s) => s.setView)
   const activeTool = useUi((s) => s.activeTool)
   const setTool = useUi((s) => s.setTool)
+  const snapGuides = useUi((s) => s.snapGuides)
 
   const viewportRef = React.useRef<HTMLDivElement>(null)
   const [drag, setDrag] = React.useState<DragState | null>(null)
@@ -53,18 +54,20 @@ export function Canvas({ boardId }: { boardId: string }) {
 
   // drag-to-connect from a card's edge handle: reuse the pending-line preview,
   // finish by dropping onto another card (snapping to a nearby edge-center)
+  // (these are useCallback'd so memoized CardShells keep stable props)
   const connectFrom = React.useRef<LineEnd | null>(null)
-  const onConnectStart = (cardId: string, ax: number, ay: number) => {
+  const onConnectStart = React.useCallback((cardId: string, ax: number, ay: number) => {
     const from: LineEnd = { cardId, ax, ay }
     connectFrom.current = from
     setPendingLineFrom(from)
-  }
-  const onConnectMove = (clientX: number, clientY: number) => {
+  }, [])
+  const onConnectMove = React.useCallback((clientX: number, clientY: number) => {
     if (!connectFrom.current) return
     const local = clientToLocal(clientX, clientY)
     setCursorWorld(screenToWorld(view, local.x, local.y))
-  }
-  const onConnectEnd = (clientX: number, clientY: number) => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view])
+  const onConnectEnd = React.useCallback((clientX: number, clientY: number) => {
     const from = connectFrom.current
     connectFrom.current = null
     setPendingLineFrom(null)
@@ -91,7 +94,19 @@ export function Canvas({ boardId }: { boardId: string }) {
     }
     const id = store.getState().addLine(boardId, from, { cardId: targetId, ax, ay })
     useUi.getState().setSelectedLine(id)
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardId])
+
+  const onCardContextMenu = React.useCallback(
+    (cardId: string, x: number, y: number) => setCtxMenu({ cardId, x, y }),
+    [],
+  )
+
+  const onLineAnchor = React.useCallback((cardId: string) => {
+    if (!pendingLineFrom) setPendingLineFrom({ cardId })
+    else completeLine({ cardId })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingLineFrom])
 
   const panGesture = React.useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
   const marqueeGesture = React.useRef<{ startX: number; startY: number } | null>(null)
@@ -398,6 +413,90 @@ export function Canvas({ boardId }: { boardId: string }) {
     })
   }
 
+  // world rects of the current selection, measured from the DOM (auto-height
+  // cards carry no h in state, so measuring is the only honest source)
+  const selectionWorldRects = (): { id: string; x: number; y: number; w: number; h: number }[] => {
+    const worldEl = viewportRef.current?.querySelector('.canvas-world') as HTMLElement | null
+    if (!worldEl) return []
+    const o = worldEl.getBoundingClientRect()
+    const z = view.zoom
+    return useUi.getState().selection.flatMap((id) => {
+      const el = worldEl.querySelector(`:scope > .card-shell[data-card-id="${id}"]`) as HTMLElement | null
+      if (!el) return []
+      const r = el.getBoundingClientRect()
+      return [{ id, x: (r.left - o.left) / z, y: (r.top - o.top) / z, w: r.width / z, h: r.height / z }]
+    })
+  }
+
+  type AlignMode = 'left' | 'centerX' | 'right' | 'top' | 'middleY' | 'bottom'
+  const alignSelection = (mode: AlignMode) => {
+    const rects = selectionWorldRects()
+    if (rects.length < 2) return
+    const s = store.getState()
+    const minX = Math.min(...rects.map((r) => r.x))
+    const maxR = Math.max(...rects.map((r) => r.x + r.w))
+    const minY = Math.min(...rects.map((r) => r.y))
+    const maxB = Math.max(...rects.map((r) => r.y + r.h))
+    for (const r of rects) {
+      if (mode === 'left') s.updateCard(r.id, { x: Math.round(minX) })
+      else if (mode === 'right') s.updateCard(r.id, { x: Math.round(maxR - r.w) })
+      else if (mode === 'centerX') s.updateCard(r.id, { x: Math.round((minX + maxR) / 2 - r.w / 2) })
+      else if (mode === 'top') s.updateCard(r.id, { y: Math.round(minY) })
+      else if (mode === 'bottom') s.updateCard(r.id, { y: Math.round(maxB - r.h) })
+      else s.updateCard(r.id, { y: Math.round((minY + maxB) / 2 - r.h / 2) })
+    }
+  }
+
+  const distributeSelection = (axis: 'h' | 'v') => {
+    const rects = selectionWorldRects()
+    if (rects.length < 3) return
+    const s = store.getState()
+    const sorted = rects.slice().sort((a, b) => (axis === 'h' ? a.x - b.x : a.y - b.y))
+    const first = sorted[0]
+    const last = sorted[sorted.length - 1]
+    const span = axis === 'h' ? last.x + last.w - first.x : last.y + last.h - first.y
+    const sum = sorted.reduce((acc, r) => acc + (axis === 'h' ? r.w : r.h), 0)
+    const gap = (span - sum) / (sorted.length - 1)
+    let cursor = (axis === 'h' ? first.x + first.w : first.y + first.h) + gap
+    for (const r of sorted.slice(1, -1)) {
+      if (axis === 'h') s.updateCard(r.id, { x: Math.round(cursor) })
+      else s.updateCard(r.id, { y: Math.round(cursor) })
+      cursor += (axis === 'h' ? r.w : r.h) + gap
+    }
+  }
+
+  // swap z with the neighbour above/below instead of jumping to the extreme
+  const stepZ = (cardId: string, dir: 1 | -1) => {
+    const s = store.getState()
+    const list = boardCards(s, boardId).slice().sort((a, b) => a.z - b.z)
+    const i = list.findIndex((c) => c.id === cardId)
+    const j = i + dir
+    if (i < 0 || j < 0 || j >= list.length) return
+    s.updateCard(cardId, { z: list[j].z })
+    s.updateCard(list[j].id, { z: list[i].z })
+  }
+
+  const fitToSelection = () => {
+    const rects = selectionWorldRects()
+    if (rects.length === 0) {
+      fitToContent()
+      return
+    }
+    const el = viewportRef.current!
+    const minX = Math.min(...rects.map((r) => r.x)) - 60
+    const minY = Math.min(...rects.map((r) => r.y)) - 60
+    const maxX = Math.max(...rects.map((r) => r.x + r.w)) + 60
+    const maxY = Math.max(...rects.map((r) => r.y + r.h)) + 60
+    const zoom = clampZoom(Math.min(el.clientWidth / (maxX - minX), el.clientHeight / (maxY - minY), 1.5))
+    setView(boardId, {
+      zoom,
+      pan: {
+        x: (el.clientWidth - (maxX - minX) * zoom) / 2 - minX * zoom,
+        y: (el.clientHeight - (maxY - minY) * zoom) / 2 - minY * zoom,
+      },
+    })
+  }
+
   // View-menu commands from the top bar
   React.useEffect(() => {
     const onView = (e: Event) => {
@@ -406,6 +505,7 @@ export function Canvas({ boardId }: { boardId: string }) {
       else if (op === 'zoom-out') zoomStep(-1)
       else if (op === 'zoom-reset') setView(boardId, { zoom: 1, pan: view.pan })
       else if (op === 'fit') fitToContent()
+      else if (op === 'fit-selection') fitToSelection()
     }
     window.addEventListener('atlas:view', onView)
     return () => window.removeEventListener('atlas:view', onView)
@@ -529,19 +629,29 @@ export function Canvas({ boardId }: { boardId: string }) {
             key={card.id}
             card={card}
             zoom={view.zoom}
-            drag={drag}
+            // pass null to cards not being dragged so React.memo can skip them
+            drag={drag && drag.ids.includes(card.id) ? drag : null}
             setDrag={setDrag}
-            onContextMenu={(cardId, x, y) => setCtxMenu({ cardId, x, y })}
+            onContextMenu={onCardContextMenu}
             lineToolActive={activeTool === 'line'}
-            onLineAnchor={(cardId) => {
-              if (!pendingLineFrom) setPendingLineFrom({ cardId })
-              else completeLine({ cardId })
-            }}
+            onLineAnchor={onLineAnchor}
             onConnectStart={onConnectStart}
             onConnectMove={onConnectMove}
             onConnectEnd={onConnectEnd}
           />
         ))}
+        {snapGuides?.v && (
+          <div
+            className="snap-guide"
+            style={{ left: snapGuides.v.x, top: snapGuides.v.y1, width: 0, height: snapGuides.v.y2 - snapGuides.v.y1 }}
+          />
+        )}
+        {snapGuides?.h && (
+          <div
+            className="snap-guide"
+            style={{ left: snapGuides.h.x1, top: snapGuides.h.y, width: snapGuides.h.x2 - snapGuides.h.x1, height: 0 }}
+          />
+        )}
       </div>
 
       {activeTool === 'draw' && (
@@ -559,11 +669,12 @@ export function Canvas({ boardId }: { boardId: string }) {
         const cardId = ctxMenu.cardId
         const card = cardId ? store.getState().cards[cardId] : null
         const type = card?.type
+        const selCount = useUi.getState().selection.length
         // clamp inside the viewport so the menu never spills off-screen / behind the board
         const vp = viewportRef.current
         const rect = vp?.getBoundingClientRect()
         const MENU_W = 200
-        const MENU_H = cardId ? 300 : 340
+        const MENU_H = cardId ? (selCount >= 2 ? 420 : 340) : 340
         const PAD = 8
         const rawX = ctxMenu.x - (rect?.left ?? 0)
         const rawY = ctxMenu.y - (rect?.top ?? 0)
@@ -658,12 +769,55 @@ export function Canvas({ boardId }: { boardId: string }) {
               >
                 {gap} Bring to front
               </button>
+              <button className="menu-item" onClick={menuAction(() => stepZ(cardId, 1))}>
+                {gap} Bring forward
+              </button>
+              <button className="menu-item" onClick={menuAction(() => stepZ(cardId, -1))}>
+                {gap} Send backward
+              </button>
               <button
                 className="menu-item"
                 onClick={menuAction(() => store.getState().sendToBack(cardId))}
               >
                 {gap} Send to back
               </button>
+              {selCount >= 2 && (
+                <>
+                  <div className="menu-sep" />
+                  <div className="menu-row">
+                    {([
+                      ['left', 'Left'],
+                      ['centerX', 'Center'],
+                      ['right', 'Right'],
+                    ] as const).map(([m, label]) => (
+                      <button key={m} className="menu-item" title={'Align ' + label.toLowerCase()} onClick={menuAction(() => alignSelection(m))}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="menu-row">
+                    {([
+                      ['top', 'Top'],
+                      ['middleY', 'Middle'],
+                      ['bottom', 'Bottom'],
+                    ] as const).map(([m, label]) => (
+                      <button key={m} className="menu-item" title={'Align ' + label.toLowerCase()} onClick={menuAction(() => alignSelection(m))}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {selCount >= 3 && (
+                    <>
+                      <button className="menu-item" onClick={menuAction(() => distributeSelection('h'))}>
+                        {gap} Distribute horizontally
+                      </button>
+                      <button className="menu-item" onClick={menuAction(() => distributeSelection('v'))}>
+                        {gap} Distribute vertically
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
               <div className="menu-sep" />
               <button
                 className="menu-item danger"

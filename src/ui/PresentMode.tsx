@@ -39,7 +39,7 @@ export function PresentMode({ boardId }: { boardId: string }) {
   cardsRef.current = cards
   const [view, setViewLocal] = React.useState<BoardView>({ zoom: 1, pan: { x: 0, y: 0 } })
   const [interacting, setInteracting] = React.useState(false)
-  const gestureRef = React.useRef<{ startX: number; startY: number; panX: number; panY: number; moved: boolean } | null>(null)
+  const gestureRef = React.useRef<{ startX: number; startY: number; panX: number; panY: number; moved: boolean; target: HTMLElement | null } | null>(null)
   const wheelIdleTimer = React.useRef<number | undefined>(undefined)
 
   const exit = React.useCallback(() => setPresentationMode(false), [setPresentationMode])
@@ -74,8 +74,9 @@ export function PresentMode({ boardId }: { boardId: string }) {
 
   const onStagePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.button !== 1) return
+    const cardTarget = (e.target as HTMLElement).closest('[data-card-index]') as HTMLElement | null
     safeCapture(e.currentTarget as HTMLElement, e.pointerId)
-    gestureRef.current = { startX: e.clientX, startY: e.clientY, panX: view.pan.x, panY: view.pan.y, moved: false }
+    gestureRef.current = { startX: e.clientX, startY: e.clientY, panX: view.pan.x, panY: view.pan.y, moved: false, target: cardTarget }
     setInteracting(true)
   }
 
@@ -93,8 +94,7 @@ export function PresentMode({ boardId }: { boardId: string }) {
     gestureRef.current = null
     setInteracting(false)
     if (!g || g.moved) return
-    const target = (e.target as HTMLElement).closest('[data-card-index]') as HTMLElement | null
-    if (target) setIndex(Number(target.dataset.cardIndex))
+    if (g.target) setIndex(Number(g.target.dataset.cardIndex))
   }
 
   const onWheel = (e: WheelEvent) => {
@@ -122,7 +122,10 @@ export function PresentMode({ boardId }: { boardId: string }) {
     if (!el) return
     const h = (e: WheelEvent) => onWheelRef.current(e)
     el.addEventListener('wheel', h, { passive: false })
-    return () => el.removeEventListener('wheel', h)
+    return () => {
+      el.removeEventListener('wheel', h)
+      window.clearTimeout(wheelIdleTimer.current)
+    }
   }, [])
 
   if (cards.length === 0) {

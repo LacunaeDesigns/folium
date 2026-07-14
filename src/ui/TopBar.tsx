@@ -20,6 +20,10 @@ export function TopBar({
   onTemplates,
   onLive,
   onHelp,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
   liveActive,
   rightExtra,
 }: {
@@ -34,6 +38,10 @@ export function TopBar({
   onTemplates: () => void
   onLive: () => void
   onHelp: () => void
+  onUndo: () => void
+  onRedo: () => void
+  canUndo?: boolean
+  canRedo?: boolean
   liveActive?: boolean
   rightExtra?: React.ReactNode
 }) {
@@ -88,6 +96,22 @@ export function TopBar({
         </nav>
         <div className="topbar-actions">
           {rightExtra}
+          <button
+            className="icon-btn"
+            title="Undo (Ctrl+Z)"
+            disabled={canUndo === false}
+            onClick={onUndo}
+          >
+            <Icon name="undo" />
+          </button>
+          <button
+            className="icon-btn"
+            title="Redo (Ctrl+Shift+Z)"
+            disabled={canRedo === false}
+            onClick={onRedo}
+          >
+            <Icon name="redo" />
+          </button>
           <button className="icon-btn" title="Search boards (Ctrl+K)" onClick={onSearch}>
             <Icon name="search" />
           </button>

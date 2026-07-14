@@ -45,6 +45,8 @@ export type IconName =
   | 'frame'
   | 'heading'
   | 'help'
+  | 'undo'
+  | 'redo'
 
 const paths: Record<IconName, React.ReactNode> = {
   note: (
@@ -310,6 +312,18 @@ const paths: Record<IconName, React.ReactNode> = {
       <circle cx="12" cy="12" r="8.5" />
       <path d="M9.3 9.5a2.7 2.7 0 0 1 5.3.7c0 1.8-2.4 2-2.4 3.6" />
       <circle cx="12" cy="16.7" r="0.15" fill="currentColor" stroke="currentColor" strokeWidth="1.6" />
+    </>
+  ),
+  undo: (
+    <>
+      <path d="M7 8H4.5V5.5" />
+      <path d="M4.7 8a7.5 7.5 0 1 1-1.7 5" />
+    </>
+  ),
+  redo: (
+    <>
+      <path d="M17 8h2.5V5.5" />
+      <path d="M19.3 8a7.5 7.5 0 1 0 1.7 5" />
     </>
   ),
 }

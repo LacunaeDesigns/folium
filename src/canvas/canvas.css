@@ -30,6 +30,7 @@
   box-shadow: var(--shadow-card);
   outline: 1.5px solid transparent;
   outline-offset: 0;
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
 .card-shell.selected {
@@ -39,6 +40,8 @@
 .card-shell.dragging {
   opacity: 0.92;
   cursor: grabbing;
+  transform: scale(1.02);
+  box-shadow: var(--shadow-pop);
 }
 
 .card-shell.line-target:hover {

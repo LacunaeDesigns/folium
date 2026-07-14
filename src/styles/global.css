@@ -79,6 +79,10 @@ textarea {
   background-size: 24px 24px;
 }
 
+.app-canvas.no-grid {
+  background-image: none;
+}
+
 /* generic menu / popover */
 .menu-pop {
   position: absolute;

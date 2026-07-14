@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { ToolId } from '../ui/Toolbar'
+import { AppTheme } from './settings'
 
 export interface BoardView {
   pan: { x: number; y: number }
@@ -35,7 +36,9 @@ interface UiState {
   unsortedOpen: boolean
   presentationMode: boolean
   /** app-wide appearance, applied to <html>; independent of per-board themes */
-  appTheme: 'light' | 'dark'
+  appTheme: AppTheme
+  /** global default for the canvas dot grid (per-board Board.gridHidden can override) */
+  showGrid: boolean
   snapGuides: SnapGuides | null
 
   setBoard(id: string): void
@@ -50,7 +53,8 @@ interface UiState {
   setSearchOpen(open: boolean): void
   setUnsortedOpen(open: boolean): void
   setPresentationMode(on: boolean): void
-  setAppTheme(theme: 'light' | 'dark'): void
+  setAppTheme(theme: AppTheme): void
+  setShowGrid(show: boolean): void
   setSnapGuides(g: SnapGuides | null): void
 }
 
@@ -66,6 +70,7 @@ export const useUi = create<UiState>((set) => ({
   unsortedOpen: false,
   presentationMode: false,
   appTheme: 'light',
+  showGrid: true,
   snapGuides: null,
 
   setBoard: (id) => {
@@ -91,5 +96,6 @@ export const useUi = create<UiState>((set) => ({
   setUnsortedOpen: (open) => set({ unsortedOpen: open }),
   setPresentationMode: (on) => set({ presentationMode: on }),
   setAppTheme: (theme) => set({ appTheme: theme }),
+  setShowGrid: (show) => set({ showGrid: show }),
   setSnapGuides: (g) => set({ snapGuides: g }),
 }))

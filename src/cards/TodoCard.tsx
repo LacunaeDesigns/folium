@@ -61,6 +61,8 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
 
   const doneCount = items.filter((it) => it.done).length
 
+  const clearDone = () => setItems(items.filter((it) => !it.done))
+
   return (
     <div className="todo-card">
       <input
@@ -119,7 +121,14 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
       ))}
       {items.length > 1 && (
         <div className="todo-progress">
-          {doneCount}/{items.length}
+          <span>
+            {doneCount}/{items.length}
+          </span>
+          {!readOnly && doneCount > 0 && (
+            <button className="todo-clear-done no-drag" onClick={clearDone}>
+              Clear done
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -115,7 +115,18 @@ export function ColumnCard({ card, readOnly }: CardBodyProps) {
         )}
       </div>
       {!content.collapsed && (
-        <div className="column-body">
+        <div
+          className="column-body"
+          onDoubleClick={(e) => {
+            if (readOnly) return
+            const target = e.target as HTMLElement
+            if (target.closest('[data-col-member], input, textarea, button, a')) return
+            const s = store.getState()
+            const id = s.addCard(card.boardId, 'note', {})
+            s.setCardColumn(id, card.id, members.length)
+            useUi.getState().setSelection([id])
+          }}
+        >
           {members.map((m) => (
             <ColumnMember key={m.id} card={m} readOnly={readOnly} />
           ))}

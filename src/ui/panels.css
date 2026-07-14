@@ -296,6 +296,33 @@
   background: var(--bg-hover);
 }
 
+.settings-theme-row {
+  display: flex;
+  gap: 6px;
+}
+
+.settings-theme-opt {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 4px;
+  font-size: 12px;
+  background: var(--bg-chrome);
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-align: center;
+}
+
+.settings-theme-opt:hover {
+  background: var(--bg-hover);
+}
+
+.settings-theme-opt.active {
+  border-color: var(--accent);
+  color: var(--ink);
+  background: var(--bg-hover);
+}
+
 /* templates */
 .tpl-modal {
   width: 720px;

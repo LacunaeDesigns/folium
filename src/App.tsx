@@ -1,4 +1,5 @@
 import React from 'react'
+import { useStore } from 'zustand'
 import { TopBar } from './ui/TopBar'
 import { Toolbar } from './ui/Toolbar'
 import { Canvas } from './canvas/Canvas'
@@ -15,7 +16,17 @@ import { useSync, linkFolder, unlinkFolder, reconnect, syncNow } from './store/s
 import { relTime } from './cards/CommentCard'
 import { useAtlas, useAtlasStore, useDb } from './store/context'
 import { breadcrumbs } from './store/selectors'
-import { saveUserName, getUserName, savePexelsKey, getPexelsKey, getAppTheme, saveAppTheme } from './store/settings'
+import {
+  saveUserName,
+  getUserName,
+  savePexelsKey,
+  getPexelsKey,
+  getAppTheme,
+  saveAppTheme,
+  getShowGrid,
+  saveShowGrid,
+  AppTheme,
+} from './store/settings'
 import { PexelsPanel } from './ui/PexelsPanel'
 import { useUi } from './store/uiStore'
 import { useShortcuts } from './canvas/useShortcuts'
@@ -145,18 +156,35 @@ function SettingsMenu({ onClose }: { onClose: () => void }) {
   const [name, setName] = React.useState(getUserName())
   const [pexels, setPexels] = React.useState(getPexelsKey())
   const appTheme = useUi((s) => s.appTheme)
+  const showGrid = useUi((s) => s.showGrid)
   return (
     <div className="menu-pop topbar-menu settings-pop" onPointerDown={(e) => e.stopPropagation()}>
       <label className="settings-label">Appearance</label>
+      <div className="settings-theme-row">
+        {(['light', 'dark', 'system'] as const).map((t) => (
+          <button
+            key={t}
+            className={'settings-theme-opt' + (appTheme === t ? ' active' : '')}
+            onClick={() => {
+              useUi.getState().setAppTheme(t)
+              void saveAppTheme(db, t as AppTheme)
+            }}
+          >
+            {t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'System'}
+          </button>
+        ))}
+      </div>
+      <div className="settings-sep" />
+      <label className="settings-label">Preferences</label>
       <button
         className="settings-toggle"
         onClick={() => {
-          const next = appTheme === 'dark' ? 'light' : 'dark'
-          useUi.getState().setAppTheme(next)
-          void saveAppTheme(db, next)
+          const next = !showGrid
+          useUi.getState().setShowGrid(next)
+          void saveShowGrid(db, next)
         }}
       >
-        <Icon name="palette" size={15} /> {appTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        <Icon name="dots" size={15} /> {showGrid ? 'Hide grid' : 'Show grid'}
       </button>
       <div className="settings-sep" />
       <label className="settings-label">Your name (used on comments)</label>
@@ -207,23 +235,40 @@ export default function App() {
   const searchOpen = useUi((s) => s.searchOpen)
   const presentationMode = useUi((s) => s.presentationMode)
   const appTheme = useUi((s) => s.appTheme)
+  const showGrid = useUi((s) => s.showGrid)
+  const [systemDark, setSystemDark] = React.useState(
+    () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches,
+  )
+  const effectiveTheme: 'light' | 'dark' = appTheme === 'system' ? (systemDark ? 'dark' : 'light') : appTheme
   const [menu, setMenu] = React.useState<'view' | 'settings' | 'export' | 'live' | null>(null)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
   const [photosOpen, setPhotosOpen] = React.useState(false)
   const [helpOpen, setHelpOpen] = React.useState(false)
   const liveActive = useLive((s) => s.active)
+  const canUndo = useStore(store.temporal, (s) => s.pastStates.length > 0)
+  const canRedo = useStore(store.temporal, (s) => s.futureStates.length > 0)
 
   useShortcuts()
 
-  // load the persisted app-wide theme once settings are ready
+  // load the persisted app-wide theme + grid preference once settings are ready
   React.useEffect(() => {
     useUi.getState().setAppTheme(getAppTheme())
+    useUi.getState().setShowGrid(getShowGrid())
+  }, [])
+
+  // follow the OS theme while appTheme is 'system'
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
   }, [])
 
   // apply the app-wide theme to <html> so it covers the whole page, body included
   React.useEffect(() => {
-    document.documentElement.setAttribute('data-theme', appTheme)
-  }, [appTheme])
+    document.documentElement.setAttribute('data-theme', effectiveTheme)
+  }, [effectiveTheme])
 
   // hash routing: #/b/<boardId>; back/forward supported
   React.useEffect(() => {
@@ -253,8 +298,10 @@ export default function App() {
 
   if (!board) return null
 
+  const gridShown = board.gridHidden === undefined ? showGrid : !board.gridHidden
+
   return (
-    <div className="app-shell" data-board-theme={appTheme}>
+    <div className="app-shell" data-board-theme={effectiveTheme}>
       <header className="app-header">
         <TopBar
           crumbs={crumbs.map((b) => ({ id: b.id, title: b.title, color: b.color }))}
@@ -268,6 +315,10 @@ export default function App() {
           onTemplates={() => setTemplatesOpen(true)}
           onLive={() => setMenu(menu === 'live' ? null : 'live')}
           onHelp={() => setHelpOpen(true)}
+          onUndo={() => store.temporal.getState().undo()}
+          onRedo={() => store.temporal.getState().redo()}
+          canUndo={canUndo}
+          canRedo={canRedo}
           liveActive={liveActive}
           rightExtra={
             <span className="menu-anchor">
@@ -288,7 +339,7 @@ export default function App() {
           onOpenPhotos={() => setPhotosOpen(true)}
         />
       </nav>
-      <main className="app-canvas">
+      <main className={'app-canvas' + (gridShown ? '' : ' no-grid')}>
         <Canvas boardId={currentBoardId} />
         <UnsortedTray boardId={currentBoardId} />
         {trashOpen && <TrashView />}

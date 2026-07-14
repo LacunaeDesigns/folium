@@ -225,10 +225,26 @@
   color: var(--ink-soft);
 }
 .todo-progress {
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
   font-size: 11px;
   color: var(--ink-faint);
   margin-top: 4px;
+}
+
+.todo-clear-done {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.todo-clear-done:hover {
+  text-decoration: underline;
 }
 
 /* ---------- swatch ---------- */

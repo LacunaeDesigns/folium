@@ -10,6 +10,8 @@ export interface Board {
   color: string
   theme: BoardTheme
   createdAt: number
+  /** per-board override for the canvas dot grid; undefined = follow the global preference */
+  gridHidden?: boolean
 }
 
 export type CardType =

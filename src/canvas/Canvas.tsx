@@ -25,6 +25,9 @@ export function Canvas({ boardId }: { boardId: string }) {
   const store = useAtlasStore()
   const db = useDb()
   const cards = useAtlas((s) => boardCards(s, boardId))
+  const board = useAtlas((s) => s.boards[boardId])
+  const globalShowGrid = useUi((s) => s.showGrid)
+  const gridShown = board?.gridHidden === undefined ? globalShowGrid : !board.gridHidden
   const view = useUi((s) => s.views[boardId] ?? DEFAULT_VIEW)
   const setView = useUi((s) => s.setView)
   const activeTool = useUi((s) => s.activeTool)
@@ -719,6 +722,15 @@ export function Canvas({ boardId }: { boardId: string }) {
               ))}
               <button className="menu-item" onClick={menuAction(() => setTool('line'))}>
                 <Icon name="line" size={15} /> New line
+              </button>
+              <div className="menu-sep" />
+              <button
+                className="menu-item"
+                onClick={menuAction(() =>
+                  store.getState().setBoardMeta(boardId, { gridHidden: gridShown }),
+                )}
+              >
+                {gap} {gridShown ? 'Hide grid' : 'Show grid'}
               </button>
               {([
                 ['board', 'board'],

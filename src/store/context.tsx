@@ -3,6 +3,7 @@ import { useStore } from 'zustand'
 import { AtlasState, AtlasStore, createAtlasStore } from './store'
 import { AtlasDb, bindAutosave, bindBlobGc, loadDoc, openDb } from './persist'
 import { loadSettings } from './settings'
+import { createTabSync } from './tabSync'
 
 interface AtlasContextValue {
   store: AtlasStore
@@ -47,7 +48,8 @@ export async function bootAtlas(): Promise<AtlasContextValue> {
     seedWelcome(store)
     store.temporal.getState().clear()
   }
-  bindAutosave(store, db)
+  const tabSync = createTabSync(store, db)
+  bindAutosave(store, db, 600, { onWrite: tabSync.onWrite, isPaused: tabSync.isPaused })
   bindBlobGc(store, db)
   // folder sync (optional, opt-in): reconnect a linked folder and pull newer remote data
   try {

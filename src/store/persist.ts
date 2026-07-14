@@ -177,14 +177,25 @@ export async function clearSyncHandle(db: AtlasDb): Promise<void> {
   await db.handles.delete(SYNC_HANDLE_KEY)
 }
 
+export interface AutosaveHooks {
+  /** Called after an autosaved write completes (IndexedDB write has landed). */
+  onWrite?: (ts: number) => void
+  /** When true at the moment a store change fires, that change is not scheduled for autosave
+   *  (used to suppress the write+broadcast storm from a cross-tab sync reload). */
+  isPaused?: () => boolean
+}
+
 /** Debounced autosave: persists the doc slice on every store change. Returns unsubscribe. */
-export function bindAutosave(store: AtlasStore, db: AtlasDb, delay = 600): () => void {
+export function bindAutosave(store: AtlasStore, db: AtlasDb, delay = 600, hooks: AutosaveHooks = {}): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null
   const write = () => {
     const s = store.getState()
-    void saveDoc(db, { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines })
+    void saveDoc(db, { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines }).then(() => {
+      hooks.onWrite?.(Date.now())
+    })
   }
   const unsub = store.subscribe(() => {
+    if (hooks.isPaused?.()) return
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
       timer = null

@@ -81,21 +81,6 @@ export function BoardCard({ card, readOnly }: CardBodyProps) {
               </button>
             ))}
           </div>
-          <div className="picker-row">
-            <span className="picker-label">Board theme</span>
-            <button
-              className={'picker-theme' + (board.theme === 'light' ? ' on' : '')}
-              onClick={() => store.getState().setBoardMeta(board.id, { theme: 'light' })}
-            >
-              Light
-            </button>
-            <button
-              className={'picker-theme' + (board.theme === 'dark' ? ' on' : '')}
-              onClick={() => store.getState().setBoardMeta(board.id, { theme: 'dark' })}
-            >
-              Dark
-            </button>
-          </div>
         </div>
       )}
     </div>

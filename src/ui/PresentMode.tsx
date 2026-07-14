@@ -10,7 +10,7 @@ export function PresentMode({ boardId }: { boardId: string }) {
   const cards = useAtlas((s) =>
     boardCards(s, boardId).slice().sort((a, b) => a.y - b.y || a.x - b.x),
   )
-  const board = useAtlas((s) => s.boards[boardId])
+  const appTheme = useUi((s) => s.appTheme)
   const setPresentationMode = useUi((s) => s.setPresentationMode)
   const [index, setIndex] = React.useState(0)
   const stageRef = React.useRef<HTMLDivElement>(null)
@@ -34,7 +34,7 @@ export function PresentMode({ boardId }: { boardId: string }) {
 
   if (cards.length === 0) {
     return (
-      <div className="present-overlay" data-board-theme={board?.theme}>
+      <div className="present-overlay" data-board-theme={appTheme}>
         <div className="present-empty">Nothing to present on this board.</div>
         <button className="present-exit" onClick={exit}>
           <Icon name="close" size={16} />
@@ -53,7 +53,7 @@ export function PresentMode({ boardId }: { boardId: string }) {
   const ty = vh / 2 - (card.y + cardH / 2) * scale
 
   return (
-    <div className="present-overlay" data-board-theme={board?.theme}>
+    <div className="present-overlay" data-board-theme={appTheme}>
       <div className="present-stage" ref={stageRef}>
         <div
           className="present-world"

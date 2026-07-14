@@ -21,9 +21,9 @@ import { useShortcuts } from './canvas/useShortcuts'
 import { Icon } from './ui/Icons'
 import './cards'
 
-function ViewMenu({ boardId, onClose }: { boardId: string; onClose: () => void }) {
-  const store = useAtlasStore()
-  const theme = useAtlas((s) => s.boards[boardId]?.theme)
+function ViewMenu({ onClose }: { onClose: () => void }) {
+  const db = useDb()
+  const appTheme = useUi((s) => s.appTheme)
   const fire = (op: string) => {
     window.dispatchEvent(new CustomEvent('atlas:view', { detail: { op } }))
     onClose()
@@ -46,11 +46,13 @@ function ViewMenu({ boardId, onClose }: { boardId: string; onClose: () => void }
       <button
         className="menu-item"
         onClick={() => {
-          store.getState().setBoardMeta(boardId, { theme: theme === 'dark' ? 'light' : 'dark' })
+          const next = appTheme === 'dark' ? 'light' : 'dark'
+          useUi.getState().setAppTheme(next)
+          void saveAppTheme(db, next)
           onClose()
         }}
       >
-        <Icon name="palette" size={15} /> {theme === 'dark' ? 'Light board' : 'Dark board'}
+        <Icon name="palette" size={15} /> {appTheme === 'dark' ? 'Light mode' : 'Dark mode'}
       </button>
       <button
         className="menu-item"
@@ -247,7 +249,7 @@ export default function App() {
   if (!board) return null
 
   return (
-    <div className="app-shell" data-board-theme={board.theme}>
+    <div className="app-shell" data-board-theme={appTheme}>
       <header className="app-header">
         <TopBar
           crumbs={crumbs.map((b) => ({ id: b.id, title: b.title, color: b.color }))}
@@ -263,7 +265,7 @@ export default function App() {
           liveActive={liveActive}
           rightExtra={
             <span className="menu-anchor">
-              {menu === 'view' && <ViewMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
+              {menu === 'view' && <ViewMenu onClose={() => setMenu(null)} />}
               {menu === 'settings' && <SettingsMenu onClose={() => setMenu(null)} />}
               {menu === 'export' && <ExportMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
               {menu === 'live' && <LiveSessionPanel boardId={currentBoardId} />}

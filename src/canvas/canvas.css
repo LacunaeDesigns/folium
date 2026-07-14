@@ -227,6 +227,13 @@
   pointer-events: all;
   cursor: grab;
 }
+.line-mid {
+  fill: var(--bg-chrome);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  pointer-events: all;
+  cursor: grab;
+}
 .line-toolbar-fo {
   overflow: visible;
   pointer-events: none;

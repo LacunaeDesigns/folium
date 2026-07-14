@@ -235,6 +235,8 @@ export interface Line {
   color?: string
   width?: number
   dash?: boolean
+  /** orthogonal (right-angle) routing; curve is ignored while set */
+  elbow?: boolean
 }
 
 export interface TemplateMeta {

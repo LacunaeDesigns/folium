@@ -1,6 +1,7 @@
 import { ExportBundle } from './collect'
 import { renderChartSvg, rowsToChartData } from '../charts/renderChart'
 import { strokeOutlinePath } from '../model/inkOutline'
+import { elbowPath } from '../model/lineRoute'
 
 /**
  * Build a single self-contained .html file: embedded board JSON + read-only viewer.
@@ -154,6 +155,7 @@ var esc = function(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c
 var renderChartSvg = ${renderChartSvg.toString()};
 var rowsToChartData = ${rowsToChartData.toString()};
 var strokeOutlinePath = ${strokeOutlinePath.toString()};
+var elbowPath = ${elbowPath.toString()};
 var safeUrl = function(u){ u=String(u==null?'':u).trim(); return (/^(https?:|mailto:|data:image\\/|data:video\\/|data:audio\\/|data:application\\/)/i.test(u)) ? esc(u) : ''; };
 function relTime(ts){ var d = Date.now()-ts; if(d<3600000) return Math.max(1,Math.floor(d/60000))+'m ago'; if(d<86400000) return Math.floor(d/3600000)+'h ago'; return new Date(ts).toLocaleDateString(); }
 function avatar(name){ var h=0; for(var i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))|0; return '<span class="av" style="background:hsl('+(Math.abs(h)%360)+' 55% 55%)">'+esc((name||'?')[0].toUpperCase())+'</span>'; }
@@ -289,9 +291,18 @@ function render(){
       function pt(end, other){ if(end.cardId){ var r=rects[end.cardId]; if(!r) return null; if(!other) return {x:r.x+r.w/2,y:r.y+r.h/2}; if(end.ax!=null&&end.ay!=null) return edgeAnchor(r,end.ax,end.ay); return anchor(r,other); } return {x:end.x-offX,y:end.y-offY}; }
         var ca=pt(fromEnd,null), cb=pt(toEnd,null); if(!ca||!cb) return '';
         var a=pt(fromEnd,cb), b=pt(toEnd,ca);
-        var mx=(a.x+b.x)/2, my=(a.y+b.y)/2, cxp=mx-(b.y-a.y)*l.curve, cyp=my+(b.x-a.x)*l.curve;
-        var d='M '+a.x+' '+a.y+' Q '+cxp+' '+cyp+' '+b.x+' '+b.y;
-        var lbl = l.label ? '<text x="'+((a.x+2*cxp+b.x)/4)+'" y="'+((a.y+2*cyp+b.y)/4)+'" text-anchor="middle">'+esc(l.label)+'</text>' : '';
+        var d, labelX, labelY;
+        if(l.elbow){
+          function endHoriz(end, point, other){ if(end.cardId){ var r=rects[end.cardId]; if(!r) return true; return Math.abs(point.x-r.x)<0.5 || Math.abs(point.x-(r.x+r.w))<0.5; } return Math.abs(other.x-point.x) >= Math.abs(other.y-point.y); }
+          var aHoriz = endHoriz(fromEnd, a, b), bHoriz = endHoriz(toEnd, b, a);
+          var routed = elbowPath(a.x, a.y, b.x, b.y, aHoriz, bHoriz);
+          d = routed.d; labelX = routed.midX; labelY = routed.midY;
+        } else {
+          var mx=(a.x+b.x)/2, my=(a.y+b.y)/2, cxp=mx-(b.y-a.y)*l.curve, cyp=my+(b.x-a.x)*l.curve;
+          d='M '+a.x+' '+a.y+' Q '+cxp+' '+cyp+' '+b.x+' '+b.y;
+          labelX=(a.x+2*cxp+b.x)/4; labelY=(a.y+2*cyp+b.y)/4;
+        }
+        var lbl = l.label ? '<text x="'+labelX+'" y="'+labelY+'" text-anchor="middle">'+esc(l.label)+'</text>' : '';
         var col = l.color || null;
         var style = 'stroke:'+(col?esc(col):'var(--soft)')+';stroke-width:'+(l.width||2)+(l.dash?';stroke-dasharray:6 6':'')+';';
         var markerId = colorIds[col||'DEFAULT'];

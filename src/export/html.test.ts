@@ -95,6 +95,30 @@ describe('buildHtmlExport line rendering', () => {
     expect(html).toContain('"arrowStart":true')
   })
 
+  it('embeds elbow routing for an elbow line, keeping the quadratic path for non-elbow lines', () => {
+    const line: Line = {
+      id: 'l3',
+      boardId: 'b1',
+      from: { cardId: 'c1' },
+      to: { cardId: 'c2' },
+      curve: 0,
+      arrowStart: false,
+      arrowEnd: false,
+      label: '',
+      elbow: true,
+    }
+    const html = buildHtmlExport(makeBundle([line]))
+
+    // elbowPath is embedded alongside strokeOutlinePath, and the line-rendering
+    // branch dispatches to it when l.elbow is set (an L-segment, right-angle path)
+    expect(html).toContain('var elbowPath = function')
+    expect(html).toContain('if(l.elbow)')
+    // the quadratic-bezier fallback for non-elbow lines must remain untouched
+    expect(html).toContain("d='M '+a.x+' '+a.y+' Q '+cxp+' '+cyp+' '+b.x+' '+b.y;")
+    // the fixture's elbow flag must round-trip into the embedded JSON
+    expect(html).toContain('"elbow":true')
+  })
+
   it('still renders a plain line with defaults when no styling is set', () => {
     const line: Line = {
       id: 'l2',

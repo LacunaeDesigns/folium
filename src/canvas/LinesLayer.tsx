@@ -1,5 +1,6 @@
 import React from 'react'
 import { Line, LineEnd } from '../model/types'
+import { curveFromMidpoint, elbowPath } from '../model/lineRoute'
 import { useFolium, useFoliumStore } from '../store/context'
 import { linesOnBoard } from '../store/selectors'
 import { BoardView, useUi } from '../store/uiStore'
@@ -83,6 +84,18 @@ function centerOf(end: LineEnd, rects: WorldRects): Pt | null {
   return { x: end.x, y: end.y }
 }
 
+// Direction an end's connection point exits, for elbow routing. Card-attached
+// ends sit exactly on one edge of the rect (endPoint/edgeAnchor put them
+// there); free ends pick the dominant axis toward the other point.
+function isHorizontalEnd(end: LineEnd, point: Pt, other: Pt, rects: WorldRects): boolean {
+  if ('cardId' in end) {
+    const r = rects.get(end.cardId)
+    if (!r) return true
+    return Math.abs(point.x - r.x) < 0.5 || Math.abs(point.x - (r.x + r.w)) < 0.5
+  }
+  return Math.abs(other.x - point.x) >= Math.abs(other.y - point.y)
+}
+
 export function linePath(a: Pt, b: Pt, curve: number): { d: string; mid: Pt } {
   const mx = (a.x + b.x) / 2
   const my = (a.y + b.y) / 2
@@ -123,6 +136,12 @@ export function LinesLayer({
   const setEndDrag = (v: typeof endDrag) => {
     endDragRef.current = v
     setEndDragState(v)
+  }
+  const [midDrag, setMidDragState] = React.useState<{ lineId: string; a: Pt; b: Pt; curve: number } | null>(null)
+  const midDragRef = React.useRef<typeof midDrag>(null)
+  const setMidDrag = (v: typeof midDrag) => {
+    midDragRef.current = v
+    setMidDragState(v)
   }
   const [bodyDrag, setBodyDragState] = React.useState<{
     lineId: string
@@ -204,6 +223,32 @@ export function LinesLayer({
     store.getState().updateLine(lineId, { [which]: end } as Partial<Line>)
   }
 
+  const onMidPointerDown = (line: Line, a: Pt, b: Pt) => (e: React.PointerEvent) => {
+    e.stopPropagation()
+    const el = e.currentTarget as Element
+    try {
+      el.setPointerCapture(e.pointerId)
+    } catch {
+      /* synthetic */
+    }
+    setMidDrag({ lineId: line.id, a, b, curve: line.curve })
+  }
+
+  const onMidPointerMove = (e: React.PointerEvent) => {
+    const cur = midDragRef.current
+    if (!cur) return
+    const p = toWorld(e.clientX, e.clientY)
+    const curve = curveFromMidpoint(cur.a.x, cur.a.y, cur.b.x, cur.b.y, p.x, p.y, cur.curve)
+    setMidDrag({ ...cur, curve })
+  }
+
+  const onMidPointerUp = (e: React.PointerEvent) => {
+    const cur = midDragRef.current
+    if (!cur) return
+    setMidDrag(null)
+    store.getState().updateLine(cur.lineId, { curve: cur.curve })
+  }
+
   const translateEnd = (end: LineEnd, dx: number, dy: number): LineEnd => {
     if ('cardId' in end) return end
     return { x: end.x + dx, y: end.y + dy }
@@ -268,7 +313,21 @@ export function LinesLayer({
     const b = endPoint(toEnd, rects, cFrom)
     if (!a || !b) return null
 
-    const { d, mid } = linePath(a, b, line.curve)
+    const dragMid = midDrag?.lineId === line.id ? midDrag : null
+    const curve = dragMid ? dragMid.curve : line.curve
+    let d: string
+    let mid: Pt
+    if (line.elbow) {
+      const aHoriz = isHorizontalEnd(fromEnd, a, b, rects)
+      const bHoriz = isHorizontalEnd(toEnd, b, a, rects)
+      const routed = elbowPath(a.x, a.y, b.x, b.y, aHoriz, bHoriz)
+      d = routed.d
+      mid = { x: routed.midX, y: routed.midY }
+    } else {
+      const straight = linePath(a, b, curve)
+      d = straight.d
+      mid = straight.mid
+    }
     const isSel = selectedLine === line.id
 
     return (
@@ -322,10 +381,21 @@ export function LinesLayer({
               onPointerMove={onEndPointerMove}
               onPointerUp={onEndPointerUp}
             />
+            {!line.elbow && (
+              <circle
+                className="line-mid"
+                cx={mid.x}
+                cy={mid.y}
+                r={6 / view.zoom}
+                onPointerDown={onMidPointerDown(line, a, b)}
+                onPointerMove={onMidPointerMove}
+                onPointerUp={onMidPointerUp}
+              />
+            )}
           </>
         )}
         {isSel && (
-          <foreignObject x={mid.x - 115} y={mid.y + 12} width={240} height={36} className="line-toolbar-fo">
+          <foreignObject x={mid.x - 135} y={mid.y + 12} width={280} height={36} className="line-toolbar-fo">
             <div className="line-toolbar no-drag" onPointerDown={(e) => e.stopPropagation()}>
               <button
                 className={line.arrowStart ? 'on' : ''}
@@ -343,9 +413,21 @@ export function LinesLayer({
               </button>
               <button
                 title="Straight / curved"
-                onClick={() => store.getState().updateLine(line.id, { curve: line.curve === 0 ? 0.2 : 0 })}
+                onClick={() =>
+                  store.getState().updateLine(
+                    line.id,
+                    line.elbow ? { elbow: false, curve: 0.2 } : { curve: line.curve === 0 ? 0.2 : 0 }
+                  )
+                }
               >
                 ~
+              </button>
+              <button
+                className={line.elbow ? 'on' : ''}
+                title="Elbow line"
+                onClick={() => store.getState().updateLine(line.id, { elbow: !line.elbow })}
+              >
+                ⌐
               </button>
               <button title="Label" onClick={() => setLabelEdit(line.id)}>
                 Aa

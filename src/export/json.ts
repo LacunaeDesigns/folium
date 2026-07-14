@@ -1,5 +1,5 @@
 import { DocState, Template } from '../model/types'
-import { FoliumDb, saveDoc } from '../store/persist'
+import { FoliumDb, blobToB64Cached, saveDoc } from '../store/persist'
 import { FoliumStore } from '../store/store'
 
 interface BackupBlob {
@@ -18,16 +18,6 @@ export interface Backup {
   settings: { userName: string }
 }
 
-function bufToB64(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf)
-  let bin = ''
-  const chunk = 0x8000
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + chunk))
-  }
-  return btoa(bin)
-}
-
 function b64ToBuf(b64: string): ArrayBuffer {
   const bin = atob(b64)
   const bytes = new Uint8Array(bin.length)
@@ -43,7 +33,7 @@ export async function exportBackup(db: FoliumDb, doc: DocState, userName: string
     version: 1,
     exportedAt: Date.now(),
     doc,
-    blobs: blobRows.map((r) => ({ id: r.id, type: r.type, b64: bufToB64(r.buf) })),
+    blobs: blobRows.map((r) => ({ id: r.id, type: r.type, b64: blobToB64Cached(r.id, r.buf) })),
     templates,
     settings: { userName },
   }

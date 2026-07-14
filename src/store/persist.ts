@@ -86,7 +86,29 @@ export async function getBlob(db: FoliumDb, id: string): Promise<Blob | undefine
 }
 
 export async function deleteBlob(db: FoliumDb, id: string): Promise<void> {
+  b64Cache.delete(id)
   await db.blobs.delete(id)
+}
+
+const b64Cache = new Map<string, string>()
+
+/** Base64 of a stored blob's bytes, cached by blob id. Folder sync re-exports every
+ *  blob on every push, and blob ids are content-stable (a new id is minted whenever
+ *  a blob's bytes change), so caching here turns a repeated full-image re-encode
+ *  into a one-time cost per image. */
+export function blobToB64Cached(id: string, buf: ArrayBuffer): string {
+  let b64 = b64Cache.get(id)
+  if (!b64) {
+    const bytes = new Uint8Array(buf)
+    let bin = ''
+    const chunk = 0x8000
+    for (let i = 0; i < bytes.length; i += chunk) {
+      bin += String.fromCharCode(...bytes.subarray(i, i + chunk))
+    }
+    b64 = btoa(bin)
+    b64Cache.set(id, b64)
+  }
+  return b64
 }
 
 /** blobIds referenced by any card in the doc — live, in unsorted, or still in trash.

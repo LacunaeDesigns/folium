@@ -1,5 +1,6 @@
 import { ExportBundle } from './collect'
 import { renderChartSvg, rowsToChartData } from '../charts/renderChart'
+import { strokeOutlinePath } from '../model/inkOutline'
 
 /**
  * Build a single self-contained .html file: embedded board JSON + read-only viewer.
@@ -117,6 +118,7 @@ table.tbl tr:first-child{background:var(--yellow);font-weight:700}
 .headingc.h1{font-size:28px;line-height:1.2}
 .headingc.h2{font-size:22px;line-height:1.25}
 .headingc.h3{font-size:17px;line-height:1.3}
+.stickerc{width:100%;height:100%;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none}
 svg.lines{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 svg.lines path{stroke:var(--soft);stroke-width:2;fill:none}
 svg.lines text{font-size:12px;fill:var(--soft);paint-order:stroke;stroke:var(--bg);stroke-width:4px}
@@ -151,6 +153,7 @@ var zoom = 1;
 var esc = function(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); };
 var renderChartSvg = ${renderChartSvg.toString()};
 var rowsToChartData = ${rowsToChartData.toString()};
+var strokeOutlinePath = ${strokeOutlinePath.toString()};
 var safeUrl = function(u){ u=String(u==null?'':u).trim(); return (/^(https?:|mailto:|data:image\\/|data:video\\/|data:audio\\/|data:application\\/)/i.test(u)) ? esc(u) : ''; };
 function relTime(ts){ var d = Date.now()-ts; if(d<3600000) return Math.max(1,Math.floor(d/60000))+'m ago'; if(d<86400000) return Math.floor(d/3600000)+'h ago'; return new Date(ts).toLocaleDateString(); }
 function avatar(name){ var h=0; for(var i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))|0; return '<span class="av" style="background:hsl('+(Math.abs(h)%360)+' 55% 55%)">'+esc((name||'?')[0].toUpperCase())+'</span>'; }
@@ -211,13 +214,14 @@ function cardBody(card){
     case 'swatch': return '<div class="swatch"><div class="blk" style="background:'+esc(c.hex)+'"><span class="hx">'+esc(c.hex.toUpperCase())+'</span></div>'+(c.name?'<div class="nm">'+esc(c.name)+'</div>':'')+'</div>';
     case 'sticky': return '<div class="stick" style="background:var(--c-'+(c.color||'yellow')+')">'+esc(c.text)+'</div>';
     case 'shape': { var col='var(--c-'+(c.fill||'blue')+')'; var sh=''; if(c.shape==='ellipse') sh='<ellipse cx="50" cy="50" rx="48" ry="48" fill="'+col+'"/>'; else if(c.shape==='diamond') sh='<polygon points="50,2 98,50 50,98 2,50" fill="'+col+'"/>'; else sh='<rect x="2" y="2" width="96" height="96" rx="6" fill="'+col+'"/>'; return '<div class="shape"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'+sh+'</svg><div class="tx">'+esc(c.text)+'</div></div>'; }
-    case 'ink': { var paths=(c.strokes||[]).map(function(s){ var d=''; for(var i=0;i+1<s.points.length;i+=2){ d+=(i===0?'M ':' L ')+s.points[i]+' '+s.points[i+1]; } return '<path d="'+d+'" stroke="'+esc(s.color)+'" stroke-width="'+s.width+'" fill="none" stroke-linecap="round"/>'; }).join(''); return '<svg style="display:block;width:100%;height:100%" viewBox="0 0 '+c.natW+' '+c.natH+'" preserveAspectRatio="none">'+paths+'</svg>'; }
+    case 'ink': { var paths=(c.strokes||[]).map(function(s){ if(s.pressures && s.pressures.length===s.points.length/2){ return '<path d="'+strokeOutlinePath(s.points, s.pressures, s.width)+'" fill="'+esc(s.color)+'" stroke="none"/>'; } var d=''; for(var i=0;i+1<s.points.length;i+=2){ d+=(i===0?'M ':' L ')+s.points[i]+' '+s.points[i+1]; } return '<path d="'+d+'" stroke="'+esc(s.color)+'" stroke-width="'+s.width+'" fill="none" stroke-linecap="round"/>'; }).join(''); return '<svg style="display:block;width:100%;height:100%" viewBox="0 0 '+c.natW+' '+c.natH+'" preserveAspectRatio="none">'+paths+'</svg>'; }
     case 'frame': return '<div class="framec"><div class="fh">'+esc(c.title||'Frame')+'</div></div>';
     case 'heading': return '<div class="headingc h'+c.level+'">'+esc(c.text)+'</div>';
+    case 'sticker': return '<div class="stickerc" style="font-size:'+(Math.min(card.w, card.h||card.w)*0.7)+'px">'+esc(c.emoji)+'</div>';
   }
   return '';
 }
-var TP = {sticky:1,shape:1,ink:1,board:1,swatch:1,comment:1,column:1,image:1,frame:1,heading:1};
+var TP = {sticky:1,shape:1,ink:1,board:1,swatch:1,comment:1,column:1,image:1,frame:1,heading:1,sticker:1};
 function anchor(r, other){
   var cx=r.x+r.w/2, cy=r.y+r.h/2, dx=other.x-cx, dy=other.y-cy;
   if(Math.abs(dx)*r.h > Math.abs(dy)*r.w) return {x: dx>0?r.x+r.w:r.x, y:cy};

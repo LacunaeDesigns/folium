@@ -132,6 +132,8 @@ function cardToMarkdown(state: DocState, card: Card, depth: number): string {
       return `${'#'.repeat(Math.min(6, depth + 2))} ${c.title || 'Frame'}`
     case 'heading':
       return `${'#'.repeat(Math.min(6, c.level + 1))} ${c.text}`
+    case 'sticker':
+      return c.emoji
   }
 }
 

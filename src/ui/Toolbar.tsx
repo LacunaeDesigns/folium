@@ -21,6 +21,7 @@ export type ToolId =
   | 'chart'
   | 'frame'
   | 'heading'
+  | 'sticker'
 
 interface ToolDef {
   id: ToolId
@@ -46,6 +47,7 @@ const MORE_TOOLS: ToolDef[] = [
   { id: 'chart', icon: 'chart', label: 'Chart' },
   { id: 'frame', icon: 'frame', label: 'Frame' },
   { id: 'heading', icon: 'heading', label: 'Heading' },
+  { id: 'sticker', icon: 'sticker', label: 'Sticker' },
 ]
 
 const MEDIA_TOOLS: ToolDef[] = [

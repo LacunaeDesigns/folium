@@ -2,6 +2,7 @@ import React from 'react'
 import { CardType, LineEnd } from '../model/types'
 import { LinesLayer } from './LinesLayer'
 import { InkLayer } from './InkLayer'
+import { StickerPanel } from './StickerPanel'
 import { useAtlas, useAtlasStore, useDb } from '../store/context'
 import { putBlob, getBlob } from '../store/persist'
 import { collectClip } from '../store/store'
@@ -248,6 +249,12 @@ export function Canvas({ boardId }: { boardId: string }) {
     } else if (tool === 'line' || tool === 'draw') {
       // handled by dedicated modes (phase 6)
       return
+    } else if (tool === 'sticker') {
+      newId = s.addCard(boardId, 'sticker', {
+        x: world.x,
+        y: world.y,
+        content: { kind: 'sticker', emoji: useUi.getState().stickerEmoji } as never,
+      })
     } else {
       const typeMap: Partial<Record<ToolId, CardType>> = {
         note: 'note',
@@ -664,6 +671,8 @@ export function Canvas({ boardId }: { boardId: string }) {
       {activeTool === 'draw' && (
         <InkLayer boardId={boardId} view={view} viewportEl={viewportRef.current} />
       )}
+
+      {activeTool === 'sticker' && <StickerPanel />}
 
       {marquee && (
         <div

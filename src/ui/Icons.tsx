@@ -47,6 +47,7 @@ export type IconName =
   | 'help'
   | 'undo'
   | 'redo'
+  | 'sticker'
 
 const paths: Record<IconName, React.ReactNode> = {
   note: (
@@ -325,6 +326,9 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M17 8h2.5V5.5" />
       <path d="M19.3 8a7.5 7.5 0 1 0 1.7 5" />
     </>
+  ),
+  sticker: (
+    <path d="M12 4.2l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7Z" />
   ),
 }
 

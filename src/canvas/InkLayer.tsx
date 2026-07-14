@@ -3,11 +3,15 @@ import { useAtlasStore } from '../store/context'
 import { BoardView, useUi } from '../store/uiStore'
 import { Icon } from '../ui/Icons'
 import { Pt } from './coords'
+import { hasMeaningfulPressure, strokeOutlinePath } from '../model/inkOutline'
 
 interface Stroke {
   points: number[]
   color: string
   width: number
+  /** one pressure value per point, recorded live; stripped before persisting
+   *  if it carries no real per-point variation (see hasMeaningfulPressure) */
+  pressures?: number[]
 }
 
 const INK_COLORS = ['#33373b', '#d64541', '#4c6ef5', '#4caf6e', '#e56937', '#8e5cd9']
@@ -61,9 +65,10 @@ export function InkLayer({
     // include a stroke still being drawn (e.g. Esc pressed mid-stroke)
     const live = current.current
     current.current = null
+    const liveClean = live && !hasMeaningfulPressure(live.pressures ?? []) ? { ...live, pressures: undefined } : live
     const all =
-      live && live.width > 0 && live.points.length >= 4
-        ? [...strokesRef.current, live]
+      liveClean && liveClean.width > 0 && liveClean.points.length >= 4
+        ? [...strokesRef.current, liveClean]
         : strokesRef.current
     if (!all.length) return
     let minX = Infinity,
@@ -117,7 +122,7 @@ export function InkLayer({
       current.current = { points: [], color: '', width: 0 } // erase-drag marker
       return
     }
-    current.current = { points: [p.x, p.y], color: draw.color, width: draw.width }
+    current.current = { points: [p.x, p.y], color: draw.color, width: draw.width, pressures: [e.pressure || 0] }
     force()
   }
 
@@ -129,6 +134,7 @@ export function InkLayer({
       return
     }
     current.current.points.push(p.x, p.y)
+    current.current.pressures!.push(e.pressure || 0)
     force()
   }
 
@@ -139,7 +145,10 @@ export function InkLayer({
       force()
       return
     }
-    setStrokes((prev) => [...prev, c])
+    // drop the pressure array unless it carries real per-point variation, so
+    // mouse-drawn strokes persist and render exactly as they did before
+    const clean = hasMeaningfulPressure(c.pressures ?? []) ? c : { ...c, pressures: undefined }
+    setStrokes((prev) => [...prev, clean])
   }
 
   return (
@@ -152,18 +161,30 @@ export function InkLayer({
       >
         <svg className="lines-layer" style={{ overflow: 'visible' }}>
           <g transform={`translate(${view.pan.x} ${view.pan.y}) scale(${view.zoom})`}>
-            {strokes.map((s, i) => (
-              <path key={i} d={strokesToPath(s.points)} stroke={s.color} strokeWidth={s.width} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            ))}
+            {strokes.map((s, i) =>
+              s.pressures && hasMeaningfulPressure(s.pressures) ? (
+                <path key={i} d={strokeOutlinePath(s.points, s.pressures, s.width)} fill={s.color} stroke="none" />
+              ) : (
+                <path key={i} d={strokesToPath(s.points)} stroke={s.color} strokeWidth={s.width} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              ),
+            )}
             {current.current && !draw.eraser && (
-              <path
-                d={strokesToPath(current.current.points)}
-                stroke={current.current.color}
-                strokeWidth={current.current.width}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              current.current.pressures && hasMeaningfulPressure(current.current.pressures) ? (
+                <path
+                  d={strokeOutlinePath(current.current.points, current.current.pressures, current.current.width)}
+                  fill={current.current.color}
+                  stroke="none"
+                />
+              ) : (
+                <path
+                  d={strokesToPath(current.current.points)}
+                  stroke={current.current.color}
+                  strokeWidth={current.current.width}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )
             )}
           </g>
         </svg>

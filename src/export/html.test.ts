@@ -159,3 +159,22 @@ describe('buildHtmlExport heading rendering', () => {
     expect(html).toContain('"level":2')
   })
 })
+
+describe('buildHtmlExport sticker rendering', () => {
+  it('renders a sticker card as a chrome-less emoji div, and the fixture round-trips into the embedded JSON', () => {
+    const bundle = makeBundle([])
+    const sticker: Card = {
+      ...bundle.cards[0],
+      id: 's1',
+      type: 'sticker',
+      content: { kind: 'sticker', emoji: '⭐' },
+    }
+    bundle.cards.push(sticker)
+    const html = buildHtmlExport(bundle)
+
+    expect(html).toContain("case 'sticker'")
+    expect(html).toContain('class="stickerc"')
+    expect(html).toContain('sticker:1') // TP (transparent) map entry
+    expect(html).toContain('"emoji":"⭐"')
+  })
+})

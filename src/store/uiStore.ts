@@ -31,6 +31,8 @@ interface UiState {
   /** per-board pan/zoom, in-memory */
   views: Record<string, BoardView>
   draw: DrawSettings
+  /** active emoji for the sticker tool, chosen from the picker before placing */
+  stickerEmoji: string
   trashOpen: boolean
   searchOpen: boolean
   unsortedOpen: boolean
@@ -49,6 +51,7 @@ interface UiState {
   setTool(tool: ToolId | null): void
   setView(boardId: string, view: BoardView): void
   setDraw(patch: Partial<DrawSettings>): void
+  setStickerEmoji(emoji: string): void
   setTrashOpen(open: boolean): void
   setSearchOpen(open: boolean): void
   setUnsortedOpen(open: boolean): void
@@ -65,6 +68,7 @@ export const useUi = create<UiState>((set) => ({
   activeTool: null,
   views: {},
   draw: { color: '#33373b', width: 3, eraser: false },
+  stickerEmoji: '⭐',
   trashOpen: false,
   searchOpen: false,
   unsortedOpen: false,
@@ -91,6 +95,7 @@ export const useUi = create<UiState>((set) => ({
   setTool: (tool) => set({ activeTool: tool }),
   setView: (boardId, view) => set((s) => ({ views: { ...s.views, [boardId]: view } })),
   setDraw: (patch) => set((s) => ({ draw: { ...s.draw, ...patch } })),
+  setStickerEmoji: (emoji) => set({ stickerEmoji: emoji }),
   setTrashOpen: (open) => set({ trashOpen: open }),
   setSearchOpen: (open) => set({ searchOpen: open }),
   setUnsortedOpen: (open) => set({ unsortedOpen: open }),

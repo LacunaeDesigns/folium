@@ -67,7 +67,8 @@
 .card-shell[data-type='column'],
 .card-shell[data-type='image'],
 .card-shell[data-type='frame'],
-.card-shell[data-type='heading'] {
+.card-shell[data-type='heading'],
+.card-shell[data-type='sticker'] {
   background: transparent;
   box-shadow: none;
 }
@@ -342,6 +343,34 @@
 .draw-eraser.on {
   background: var(--accent-soft);
   color: var(--accent);
+}
+.sticker-panel {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 280px;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 7px 8px;
+  box-shadow: var(--shadow-pop);
+  z-index: 75;
+}
+.sticker-choice {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border-radius: 5px;
+}
+.sticker-choice.on {
+  background: var(--accent-soft);
 }
 .draw-done {
   font-size: 12px;

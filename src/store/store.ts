@@ -126,6 +126,8 @@ export function defaultContent(type: CardType): CardContent {
       return { kind: 'frame', title: '' }
     case 'heading':
       return { kind: 'heading', text: '', level: 1 }
+    case 'sticker':
+      return { kind: 'sticker', emoji: '⭐' }
   }
 }
 

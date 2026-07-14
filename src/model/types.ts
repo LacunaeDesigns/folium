@@ -33,6 +33,7 @@ export type CardType =
   | 'chart'
   | 'frame'
   | 'heading'
+  | 'sticker'
 
 export interface TodoItem {
   id: string
@@ -132,10 +133,19 @@ export interface ShapeContent {
   fill: string
   text: string
 }
+export interface InkStroke {
+  points: number[]
+  color: string
+  width: number
+  /** one 0..1 pressure value per point; omitted when the input device (mouse)
+   *  carries no real pressure data — old saved strokes have no pressures either */
+  pressures?: number[]
+}
+
 export interface InkContent {
   kind: 'ink'
   /** strokes in card-local coordinates */
-  strokes: { points: number[]; color: string; width: number }[]
+  strokes: InkStroke[]
   /** natural (creation-time) dimensions — viewBox for scaling on resize */
   natW: number
   natH: number
@@ -162,6 +172,11 @@ export interface HeadingContent {
   level: 1 | 2 | 3
 }
 
+export interface StickerContent {
+  kind: 'sticker'
+  emoji: string
+}
+
 export type CardContent =
   | NoteContent
   | TodoContent
@@ -179,6 +194,7 @@ export type CardContent =
   | ChartContent
   | FrameContent
   | HeadingContent
+  | StickerContent
 
 export interface Card {
   id: string
@@ -290,4 +306,5 @@ export const DEFAULT_CARD_SIZE: Record<CardType, { w: number; h?: number }> = {
   chart: { w: 300 },
   frame: { w: 480, h: 320 },
   heading: { w: 360 },
+  sticker: { w: 120, h: 120 },
 }

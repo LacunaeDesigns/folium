@@ -57,6 +57,7 @@ export function cardText(card: Card): string {
       return c.text
     case 'board':
     case 'ink':
+    case 'sticker':
       return ''
   }
 }

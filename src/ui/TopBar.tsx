@@ -25,7 +25,10 @@ export function TopBar({
   canUndo,
   canRedo,
   liveActive,
-  rightExtra,
+  liveMenu,
+  exportMenu,
+  viewMenu,
+  settingsMenu,
 }: {
   crumbs: Crumb[]
   title: string
@@ -43,7 +46,11 @@ export function TopBar({
   canUndo?: boolean
   canRedo?: boolean
   liveActive?: boolean
-  rightExtra?: React.ReactNode
+  /** popovers rendered inside each button's own .menu-anchor so they drop from their button */
+  liveMenu?: React.ReactNode
+  exportMenu?: React.ReactNode
+  viewMenu?: React.ReactNode
+  settingsMenu?: React.ReactNode
 }) {
   const [editing, setEditing] = React.useState(false)
   const [draft, setDraft] = React.useState(title)
@@ -95,7 +102,6 @@ export function TopBar({
           )}
         </nav>
         <div className="topbar-actions">
-          {rightExtra}
           <button
             className="icon-btn"
             title="Undo (Ctrl+Z)"
@@ -115,22 +121,34 @@ export function TopBar({
           <button className="icon-btn" title="Search boards (Ctrl+K)" onClick={onSearch}>
             <Icon name="search" />
           </button>
-          <button className="chrome-btn" onClick={onLive}>
-            <Icon name="broadcast" size={13} /> Live
-            {liveActive && <span className="live-dot" />}
-          </button>
+          <span className="menu-anchor">
+            <button className="chrome-btn" onClick={onLive}>
+              <Icon name="broadcast" size={13} /> Live
+              {liveActive && <span className="live-dot" />}
+            </button>
+            {liveMenu}
+          </span>
           <button className="chrome-btn" onClick={onTemplates}>
             <Icon name="template" size={13} /> Templates
           </button>
-          <button className="chrome-btn" onClick={onExport}>
-            Export <Icon name="chevron-down" size={13} />
-          </button>
-          <button className="chrome-btn" onClick={onView}>
-            View <Icon name="chevron-down" size={13} />
-          </button>
-          <button className="icon-btn" title="Settings" onClick={onSettings}>
-            <Icon name="settings" />
-          </button>
+          <span className="menu-anchor">
+            <button className="chrome-btn" onClick={onExport}>
+              Export <Icon name="chevron-down" size={13} />
+            </button>
+            {exportMenu}
+          </span>
+          <span className="menu-anchor">
+            <button className="chrome-btn" onClick={onView}>
+              View <Icon name="chevron-down" size={13} />
+            </button>
+            {viewMenu}
+          </span>
+          <span className="menu-anchor">
+            <button className="icon-btn" title="Settings" onClick={onSettings}>
+              <Icon name="settings" />
+            </button>
+            {settingsMenu}
+          </span>
           <button className="icon-btn" title="Help" onClick={onHelp}>
             <Icon name="help" />
           </button>

@@ -320,14 +320,10 @@ export default function App() {
           canUndo={canUndo}
           canRedo={canRedo}
           liveActive={liveActive}
-          rightExtra={
-            <span className="menu-anchor">
-              {menu === 'view' && <ViewMenu onClose={() => setMenu(null)} />}
-              {menu === 'settings' && <SettingsMenu onClose={() => setMenu(null)} />}
-              {menu === 'export' && <ExportMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
-              {menu === 'live' && <LiveSessionPanel boardId={currentBoardId} />}
-            </span>
-          }
+          viewMenu={menu === 'view' && <ViewMenu onClose={() => setMenu(null)} />}
+          settingsMenu={menu === 'settings' && <SettingsMenu onClose={() => setMenu(null)} />}
+          exportMenu={menu === 'export' && <ExportMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
+          liveMenu={menu === 'live' && <LiveSessionPanel boardId={currentBoardId} />}
         />
       </header>
       <nav className="app-toolbar">

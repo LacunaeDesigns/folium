@@ -127,6 +127,7 @@ svg.lines text{font-size:12px;fill:var(--soft);paint-order:stroke;stroke:var(--b
 var DATA = JSON.parse(document.getElementById('atlas-data').textContent);
 var boards = {}; DATA.boards.forEach(function(b){ boards[b.id] = b; });
 var current = DATA.rootBoardId;
+var zoom = 1;
 var esc = function(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); };
 var renderChartSvg = ${renderChartSvg.toString()};
 var rowsToChartData = ${rowsToChartData.toString()};
@@ -239,10 +240,10 @@ function render(){
   }).join('');
   world.style.width=(maxX-minX+2*pad)+'px';
   world.style.height=(maxY-minY+2*pad)+'px';
-  // scale to fit width
+  // fit-to-width as the initial zoom; ctrl/cmd+wheel adjusts it interactively from here
   var vp=document.getElementById('viewport');
-  var scale=Math.min(1, (vp.clientWidth-20)/(maxX-minX+2*pad));
-  world.style.transform='scale('+scale+')';
+  zoom=Math.min(1, (vp.clientWidth-20)/(maxX-minX+2*pad));
+  world.style.transform='scale('+zoom+')';
   world.parentNode.style.height='calc(100vh - 92px)';
   // draw lines after layout (measure real heights)
   requestAnimationFrame(function(){
@@ -332,6 +333,23 @@ document.addEventListener('click', function(e){
   }
 });
 function avatarPin(name){ return avatar(name); }
+// ctrl/cmd+wheel zooms the board content (around the cursor) instead of the
+// browser page; plain wheel keeps native scrolling for panning
+document.getElementById('viewport').addEventListener('wheel', function(e){
+  if(!e.ctrlKey && !e.metaKey) return;
+  e.preventDefault();
+  var vp = document.getElementById('viewport');
+  var world = document.getElementById('world');
+  var r = vp.getBoundingClientRect();
+  var mx = e.clientX - r.left + vp.scrollLeft;
+  var my = e.clientY - r.top + vp.scrollTop;
+  var worldX = mx / zoom, worldY = my / zoom;
+  var factor = Math.exp(-e.deltaY * 0.0015);
+  zoom = Math.min(4, Math.max(0.1, zoom * factor));
+  world.style.transform = 'scale('+zoom+')';
+  vp.scrollLeft = worldX * zoom - (e.clientX - r.left);
+  vp.scrollTop = worldY * zoom - (e.clientY - r.top);
+}, {passive:false});
 render();
 ${safeExtra}
 </script>

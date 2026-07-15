@@ -5,6 +5,7 @@ import { FoliumDb, bindAutosave, bindBlobGc, loadDoc, openDb } from './persist'
 import { loadSettings } from './settings'
 import { createTabSync } from './tabSync'
 import { recordLocalSave } from './localSave'
+import { checkForUpdates } from './updateCheck'
 
 interface FoliumContextValue {
   store: FoliumStore
@@ -65,5 +66,7 @@ export async function bootFolium(): Promise<FoliumContextValue> {
   } catch {
     /* sync is best-effort; never block boot on it */
   }
+  // update-available check (best-effort, never blocks boot)
+  void checkForUpdates(db)
   return { store, db }
 }

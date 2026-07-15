@@ -92,6 +92,8 @@ export async function deleteBlob(db: FoliumDb, id: string): Promise<void> {
 
 const b64Cache = new Map<string, string>()
 
+let currentAutosaveFlush: (() => void) | null = null
+
 /** Base64 of a stored blob's bytes, cached by blob id. Folder sync re-exports every
  *  blob on every push, and blob ids are content-stable (a new id is minted whenever
  *  a blob's bytes change), so caching here turns a repeated full-image re-encode
@@ -232,6 +234,7 @@ export function bindAutosave(store: FoliumStore, db: FoliumDb, delay = 600, hook
       write()
     }
   }
+  currentAutosaveFlush = flush
   const onVisibility = () => {
     if (document.visibilityState === 'hidden') flush()
   }
@@ -246,5 +249,12 @@ export function bindAutosave(store: FoliumStore, db: FoliumDb, delay = 600, hook
     }
     flush()
     unsub()
+    if (currentAutosaveFlush === flush) currentAutosaveFlush = null
   }
+}
+
+/** Force the pending debounced autosave write to happen immediately (used by Ctrl+S).
+ *  No-op if nothing is bound yet or nothing is currently pending. */
+export function flushAutosave(): void {
+  currentAutosaveFlush?.()
 }

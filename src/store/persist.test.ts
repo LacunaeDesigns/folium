@@ -11,6 +11,8 @@ import {
   gcBlobs,
   bindBlobGc,
   computeReferencedBlobIds,
+  bindAutosave,
+  flushAutosave,
 } from './persist'
 import { saveBoardAsTemplate } from './templates'
 import { DocState, Template } from '../model/types'
@@ -259,5 +261,29 @@ describe('computeReferencedBlobIds', () => {
     const referenced = computeReferencedBlobIds(state, templates, ['tmpl-blob', 'orphan'])
     expect(referenced.has('tmpl-blob')).toBe(true)
     expect(referenced.has('orphan')).toBe(false)
+  })
+})
+
+describe('flushAutosave', () => {
+  it('immediately writes a pending change instead of waiting for the debounce', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    const written = new Promise<number>((resolve) => {
+      bindAutosave(store, db, 600, { onWrite: resolve })
+    })
+    store.getState().addCard(store.getState().rootId, 'note', { x: 1, y: 1 })
+
+    flushAutosave()
+    await written // resolves well under the 600ms debounce, proving flush bypassed it
+
+    const loaded = await loadDoc(db)
+    expect(Object.keys(loaded!.cards)).toHaveLength(1)
+  })
+
+  it('is a safe no-op when nothing is pending', () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    bindAutosave(store, db)
+    expect(() => flushAutosave()).not.toThrow()
   })
 })

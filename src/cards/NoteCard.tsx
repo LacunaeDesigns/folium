@@ -1,5 +1,6 @@
 import React from 'react'
 import { EditorContent, useEditor, Editor } from '@tiptap/react'
+import { AllSelection, Selection, TextSelection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import Highlight from '@tiptap/extension-highlight'
 import Underline from '@tiptap/extension-underline'
@@ -13,6 +14,19 @@ import { useFoliumStore } from '../store/context'
 import { useEditing, useDebouncedCommit } from './useEditing'
 import { Icon } from '../ui/Icons'
 
+// Ctrl+A/Cmd+A produces a ProseMirror AllSelection, not a plain TextSelection.
+// The list wrap/lift commands (toggleBulletList/toggleOrderedList) silently
+// no-op against an AllSelection — even a single, unchained toggle — even
+// though the exact same range expressed as a TextSelection works fine.
+// Replace it with an equivalent TextSelection before running any list toggle.
+function normalizeAllSelectionForListToggle(editor: Editor): void {
+  if (!(editor.state.selection instanceof AllSelection)) return
+  const { doc } = editor.state
+  const from = Selection.atStart(doc).from
+  const to = Selection.atEnd(doc).to
+  editor.view.dispatch(editor.state.tr.setSelection(TextSelection.create(doc, from, to)))
+}
+
 // Plain toggleBulletList()/toggleOrderedList() only flip the current list type
 // on/off against a paragraph — switching from one list type to the other takes
 // two clicks (toggle off, then toggle on). These instead convert directly:
@@ -22,6 +36,7 @@ import { Icon } from '../ui/Icons'
 // ProseMirror AllSelection, i.e. after Ctrl+A/Cmd+A, even though each toggle
 // works fine on its own with that same selection.
 export function setBulletList(editor: Editor) {
+  normalizeAllSelectionForListToggle(editor)
   if (editor.isActive('orderedList')) {
     editor.chain().focus().toggleOrderedList().run()
   }
@@ -29,6 +44,7 @@ export function setBulletList(editor: Editor) {
 }
 
 export function setOrderedList(editor: Editor) {
+  normalizeAllSelectionForListToggle(editor)
   if (editor.isActive('bulletList')) {
     editor.chain().focus().toggleBulletList().run()
   }

@@ -77,4 +77,30 @@ describe('list type switching', () => {
       Array.from({ length: 5 }, (_, i) => `item ${i + 1}`).join(' '),
     )
   })
+
+  // Regression: toggling a list *off* (not switching type) also silently
+  // no-ops against a genuine AllSelection, even as a single, unchained
+  // toggleBulletList() call — caught via manual browser testing (Ctrl+A on
+  // an already-bulleted note, click the bullet button, nothing happens).
+  it('toggles a bullet list off across an AllSelection (Ctrl+A) instead of silently no-oping', () => {
+    const editor = makeEditor('<ul><li>solo</li></ul>')
+    editor.view.dispatch(editor.state.tr.setSelection(new AllSelection(editor.state.doc)))
+    expect(editor.isActive('bulletList')).toBe(true)
+
+    setBulletList(editor)
+
+    expect(editor.isActive('bulletList')).toBe(false)
+    expect(editor.getText().trim()).toBe('solo')
+  })
+
+  it('toggles an ordered list off across an AllSelection (Ctrl+A) instead of silently no-oping', () => {
+    const editor = makeEditor('<ol><li>solo</li></ol>')
+    editor.view.dispatch(editor.state.tr.setSelection(new AllSelection(editor.state.doc)))
+    expect(editor.isActive('orderedList')).toBe(true)
+
+    setOrderedList(editor)
+
+    expect(editor.isActive('orderedList')).toBe(false)
+    expect(editor.getText().trim()).toBe('solo')
+  })
 })

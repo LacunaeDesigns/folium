@@ -273,9 +273,12 @@ describe('flushAutosave', () => {
     })
     store.getState().addCard(store.getState().rootId, 'note', { x: 1, y: 1 })
 
+    const start = Date.now()
     flushAutosave()
-    await written // resolves well under the 600ms debounce, proving flush bypassed it
+    await written
+    const elapsed = Date.now() - start
 
+    expect(elapsed).toBeLessThan(300) // well under the 600ms debounce — proves flush bypassed it
     const loaded = await loadDoc(db)
     expect(Object.keys(loaded!.cards)).toHaveLength(1)
   })

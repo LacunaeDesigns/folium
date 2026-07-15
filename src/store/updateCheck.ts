@@ -43,6 +43,7 @@ export async function checkForUpdates(db: FoliumDb): Promise<void> {
     const lastCheckedAt = await getSetting<number | null>(db, LAST_CHECKED_KEY, null)
     const now = Date.now()
     if (shouldSkipCheck(lastCheckedAt, now)) return
+    await setSetting(db, LAST_CHECKED_KEY, now)
 
     const res = await fetch(COMMITS_URL, { headers: { Accept: 'application/vnd.github+json' } })
     if (!res.ok) return
@@ -52,7 +53,6 @@ export async function checkForUpdates(db: FoliumDb): Promise<void> {
     const remoteTs = new Date(dateStr).getTime()
     if (Number.isNaN(remoteTs)) return
 
-    await setSetting(db, LAST_CHECKED_KEY, now)
     const dismissedAt = await getSetting<number | null>(db, DISMISSED_KEY, null)
     useUpdateCheck.setState({
       available: isUpdateAvailable(__BUILD_TIME__, remoteTs, dismissedAt),

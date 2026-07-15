@@ -110,8 +110,14 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             {activeSection === 'start' && (
               <section id="help-start">
                 <h2>Getting started</h2>
-                <p>Cards live on boards. Pick a tool from the toolbar, then click the canvas to place a card.</p>
-                <p>Double-click an empty spot on the canvas to drop a quick note there.</p>
+                <p className="help-tip">
+                  <Icon name="plus" size={14} />
+                  <span>Cards live on boards. Pick a tool from the toolbar, then click the canvas to place a card.</span>
+                </p>
+                <p className="help-tip">
+                  <Icon name="note" size={14} />
+                  <span>Double-click an empty spot on the canvas to drop a quick note there.</span>
+                </p>
               </section>
             )}
 
@@ -135,10 +141,16 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
               <section id="help-nav">
                 <h2>Navigating</h2>
                 <p>Pan the canvas by holding Space and dragging, or by dragging with the middle mouse button.</p>
-                <p>Zoom by holding Ctrl and scrolling the wheel.</p>
-                <p>
-                  Use the View menu, or Shift+1, to fit the whole board in view. Use Shift+2 to zoom to the
-                  current selection.
+                <p className="help-tip">
+                  <Icon name="zoom-in" size={14} />
+                  <span>Zoom by holding Ctrl and scrolling the wheel.</span>
+                </p>
+                <p className="help-tip">
+                  <Icon name="fit" size={14} />
+                  <span>
+                    Use the View menu, or Shift+1, to fit the whole board in view. Use Shift+2 to zoom to the
+                    current selection.
+                  </span>
                 </p>
               </section>
             )}
@@ -148,7 +160,10 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
                 <h2>Selecting & moving</h2>
                 <p>Drag on empty canvas to draw a marquee and select the cards inside it.</p>
                 <p>Click a card to select it, and shift-click to add more cards to the selection.</p>
-                <p>Hold Alt while dragging a selection to duplicate it and drag the copies, leaving the originals in place.</p>
+                <p className="help-tip">
+                  <Icon name="duplicate" size={14} />
+                  <span>Hold Alt while dragging a selection to duplicate it and drag the copies, leaving the originals in place.</span>
+                </p>
                 <p>
                   Dragging a card shows snap guides against nearby cards. Hold Ctrl while dragging to move
                   freely, ignoring the guides.
@@ -186,7 +201,10 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             {activeSection === 'templates' && (
               <section id="help-templates">
                 <h2>Templates</h2>
-                <p>Open the template gallery from the top bar to start a new board from a built-in layout.</p>
+                <p className="help-tip">
+                  <Icon name="template" size={14} />
+                  <span>Open the template gallery from the top bar to start a new board from a built-in layout.</span>
+                </p>
                 <p>You can also save the board you are currently on as your own template, to reuse later.</p>
               </section>
             )}
@@ -194,17 +212,26 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             {activeSection === 'io' && (
               <section id="help-io">
                 <h2>Import & export</h2>
-                <p>
-                  Import Markdown files from the Export menu, or drag a <code>.md</code> file onto a board.
-                  Each file becomes a new board: headings and paragraphs become notes, checklists become
-                  to-do cards, pipe tables become table cards, and images and links become their own cards.
-                  Markdown import cannot bring across layout, colours or embedded images.
+                <p className="help-tip">
+                  <Icon name="download" size={14} />
+                  <span>
+                    Import Markdown files from the Export menu, or drag a <code>.md</code> file onto a board.
+                    Each file becomes a new board: headings and paragraphs become notes, checklists become
+                    to-do cards, pipe tables become table cards, and images and links become their own cards.
+                    Markdown import cannot bring across layout, colours or embedded images.
+                  </span>
                 </p>
-                <p>From the Export menu you can also export the current board as an HTML file (which can be printed to PDF), or as Markdown.</p>
-                <p>
-                  Back up all data as a single JSON file, and restore it later with Import backup — this
-                  replaces all current boards, cards and files, so use it for moving your whole workspace
-                  between machines.
+                <p className="help-tip">
+                  <Icon name="export" size={14} />
+                  <span>From the Export menu you can also export the current board as an HTML file (which can be printed to PDF), or as Markdown.</span>
+                </p>
+                <p className="help-tip">
+                  <Icon name="restore" size={14} />
+                  <span>
+                    Back up all data as a single JSON file, and restore it later with Import backup — this
+                    replaces all current boards, cards and files, so use it for moving your whole workspace
+                    between machines.
+                  </span>
                 </p>
               </section>
             )}
@@ -212,9 +239,12 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             {activeSection === 'photos' && (
               <section id="help-photos">
                 <h2>Photos via Pexels</h2>
-                <p>
-                  Get a free API key from pexels.com/api and paste it into Settings to search and add
-                  photos straight onto a board.
+                <p className="help-tip">
+                  <Icon name="image" size={14} />
+                  <span>
+                    Get a free API key from pexels.com/api and paste it into Settings to search and add
+                    photos straight onto a board.
+                  </span>
                 </p>
                 <p>The key is stored only in this browser and is never included in exports or synced elsewhere.</p>
               </section>

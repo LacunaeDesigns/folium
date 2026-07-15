@@ -501,6 +501,16 @@
   border-radius: 4px;
   padding: 1px 5px;
 }
+.help-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.help-tip svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ink-faint);
+}
 .help-card-list {
   display: flex;
   flex-direction: column;

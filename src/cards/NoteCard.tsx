@@ -17,20 +17,22 @@ import { Icon } from '../ui/Icons'
 // on/off against a paragraph — switching from one list type to the other takes
 // two clicks (toggle off, then toggle on). These instead convert directly:
 // toggle the other type off first (if active) before toggling the target on.
+// The two toggles MUST run as separate transactions (not chained into one
+// .run()) — chaining both breaks silently (a no-op) when the selection is a
+// ProseMirror AllSelection, i.e. after Ctrl+A/Cmd+A, even though each toggle
+// works fine on its own with that same selection.
 export function setBulletList(editor: Editor) {
   if (editor.isActive('orderedList')) {
-    editor.chain().focus().toggleOrderedList().toggleBulletList().run()
-  } else {
-    editor.chain().focus().toggleBulletList().run()
+    editor.chain().focus().toggleOrderedList().run()
   }
+  editor.chain().focus().toggleBulletList().run()
 }
 
 export function setOrderedList(editor: Editor) {
   if (editor.isActive('bulletList')) {
-    editor.chain().focus().toggleBulletList().toggleOrderedList().run()
-  } else {
-    editor.chain().focus().toggleOrderedList().run()
+    editor.chain().focus().toggleBulletList().run()
   }
+  editor.chain().focus().toggleOrderedList().run()
 }
 
 function FormatBar({ editor, noteId, bg }: { editor: Editor; noteId: string; bg: string }) {

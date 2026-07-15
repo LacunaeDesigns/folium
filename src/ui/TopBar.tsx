@@ -29,6 +29,7 @@ export function TopBar({
   exportMenu,
   viewMenu,
   settingsMenu,
+  saveStatus,
 }: {
   crumbs: Crumb[]
   title: string
@@ -51,6 +52,7 @@ export function TopBar({
   exportMenu?: React.ReactNode
   viewMenu?: React.ReactNode
   settingsMenu?: React.ReactNode
+  saveStatus?: React.ReactNode
 }) {
   const [editing, setEditing] = React.useState(false)
   const [draft, setDraft] = React.useState(title)
@@ -118,6 +120,7 @@ export function TopBar({
           >
             <Icon name="redo" />
           </button>
+          {saveStatus}
           <button className="icon-btn" title="Search boards (Ctrl+K)" onClick={onSearch}>
             <Icon name="search" />
           </button>

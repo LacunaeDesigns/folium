@@ -11,6 +11,7 @@ import { ExportMenu } from './ui/ExportMenu'
 import { PresentMode } from './ui/PresentMode'
 import { LiveSessionPanel } from './ui/LiveSessionPanel'
 import { HelpPanel } from './ui/HelpPanel'
+import { SaveStatusIndicator } from './ui/SaveStatusIndicator'
 import { useLive } from './live/host'
 import { useSync, linkFolder, unlinkFolder, reconnect, syncNow } from './store/sync'
 import { relTime } from './cards/CommentCard'
@@ -336,6 +337,7 @@ export default function App() {
           settingsMenu={menu === 'settings' && <SettingsMenu onClose={() => setMenu(null)} />}
           exportMenu={menu === 'export' && <ExportMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
           liveMenu={menu === 'live' && <LiveSessionPanel boardId={currentBoardId} />}
+          saveStatus={<SaveStatusIndicator onOpenSettings={() => setMenu('settings')} />}
         />
       </header>
       <nav className="app-toolbar">

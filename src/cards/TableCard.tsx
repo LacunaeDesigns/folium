@@ -22,6 +22,13 @@ export function TableCard({ card, readOnly }: CardBodyProps) {
   const addCol = () => setRows(rows.map((r) => [...r, '']))
   const delCol = () => rows[0].length > 1 && setRows(rows.map((r) => r.slice(0, -1)))
 
+  // grow a cell's textarea to fit its wrapped content, same approach as TodoCard
+  const autoGrow = (el: HTMLTextAreaElement | null) => {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }
+
   return (
     <div className="table-card">
       <table>
@@ -30,11 +37,16 @@ export function TableCard({ card, readOnly }: CardBodyProps) {
             <tr key={r} className={r === 0 ? 'thead' : undefined}>
               {row.map((cell, c) => (
                 <td key={c}>
-                  <input
+                  <textarea
+                    ref={autoGrow}
+                    rows={1}
                     value={cell}
                     readOnly={readOnly}
                     placeholder={r === 0 ? 'Header' : ''}
-                    onChange={(e) => setCell(r, c, e.target.value)}
+                    onChange={(e) => {
+                      setCell(r, c, e.target.value)
+                      autoGrow(e.target)
+                    }}
                   />
                 </td>
               ))}

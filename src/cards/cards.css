@@ -909,24 +909,33 @@
 }
 .table-card table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 .table-card td {
   border: 1px solid var(--border);
   padding: 0;
+  vertical-align: top;
 }
 .table-card tr:first-child td { border-top: none; }
 .table-card td:first-child { border-left: none; }
 .table-card tr:last-child td { border-bottom: none; }
 .table-card td:last-child { border-right: none; }
-.table-card td input {
+.table-card td textarea {
+  display: block;
   width: 100%;
   border: none;
   outline: none;
+  resize: none;
   background: transparent;
+  font-family: inherit;
   font-size: 12.5px;
+  line-height: 1.4;
   padding: 7px 9px;
   color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow: hidden;
 }
 .table-card tr.thead {
   background: var(--card-yellow);
@@ -934,7 +943,7 @@
 [data-board-theme='dark'] .table-card tr.thead {
   background: #4d451c;
 }
-.table-card tr.thead input {
+.table-card tr.thead textarea {
   font-weight: 700;
 }
 .table-controls {

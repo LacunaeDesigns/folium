@@ -201,8 +201,6 @@ export function Canvas({ boardId }: { boardId: string }) {
   // paste: files -> image/file cards, URLs -> link card
   React.useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
-      const el = document.activeElement as HTMLElement | null
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
       const vp = viewportRef.current
       if (!vp) return
       const center = screenToWorld(
@@ -210,16 +208,21 @@ export function Canvas({ boardId }: { boardId: string }) {
         vp.clientWidth / 2,
         vp.clientHeight / 2,
       )
-      if (e.clipboardData?.files.length) {
-        e.preventDefault()
-        void importFiles(e.clipboardData.files, center)
-        return
-      }
-      // in-app card clipboard takes precedence over stale OS text
+      // the in-app card clipboard always wins, even while focused in a form
+      // field — e.g. clicking a column's title to select+copy it (see
+      // resolveCopyTargetIds) naturally leaves focus right there, and Ctrl+V
+      // right after is clearly meant to paste that card, not native text
       if (hasClipboard()) {
         e.preventDefault()
         const ids = store.getState().pasteClip(getClipboard()!, boardId, center)
         if (ids.length) useUi.getState().setSelection(ids)
+        return
+      }
+      const el = document.activeElement as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
+      if (e.clipboardData?.files.length) {
+        e.preventDefault()
+        void importFiles(e.clipboardData.files, center)
         return
       }
       const text = e.clipboardData?.getData('text')?.trim()

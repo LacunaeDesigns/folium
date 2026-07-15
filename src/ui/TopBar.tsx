@@ -25,6 +25,7 @@ export function TopBar({
   canUndo,
   canRedo,
   liveActive,
+  updateAvailable,
   liveMenu,
   exportMenu,
   viewMenu,
@@ -47,6 +48,7 @@ export function TopBar({
   canUndo?: boolean
   canRedo?: boolean
   liveActive?: boolean
+  updateAvailable?: boolean
   /** popovers rendered inside each button's own .menu-anchor so they drop from their button */
   liveMenu?: React.ReactNode
   exportMenu?: React.ReactNode
@@ -154,6 +156,7 @@ export function TopBar({
           </span>
           <button className="icon-btn" title="Help" onClick={onHelp}>
             <Icon name="help" />
+            {updateAvailable && <span className="update-dot" />}
           </button>
         </div>
       </div>

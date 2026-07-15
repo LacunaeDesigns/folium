@@ -14,6 +14,7 @@ import { HelpPanel } from './ui/HelpPanel'
 import { SaveStatusIndicator } from './ui/SaveStatusIndicator'
 import { useLive } from './live/host'
 import { useSync, linkFolder, unlinkFolder, reconnect, syncNow } from './store/sync'
+import { useUpdateCheck } from './store/updateCheck'
 import { relTime } from './cards/CommentCard'
 import { useFolium, useFoliumStore, useDb } from './store/context'
 import { breadcrumbs } from './store/selectors'
@@ -258,6 +259,7 @@ export default function App() {
   const [photosOpen, setPhotosOpen] = React.useState(false)
   const [helpOpen, setHelpOpen] = React.useState(false)
   const liveActive = useLive((s) => s.active)
+  const updateAvailable = useUpdateCheck((s) => s.available)
   const canUndo = useStore(store.temporal, (s) => s.pastStates.length > 0)
   const canRedo = useStore(store.temporal, (s) => s.futureStates.length > 0)
 
@@ -333,6 +335,7 @@ export default function App() {
           canUndo={canUndo}
           canRedo={canRedo}
           liveActive={liveActive}
+          updateAvailable={updateAvailable}
           viewMenu={menu === 'view' && <ViewMenu onClose={() => setMenu(null)} />}
           settingsMenu={menu === 'settings' && <SettingsMenu onClose={() => setMenu(null)} />}
           exportMenu={menu === 'export' && <ExportMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}

@@ -1,5 +1,7 @@
 import React from 'react'
 import { Icon, IconName } from './Icons'
+import { useDb } from '../store/context'
+import { useUpdateCheck, dismissUpdate } from '../store/updateCheck'
 import './panels.css'
 
 const SECTIONS: { id: string; title: string }[] = [
@@ -58,6 +60,9 @@ const SHORTCUTS: { keys: string; action: string }[] = [
 ]
 
 export function HelpPanel({ onClose }: { onClose: () => void }) {
+  const db = useDb()
+  const updateAvailable = useUpdateCheck((s) => s.available)
+
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -89,6 +94,17 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             ))}
           </nav>
           <div className="help-content">
+            {updateAvailable && (
+              <div className="help-update-banner">
+                <span>A newer version of Folium is available.</span>
+                <a href="https://github.com/LacunaeDesigns/folium" target="_blank" rel="noreferrer">
+                  View on GitHub
+                </a>
+                <button className="chrome-btn" onClick={() => void dismissUpdate(db)}>
+                  Dismiss
+                </button>
+              </div>
+            )}
             <section id="help-start">
               <h2>Getting started</h2>
               <p>Cards live on boards. Pick a tool from the toolbar, then click the canvas to place a card.</p>

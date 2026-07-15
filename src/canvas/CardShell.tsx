@@ -1,10 +1,15 @@
 import React from 'react'
 import { Card } from '../model/types'
-import { useFoliumStore } from '../store/context'
+import { useFolium, useFoliumStore } from '../store/context'
+import { columnCards } from '../store/selectors'
 import { SnapGuides, useUi } from '../store/uiStore'
 import { getCardBody } from '../cards/registry'
 import { safeCapture } from './coords'
 import { resolveCardDrop } from './dropTarget'
+
+// stable reference for non-column cards, so the members subscription below
+// never causes them to re-render just because some other card's selection changed
+const EMPTY_MEMBERS: Card[] = []
 
 export interface DragState {
   ids: string[]
@@ -24,6 +29,13 @@ export function cardZIndex(card: Card, isSelected: boolean): number {
   // frames always render behind regular cards, regardless of their own z
   if (card.type === 'frame') return card.z - 1_000_000
   return isSelected ? card.z + SELECTED_Z_BOOST : card.z
+}
+
+// column members render via ColumnMember, not CardShell, so editing one never
+// boosts anything on its own — the column itself has to come forward, or an
+// editing member's escaped format bar stays covered by a sibling column/card
+export function columnContainsSelection(members: Pick<Card, 'id'>[], selection: string[]): boolean {
+  return members.some((m) => selection.includes(m.id))
 }
 
 interface WRect {
@@ -126,6 +138,10 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
   // per-card boolean selectors so selecting card A doesn't re-render card B
   const isSelected = useUi((s) => s.selection.includes(card.id))
   const isSolo = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
+  // only columns ever need this — non-column cards get the stable EMPTY_MEMBERS
+  // reference back, so this subscription is a no-op for the common case
+  const members = useFolium((s) => (card.type === 'column' ? columnCards(s, card.id) : EMPTY_MEMBERS))
+  const hasSelectedMember = useUi((s) => card.type === 'column' && columnContainsSelection(members, s.selection))
   const isDragging = !!drag && drag.ids.includes(card.id)
 
   const [resizePreview, setResizePreview] = React.useState<{ w: number; h?: number; x: number; y: number } | null>(null)
@@ -454,7 +470,7 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
     top: resizePreview?.y ?? card.y,
     width: w,
     height: h,
-    zIndex: cardZIndex(card, isSelected),
+    zIndex: cardZIndex(card, isSelected || hasSelectedMember),
     transform: isDragging ? `translate(${drag!.dx}px, ${drag!.dy}px)` : undefined,
   }
 

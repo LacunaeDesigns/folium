@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cardZIndex } from './CardShell'
+import { cardZIndex, columnContainsSelection } from './CardShell'
 import { Card } from '../model/types'
 
 function makeCard(patch: Partial<Card> = {}): Card {
@@ -42,5 +42,21 @@ describe('cardZIndex', () => {
     const frame = makeCard({ type: 'frame', z: 500 })
     expect(cardZIndex(frame, false)).toBeLessThan(cardZIndex(makeCard({ z: 1 }), false))
     expect(cardZIndex(frame, true)).toBeLessThan(cardZIndex(makeCard({ z: 1 }), false))
+  })
+})
+
+describe('columnContainsSelection', () => {
+  it('is true when a member card id is in the selection', () => {
+    const members = [makeCard({ id: 'm1' }), makeCard({ id: 'm2' })]
+    expect(columnContainsSelection(members, ['m2'])).toBe(true)
+  })
+
+  it('is false when no member id is in the selection', () => {
+    const members = [makeCard({ id: 'm1' }), makeCard({ id: 'm2' })]
+    expect(columnContainsSelection(members, ['other'])).toBe(false)
+  })
+
+  it('is false for an empty member list', () => {
+    expect(columnContainsSelection([], ['m1'])).toBe(false)
   })
 })

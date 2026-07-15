@@ -21,3 +21,16 @@ export function FlowDiagram({ steps }: { steps: FlowStep[] }) {
     </div>
   )
 }
+
+/** Two small cards joined by a connecting line, illustrating Lines & connections. */
+export function LinesDiagram() {
+  return (
+    <svg className="help-lines-diagram" viewBox="0 0 220 80" width="220" height="80">
+      <rect x="8" y="24" width="60" height="32" rx="6" fill="var(--card-green)" />
+      <rect x="152" y="24" width="60" height="32" rx="6" fill="var(--card-blue)" />
+      <line x1="68" y1="40" x2="152" y2="40" stroke="var(--accent)" strokeWidth="2" />
+      <circle cx="68" cy="40" r="3" fill="var(--accent)" />
+      <circle cx="152" cy="40" r="3" fill="var(--accent)" />
+    </svg>
+  )
+}

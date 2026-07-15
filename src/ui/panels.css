@@ -541,6 +541,10 @@
   color: var(--ink-faint);
   font-size: 14px;
 }
+.help-lines-diagram {
+  display: block;
+  margin-bottom: 14px;
+}
 .help-keys-table {
   width: 100%;
   border-collapse: collapse;

@@ -2,7 +2,7 @@ import React from 'react'
 import { Icon, IconName } from './Icons'
 import { useDb } from '../store/context'
 import { useUpdateCheck, dismissUpdate } from '../store/updateCheck'
-import { FlowDiagram } from './HelpDiagrams'
+import { FlowDiagram, LinesDiagram } from './HelpDiagrams'
 import './panels.css'
 
 const SECTIONS: { id: string; title: string }[] = [
@@ -159,6 +159,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             {activeSection === 'lines' && (
               <section id="help-lines">
                 <h2>Lines & connections</h2>
+                <LinesDiagram />
                 <p>Drag from a card's edge handle to another card to connect them with a line.</p>
                 <p>
                   The line end snaps to the nearest edge-centre of the target card if you drop within 26

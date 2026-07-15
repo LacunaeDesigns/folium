@@ -205,7 +205,14 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
                 Dropbox or iCloud, and Folium keeps your whole workspace saved there so it appears on
                 your other machines.
               </p>
-              <p>This needs Chrome or Edge. Use the linked folder from one machine at a time — if two machines save at once, the last save wins.</p>
+              <p>
+                This needs Chrome or Edge. Use the linked folder from one machine at a time —
+                finish editing and wait for the toolbar to say “Saved” before switching. If you
+                see “Sync conflict,” it means this machine's edits weren't pushed because the
+                folder had already moved on elsewhere — nothing is lost, your edits are still
+                saved locally, but open Settings and either reload to get the newer version, or
+                wait for the other machine to settle and try syncing again.
+              </p>
             </section>
 
             <section id="help-live">

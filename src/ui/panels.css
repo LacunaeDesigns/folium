@@ -540,6 +540,21 @@
   display: flex;
   gap: 8px;
 }
+.help-update-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-ui);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.help-update-banner a {
+  font-weight: 600;
+  color: var(--accent);
+}
 
 /* presentation mode */
 .present-overlay {
@@ -688,6 +703,14 @@
   height: 7px;
   border-radius: 50%;
   background: #4caf6e;
+  display: inline-block;
+  margin-left: 4px;
+}
+.update-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
   display: inline-block;
   margin-left: 4px;
 }

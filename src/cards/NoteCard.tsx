@@ -13,6 +13,26 @@ import { useFoliumStore } from '../store/context'
 import { useEditing, useDebouncedCommit } from './useEditing'
 import { Icon } from '../ui/Icons'
 
+// Plain toggleBulletList()/toggleOrderedList() only flip the current list type
+// on/off against a paragraph — switching from one list type to the other takes
+// two clicks (toggle off, then toggle on). These instead convert directly:
+// toggle the other type off first (if active) before toggling the target on.
+export function setBulletList(editor: Editor) {
+  if (editor.isActive('orderedList')) {
+    editor.chain().focus().toggleOrderedList().toggleBulletList().run()
+  } else {
+    editor.chain().focus().toggleBulletList().run()
+  }
+}
+
+export function setOrderedList(editor: Editor) {
+  if (editor.isActive('bulletList')) {
+    editor.chain().focus().toggleBulletList().toggleOrderedList().run()
+  } else {
+    editor.chain().focus().toggleOrderedList().run()
+  }
+}
+
 function FormatBar({ editor, noteId, bg }: { editor: Editor; noteId: string; bg: string }) {
   const store = useFoliumStore()
   const btn = (
@@ -40,8 +60,8 @@ function FormatBar({ editor, noteId, bg }: { editor: Editor; noteId: string; bg:
       {btn(<s>S</s>, () => editor.chain().focus().toggleStrike().run(), editor.isActive('strike'), 'Strikethrough')}
       {btn('H1', () => editor.chain().focus().toggleHeading({ level: 1 }).run(), editor.isActive('heading', { level: 1 }), 'Heading')}
       {btn('H2', () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive('heading', { level: 2 }), 'Subheading')}
-      {btn('••', () => editor.chain().focus().toggleBulletList().run(), editor.isActive('bulletList'), 'Bullet list')}
-      {btn('1.', () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'), 'Numbered list')}
+      {btn('••', () => setBulletList(editor), editor.isActive('bulletList'), 'Bullet list')}
+      {btn('1.', () => setOrderedList(editor), editor.isActive('orderedList'), 'Numbered list')}
       {btn('✓', () => editor.chain().focus().toggleTaskList().run(), editor.isActive('taskList'), 'Checklist')}
       {btn(
         <span className="hl-swatch" />,

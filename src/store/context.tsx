@@ -4,6 +4,7 @@ import { FoliumState, FoliumStore, createFoliumStore } from './store'
 import { FoliumDb, bindAutosave, bindBlobGc, loadDoc, openDb } from './persist'
 import { loadSettings } from './settings'
 import { createTabSync } from './tabSync'
+import { recordLocalSave } from './localSave'
 
 interface FoliumContextValue {
   store: FoliumStore
@@ -49,7 +50,13 @@ export async function bootFolium(): Promise<FoliumContextValue> {
     store.temporal.getState().clear()
   }
   const tabSync = createTabSync(store, db)
-  bindAutosave(store, db, 600, { onWrite: tabSync.onWrite, isPaused: tabSync.isPaused })
+  bindAutosave(store, db, 600, {
+    onWrite: (ts) => {
+      tabSync.onWrite(ts)
+      recordLocalSave(ts)
+    },
+    isPaused: tabSync.isPaused,
+  })
   bindBlobGc(store, db)
   // folder sync (optional, opt-in): reconnect a linked folder and pull newer remote data
   try {

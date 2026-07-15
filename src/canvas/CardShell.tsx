@@ -12,6 +12,20 @@ export interface DragState {
   dy: number
 }
 
+// selected cards render above the rest of the stack so their format bar,
+// resize handles and connect handles are always clickable, even when a
+// higher-z sibling card would otherwise sit in front of the whole thing —
+// the boost stays well below .snap-guide (9999) / .lines-layer (10000) in
+// canvas.css, which must always render above every card regardless of
+// selection
+const SELECTED_Z_BOOST = 5000
+
+export function cardZIndex(card: Card, isSelected: boolean): number {
+  // frames always render behind regular cards, regardless of their own z
+  if (card.type === 'frame') return card.z - 1_000_000
+  return isSelected ? card.z + SELECTED_Z_BOOST : card.z
+}
+
 interface WRect {
   x: number
   y: number
@@ -440,8 +454,7 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
     top: resizePreview?.y ?? card.y,
     width: w,
     height: h,
-    // frames always render behind regular cards, regardless of their own z
-    zIndex: card.type === 'frame' ? card.z - 1_000_000 : card.z,
+    zIndex: cardZIndex(card, isSelected),
     transform: isDragging ? `translate(${drag!.dx}px, ${drag!.dy}px)` : undefined,
   }
 

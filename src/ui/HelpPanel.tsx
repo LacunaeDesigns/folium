@@ -62,6 +62,7 @@ const SHORTCUTS: { keys: string; action: string }[] = [
 export function HelpPanel({ onClose }: { onClose: () => void }) {
   const db = useDb()
   const updateAvailable = useUpdateCheck((s) => s.available)
+  const [activeSection, setActiveSection] = React.useState('start')
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -70,10 +71,6 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
-
-  const jump = (id: string) => {
-    document.getElementById('help-' + id)?.scrollIntoView({ block: 'start' })
-  }
 
   return (
     <div className="overlay" onPointerDown={onClose}>
@@ -88,7 +85,11 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
         <div className="help-body">
           <nav className="help-toc">
             {SECTIONS.map((s) => (
-              <button key={s.id} className="help-toc-item" onClick={() => jump(s.id)}>
+              <button
+                key={s.id}
+                className={'help-toc-item' + (activeSection === s.id ? ' active' : '')}
+                onClick={() => setActiveSection(s.id)}
+              >
                 {s.title}
               </button>
             ))}
@@ -105,161 +106,187 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
                 </button>
               </div>
             )}
-            <section id="help-start">
-              <h2>Getting started</h2>
-              <p>Cards live on boards. Pick a tool from the toolbar, then click the canvas to place a card.</p>
-              <p>Double-click an empty spot on the canvas to drop a quick note there.</p>
-            </section>
+            {activeSection === 'start' && (
+              <section id="help-start">
+                <h2>Getting started</h2>
+                <p>Cards live on boards. Pick a tool from the toolbar, then click the canvas to place a card.</p>
+                <p>Double-click an empty spot on the canvas to drop a quick note there.</p>
+              </section>
+            )}
 
-            <section id="help-cards">
-              <h2>Card types</h2>
-              <ul className="help-card-list">
-                {CARD_TYPES.map((c) => (
-                  <li key={c.name}>
-                    <Icon name={c.icon} size={15} />
-                    <span>
-                      <b>{c.name}.</b> {c.desc}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <section id="help-nav">
-              <h2>Navigating</h2>
-              <p>Pan the canvas by holding Space and dragging, or by dragging with the middle mouse button.</p>
-              <p>Zoom by holding Ctrl and scrolling the wheel.</p>
-              <p>
-                Use the View menu, or Shift+1, to fit the whole board in view. Use Shift+2 to zoom to the
-                current selection.
-              </p>
-            </section>
-
-            <section id="help-select">
-              <h2>Selecting & moving</h2>
-              <p>Drag on empty canvas to draw a marquee and select the cards inside it.</p>
-              <p>Click a card to select it, and shift-click to add more cards to the selection.</p>
-              <p>Hold Alt while dragging a selection to duplicate it and drag the copies, leaving the originals in place.</p>
-              <p>
-                Dragging a card shows snap guides against nearby cards. Hold Ctrl while dragging to move
-                freely, ignoring the guides.
-              </p>
-            </section>
-
-            <section id="help-lines">
-              <h2>Lines & connections</h2>
-              <p>Drag from a card's edge handle to another card to connect them with a line.</p>
-              <p>
-                The line end snaps to the nearest edge-centre of the target card if you drop within 26
-                pixels of it. Hold Ctrl while dropping to place the end freely instead.
-              </p>
-              <p>
-                Select a line to open its toolbar: toggle arrowheads at either end, switch between a
-                straight or curved line, add a label, set a thin or thick width, toggle a dashed stroke,
-                and pick a colour.
-              </p>
-            </section>
-
-            <section id="help-boards">
-              <h2>Boards, columns & frames</h2>
-              <p>A board card opens a nested board of its own, so you can organise work in layers.</p>
-              <p>A column holds other cards in a vertical list and can be collapsed to save space.</p>
-              <p>A frame is a labelled section: cards placed inside it move and resize together with the frame.</p>
-            </section>
-
-            <section id="help-templates">
-              <h2>Templates</h2>
-              <p>Open the template gallery from the top bar to start a new board from a built-in layout.</p>
-              <p>You can also save the board you are currently on as your own template, to reuse later.</p>
-            </section>
-
-            <section id="help-io">
-              <h2>Import & export</h2>
-              <p>
-                Import Markdown files from the Export menu, or drag a <code>.md</code> file onto a board.
-                Each file becomes a new board: headings and paragraphs become notes, checklists become
-                to-do cards, pipe tables become table cards, and images and links become their own cards.
-                Markdown import cannot bring across layout, colours or embedded images.
-              </p>
-              <p>From the Export menu you can also export the current board as an HTML file (which can be printed to PDF), or as Markdown.</p>
-              <p>
-                Back up all data as a single JSON file, and restore it later with Import backup — this
-                replaces all current boards, cards and files, so use it for moving your whole workspace
-                between machines.
-              </p>
-            </section>
-
-            <section id="help-photos">
-              <h2>Photos via Pexels</h2>
-              <p>
-                Get a free API key from pexels.com/api and paste it into Settings to search and add
-                photos straight onto a board.
-              </p>
-              <p>The key is stored only in this browser and is never included in exports or synced elsewhere.</p>
-            </section>
-
-            <section id="help-sync">
-              <h2>Cross-machine sync</h2>
-              <p>
-                In Settings, link a folder inside a synced location such as OneDrive, Google Drive,
-                Dropbox or iCloud, and Folium keeps your whole workspace saved there so it appears on
-                your other machines.
-              </p>
-              <p>
-                This needs Chrome or Edge. Use the linked folder from one machine at a time —
-                finish editing and wait for the toolbar to say “Saved” before switching. If you
-                see “Sync conflict,” it means this machine's edits weren't pushed because the
-                folder had already moved on elsewhere — nothing is lost, your edits are still
-                saved locally, but open Settings and either reload to get the newer version, or
-                wait for the other machine to settle and try syncing again.
-              </p>
-            </section>
-
-            <section id="help-live">
-              <h2>Live review</h2>
-              <p>
-                Start a live session from the top bar to get a session code. Reviewers open the exported
-                HTML file of this board, click “Join live session” and enter the code — their comments
-                then land on this board live.
-              </p>
-            </section>
-
-            <section id="help-keys">
-              <h2>Keyboard shortcuts</h2>
-              <table className="help-keys-table">
-                <tbody>
-                  {SHORTCUTS.map((s) => (
-                    <tr key={s.keys}>
-                      <td><kbd>{s.keys}</kbd></td>
-                      <td>{s.action}</td>
-                    </tr>
+            {activeSection === 'cards' && (
+              <section id="help-cards">
+                <h2>Card types</h2>
+                <ul className="help-card-list">
+                  {CARD_TYPES.map((c) => (
+                    <li key={c.name}>
+                      <Icon name={c.icon} size={15} />
+                      <span>
+                        <b>{c.name}.</b> {c.desc}
+                      </span>
+                    </li>
                   ))}
-                </tbody>
-              </table>
-            </section>
+                </ul>
+              </section>
+            )}
 
-            <section id="help-feedback">
-              <h2>Feedback & bugs</h2>
-              <p>If something breaks, or Folium is missing something you need, open an issue on GitHub.</p>
-              <div className="help-feedback-links">
-                <a
-                  className="chrome-btn"
-                  href="https://github.com/LacunaeDesigns/folium/issues/new"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Report a bug
-                </a>
-                <a
-                  className="chrome-btn"
-                  href="https://github.com/LacunaeDesigns/folium/issues/new"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Suggest a feature
-                </a>
-              </div>
-            </section>
+            {activeSection === 'nav' && (
+              <section id="help-nav">
+                <h2>Navigating</h2>
+                <p>Pan the canvas by holding Space and dragging, or by dragging with the middle mouse button.</p>
+                <p>Zoom by holding Ctrl and scrolling the wheel.</p>
+                <p>
+                  Use the View menu, or Shift+1, to fit the whole board in view. Use Shift+2 to zoom to the
+                  current selection.
+                </p>
+              </section>
+            )}
+
+            {activeSection === 'select' && (
+              <section id="help-select">
+                <h2>Selecting & moving</h2>
+                <p>Drag on empty canvas to draw a marquee and select the cards inside it.</p>
+                <p>Click a card to select it, and shift-click to add more cards to the selection.</p>
+                <p>Hold Alt while dragging a selection to duplicate it and drag the copies, leaving the originals in place.</p>
+                <p>
+                  Dragging a card shows snap guides against nearby cards. Hold Ctrl while dragging to move
+                  freely, ignoring the guides.
+                </p>
+              </section>
+            )}
+
+            {activeSection === 'lines' && (
+              <section id="help-lines">
+                <h2>Lines & connections</h2>
+                <p>Drag from a card's edge handle to another card to connect them with a line.</p>
+                <p>
+                  The line end snaps to the nearest edge-centre of the target card if you drop within 26
+                  pixels of it. Hold Ctrl while dropping to place the end freely instead.
+                </p>
+                <p>
+                  Select a line to open its toolbar: toggle arrowheads at either end, switch between a
+                  straight or curved line, add a label, set a thin or thick width, toggle a dashed stroke,
+                  and pick a colour.
+                </p>
+              </section>
+            )}
+
+            {activeSection === 'boards' && (
+              <section id="help-boards">
+                <h2>Boards, columns & frames</h2>
+                <p>A board card opens a nested board of its own, so you can organise work in layers.</p>
+                <p>A column holds other cards in a vertical list and can be collapsed to save space.</p>
+                <p>A frame is a labelled section: cards placed inside it move and resize together with the frame.</p>
+              </section>
+            )}
+
+            {activeSection === 'templates' && (
+              <section id="help-templates">
+                <h2>Templates</h2>
+                <p>Open the template gallery from the top bar to start a new board from a built-in layout.</p>
+                <p>You can also save the board you are currently on as your own template, to reuse later.</p>
+              </section>
+            )}
+
+            {activeSection === 'io' && (
+              <section id="help-io">
+                <h2>Import & export</h2>
+                <p>
+                  Import Markdown files from the Export menu, or drag a <code>.md</code> file onto a board.
+                  Each file becomes a new board: headings and paragraphs become notes, checklists become
+                  to-do cards, pipe tables become table cards, and images and links become their own cards.
+                  Markdown import cannot bring across layout, colours or embedded images.
+                </p>
+                <p>From the Export menu you can also export the current board as an HTML file (which can be printed to PDF), or as Markdown.</p>
+                <p>
+                  Back up all data as a single JSON file, and restore it later with Import backup — this
+                  replaces all current boards, cards and files, so use it for moving your whole workspace
+                  between machines.
+                </p>
+              </section>
+            )}
+
+            {activeSection === 'photos' && (
+              <section id="help-photos">
+                <h2>Photos via Pexels</h2>
+                <p>
+                  Get a free API key from pexels.com/api and paste it into Settings to search and add
+                  photos straight onto a board.
+                </p>
+                <p>The key is stored only in this browser and is never included in exports or synced elsewhere.</p>
+              </section>
+            )}
+
+            {activeSection === 'sync' && (
+              <section id="help-sync">
+                <h2>Cross-machine sync</h2>
+                <p>
+                  In Settings, link a folder inside a synced location such as OneDrive, Google Drive,
+                  Dropbox or iCloud, and Folium keeps your whole workspace saved there so it appears on
+                  your other machines.
+                </p>
+                <p>
+                  This needs Chrome or Edge. Use the linked folder from one machine at a time —
+                  finish editing and wait for the toolbar to say “Saved” before switching. If you
+                  see “Sync conflict,” it means this machine's edits weren't pushed because the
+                  folder had already moved on elsewhere — nothing is lost, your edits are still
+                  saved locally, but open Settings and either reload to get the newer version, or
+                  wait for the other machine to settle and try syncing again.
+                </p>
+              </section>
+            )}
+
+            {activeSection === 'live' && (
+              <section id="help-live">
+                <h2>Live review</h2>
+                <p>
+                  Start a live session from the top bar to get a session code. Reviewers open the exported
+                  HTML file of this board, click “Join live session” and enter the code — their comments
+                  then land on this board live.
+                </p>
+              </section>
+            )}
+
+            {activeSection === 'keys' && (
+              <section id="help-keys">
+                <h2>Keyboard shortcuts</h2>
+                <table className="help-keys-table">
+                  <tbody>
+                    {SHORTCUTS.map((s) => (
+                      <tr key={s.keys}>
+                        <td><kbd>{s.keys}</kbd></td>
+                        <td>{s.action}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
+
+            {activeSection === 'feedback' && (
+              <section id="help-feedback">
+                <h2>Feedback & bugs</h2>
+                <p>If something breaks, or Folium is missing something you need, open an issue on GitHub.</p>
+                <div className="help-feedback-links">
+                  <a
+                    className="chrome-btn"
+                    href="https://github.com/LacunaeDesigns/folium/issues/new"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Report a bug
+                  </a>
+                  <a
+                    className="chrome-btn"
+                    href="https://github.com/LacunaeDesigns/folium/issues/new"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Suggest a feature
+                  </a>
+                </div>
+              </section>
+            )}
           </div>
         </div>
       </div>

@@ -470,6 +470,11 @@
   background: var(--bg-hover);
   color: var(--ink);
 }
+.help-toc-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
 .help-content {
   flex: 1;
   overflow-y: auto;

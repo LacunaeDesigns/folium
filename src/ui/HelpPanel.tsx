@@ -2,7 +2,7 @@ import React from 'react'
 import { Icon, IconName } from './Icons'
 import { useDb } from '../store/context'
 import { useUpdateCheck, dismissUpdate } from '../store/updateCheck'
-import { FlowDiagram, LinesDiagram } from './HelpDiagrams'
+import { FlowDiagram, LinesDiagram, BoardsColumnsFramesDiagram } from './HelpDiagrams'
 import './panels.css'
 
 const SECTIONS: { id: string; title: string }[] = [
@@ -176,6 +176,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             {activeSection === 'boards' && (
               <section id="help-boards">
                 <h2>Boards, columns & frames</h2>
+                <BoardsColumnsFramesDiagram />
                 <p>A board card opens a nested board of its own, so you can organise work in layers.</p>
                 <p>A column holds other cards in a vertical list and can be collapsed to save space.</p>
                 <p>A frame is a labelled section: cards placed inside it move and resize together with the frame.</p>

@@ -34,3 +34,33 @@ export function LinesDiagram() {
     </svg>
   )
 }
+
+/** Three small side-by-side illustrations distinguishing a board, a column, and a frame —
+ *  these three concepts are easy to confuse by name alone. */
+export function BoardsColumnsFramesDiagram() {
+  return (
+    <div className="help-bcf-diagram">
+      <div className="help-bcf-item">
+        <div className="help-bcf-board">
+          <div className="help-bcf-board-inner" />
+        </div>
+        <span>Board</span>
+      </div>
+      <div className="help-bcf-item">
+        <div className="help-bcf-column">
+          <div className="help-bcf-column-row" />
+          <div className="help-bcf-column-row" />
+          <div className="help-bcf-column-row" />
+        </div>
+        <span>Column</span>
+      </div>
+      <div className="help-bcf-item">
+        <div className="help-bcf-frame">
+          <div className="help-bcf-frame-shape" />
+          <div className="help-bcf-frame-shape" />
+        </div>
+        <span>Frame</span>
+      </div>
+    </div>
+  )
+}

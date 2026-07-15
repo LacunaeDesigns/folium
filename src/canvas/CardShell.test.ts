@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cardZIndex, columnContainsSelection } from './CardShell'
+import { cardZIndex, columnContainsSelection, blurActiveFormField } from './CardShell'
 import { Card } from '../model/types'
 
 function makeCard(patch: Partial<Card> = {}): Card {
@@ -58,5 +58,36 @@ describe('columnContainsSelection', () => {
 
   it('is false for an empty member list', () => {
     expect(columnContainsSelection([], ['m1'])).toBe(false)
+  })
+})
+
+describe('blurActiveFormField', () => {
+  it('blurs a focused input', () => {
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    input.focus()
+    expect(document.activeElement).toBe(input)
+
+    blurActiveFormField()
+
+    expect(document.activeElement).not.toBe(input)
+    input.remove()
+  })
+
+  it('blurs a focused textarea', () => {
+    const textarea = document.createElement('textarea')
+    document.body.appendChild(textarea)
+    textarea.focus()
+    expect(document.activeElement).toBe(textarea)
+
+    blurActiveFormField()
+
+    expect(document.activeElement).not.toBe(textarea)
+    textarea.remove()
+  })
+
+  it('does nothing when nothing is focused', () => {
+    document.body.focus()
+    expect(() => blurActiveFormField()).not.toThrow()
   })
 })

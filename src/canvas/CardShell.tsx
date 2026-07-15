@@ -38,6 +38,17 @@ export function columnContainsSelection(members: Pick<Card, 'id'>[], selection: 
   return members.some((m) => selection.includes(m.id))
 }
 
+// a plain click on a card only ever moves selection, never blurs — so a text
+// field focused elsewhere (e.g. a column title clicked earlier) stays "active"
+// after selecting a different card, and isTyping()-gated shortcuts like
+// Ctrl+C/X silently no-op instead of acting on the new selection
+export function blurActiveFormField(): void {
+  const active = document.activeElement as HTMLElement | null
+  if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+    active.blur()
+  }
+}
+
 interface WRect {
   x: number
   y: number
@@ -204,7 +215,15 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
     // otherwise merely clicking to type would select the card, and a stray
     // keystroke afterward could trigger the global "delete selected cards"
     // shortcut instead of being a harmless no-op
-    if (!fromFormField && !ui.selection.includes(card.id)) ui.setSelection([card.id])
+    if (!fromFormField && !ui.selection.includes(card.id)) {
+      // a click on a plain (non-form-field) part of a card only moves
+      // selection — it never blurs anything on its own, so a text field left
+      // focused elsewhere (e.g. a column title clicked earlier) silently eats
+      // the next Ctrl+C/X as "still typing" instead of copying the newly
+      // selected card
+      blurActiveFormField()
+      ui.setSelection([card.id])
+    }
 
     gesture.current = {
       startX: e.clientX,

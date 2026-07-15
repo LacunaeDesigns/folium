@@ -354,6 +354,23 @@ describe('frames', () => {
     expect(s().cards[a].y).toBe(90)
   })
 
+  it('moving a frame onto a stationary card assigns it membership, even though the card itself never moved', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 900, y: 900, w: 100, h: 60 })
+    expect(s().cards[a].frameId).toBeNull()
+    s().moveCards([frame], 900, 900) // frame now covers (900,900)-(1300,1200), which contains `a`
+    expect(s().cards[a].frameId).toBe(frame)
+  })
+
+  it('resizing a frame to newly cover a stationary card assigns it membership', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 100, h: 100 })
+    const a = s().addCard(s().rootId, 'note', { x: 300, y: 300, w: 100, h: 60 })
+    expect(s().cards[a].frameId).toBeNull()
+    s().resizeFrame(frame, 0, 0, 500, 500) // now covers (300,300)
+    expect(s().cards[a].frameId).toBe(frame)
+    expect(s().cards[a].x).toBe(300) // membership assigned without repositioning a brand-new member
+  })
+
   it('resizing a frame scales member position and size proportionally', () => {
     const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
     const a = s().addCard(s().rootId, 'note', { x: 100, y: 100, w: 100, h: 60 })

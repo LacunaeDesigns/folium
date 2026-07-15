@@ -144,6 +144,21 @@ function containingFrameId(cards: Record<string, Card>, boardId: string, cx: num
   return best ? best.id : null
 }
 
+/** Re-evaluate every non-frame card's frame membership on `boardId`. Needed
+ *  whenever a frame's own position or size changes: membership is otherwise
+ *  only assigned/released reactively when a CARD moves (see moveCards), so a
+ *  frame dragged or resized to newly cover/uncover an already-stationary card
+ *  would never pick it up or let it go. Mutates `cards` in place. */
+function reassignFrameMembership(cards: Record<string, Card>, boardId: string): void {
+  for (const c of Object.values(cards)) {
+    if (c.type === 'frame' || c.boardId !== boardId || c.trashed) continue
+    const cx = c.x + c.w / 2
+    const cy = c.y + (c.h ?? 80) / 2
+    const newFrameId = containingFrameId(cards, boardId, cx, cy)
+    if (c.frameId !== newFrameId) cards[c.id] = { ...c, frameId: newFrameId }
+  }
+}
+
 function makeBoard(parentId: string | null, title: string, colorIndex: number): Board {
   return {
     id: nanoid(10),
@@ -403,6 +418,15 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
               const newFrameId = containingFrameId(cards, c.boardId, cx, cy)
               if (c.frameId !== newFrameId) cards[id] = { ...c, frameId: newFrameId }
             }
+            // a moved frame may now cover or uncover cards that never themselves
+            // moved (e.g. a frame created after the fact and dragged around
+            // pre-existing cards) — the loop above only re-checks cards that were
+            // directly dragged, so those stationary cards would otherwise never
+            // pick up or release membership
+            for (const id of ids) {
+              const c = cards[id]
+              if (c?.type === 'frame') reassignFrameMembership(cards, c.boardId)
+            }
             return { cards }
           })
         },
@@ -439,6 +463,9 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
               }
             }
             cards[id] = { ...frame, x, y, w, h }
+            // resizing (not just moving) a frame can also newly cover or
+            // uncover stationary cards that were never dragged
+            reassignFrameMembership(cards, frame.boardId)
             return { cards }
           })
         },

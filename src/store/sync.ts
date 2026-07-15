@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { FoliumDb, clearSyncHandle, getSetting, loadSyncHandle, saveSyncHandle, setSetting } from './persist'
 import { FoliumStore } from './store'
 import { getUserName } from './settings'
-import { applyBackup, exportBackup, parseBackup } from '../export/json'
+import { applyBackup, Backup, exportBackup, parseBackup } from '../export/json'
 import {
   chooseSource,
   ensurePermission,
@@ -12,7 +12,7 @@ import {
   writeWorkspace,
 } from './folderSync'
 
-type SyncStatus = 'unsupported' | 'off' | 'linked' | 'needs-reconnect' | 'error'
+type SyncStatus = 'unsupported' | 'off' | 'linked' | 'needs-reconnect' | 'error' | 'conflict'
 
 interface SyncUiState {
   status: SyncStatus
@@ -43,11 +43,26 @@ function docState() {
   return { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines }
 }
 
-/** Build the current workspace backup and write it to the linked folder. */
+/** Build the current workspace backup and write it to the linked folder.
+ *  Refuses to write over a workspace another machine synced since we last read the folder —
+ *  otherwise a stale open tab would silently clobber newer work with its own older state. */
 async function push(): Promise<void> {
   if (!db || !store || !handle) return
   useSync.setState({ busy: true })
   try {
+    const lastKnownTs = await getSetting<number>(db, DOC_TS_KEY, 0)
+    let remote: Backup | null = null
+    try {
+      const remoteText = await readWorkspace(handle)
+      if (remoteText) remote = parseBackup(remoteText)
+    } catch {
+      // A cloud-sync client (Drive/OneDrive/etc.) can present a momentarily truncated file
+      // mid-upload. Treat an unreadable remote as "no signal" and push rather than error out.
+    }
+    if (remote && chooseSource(lastKnownTs, remote.exportedAt) === 'remote') {
+      useSync.setState({ status: 'conflict', error: null })
+      return
+    }
     const json = await exportBackup(db, docState(), getUserName())
     const ts = (JSON.parse(json) as { exportedAt: number }).exportedAt
     await writeWorkspace(handle, json)
@@ -111,7 +126,18 @@ export async function initFolderSync(foliumStore: FoliumStore, database: FoliumD
   if (typeof window !== 'undefined') {
     window.addEventListener('pagehide', flushSync)
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') flushSync()
+      if (document.visibilityState === 'hidden') {
+        flushSync()
+      } else if (useSync.getState().status === 'linked' || useSync.getState().status === 'conflict') {
+        // Returning to a tab left open elsewhere may mean the folder moved on while we were
+        // away — catch up now instead of waiting for the next full reload.
+        void reconcile().then((result) => {
+          if (result === 'loaded') {
+            location.hash = ''
+            location.reload()
+          }
+        })
+      }
     })
   }
 
@@ -145,21 +171,25 @@ export async function linkFolder(): Promise<void> {
     const remoteText = await readWorkspace(dir)
     let loaded = false
     if (remoteText) {
+      let remote: Backup | null = null
       let stamp = 'a Folium workspace'
       try {
-        stamp = 'a Folium workspace saved ' + new Date(parseBackup(remoteText).exportedAt).toLocaleString()
+        remote = parseBackup(remoteText)
+        stamp = 'a Folium workspace saved ' + new Date(remote.exportedAt).toLocaleString()
       } catch {
-        /* fall through with generic label */
+        /* malformed remote — fall through with a generic label; "load it" isn't offered below */
       }
       const loadIt = window.confirm(
         `This folder already contains ${stamp}.\n\nOK = load it onto this machine (replaces the boards here).\nCancel = keep this machine's boards and save them into the folder.`,
       )
       if (loadIt) {
-        const remote = parseBackup(remoteText)
+        if (!remote) throw new Error('Not a valid Folium backup file')
         await applyBackup(db, store, remote)
-        await setSetting(db, DOC_TS_KEY, remote.exportedAt)
         loaded = true
       }
+      // Either way we've now seen this remote version — record it so the very push() below
+      // (overwriting it, in the "keep local" case) isn't mistaken for an unseen external change.
+      if (remote) await setSetting(db, DOC_TS_KEY, remote.exportedAt)
     }
     await saveSyncHandle(db, dir)
     useSync.setState({ status: 'linked', dirName: dir.name })
@@ -213,5 +243,6 @@ export async function unlinkFolder(): Promise<void> {
   }
   handle = null
   await clearSyncHandle(db)
+  await setSetting(db, DOC_TS_KEY, 0)
   useSync.setState({ status: 'off', dirName: null, lastSyncedAt: null })
 }

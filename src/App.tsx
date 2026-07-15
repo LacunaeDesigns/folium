@@ -139,6 +139,18 @@ function SyncSection() {
           </div>
         </>
       )}
+      {sync.status === 'conflict' && (
+        <>
+          <p className="sync-hint error">
+            Newer changes were saved to “{sync.dirName}” from elsewhere, so this machine's edits
+            weren't pushed (to avoid overwriting them). Reloading replaces this machine's boards
+            with that newer version — anything edited here since the last sync will be lost.
+          </p>
+          <button className="sync-btn primary" disabled={sync.busy} onClick={() => void reconnect()}>
+            Reload with the newer changes
+          </button>
+        </>
+      )}
       {sync.status === 'error' && (
         <>
           <p className="sync-hint error">Sync error: {sync.error}</p>

@@ -35,7 +35,20 @@ function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
       // ensuing click/dblclick to the member shell, killing double-click editing
       safeCapture(e.currentTarget as HTMLElement, e.pointerId)
     }
+    // once dragging, suppress the browser's own selection-drag (e.g. Shift held
+    // during the drag can otherwise start a native text selection alongside
+    // this pointer-based one, which can end the gesture with a pointercancel
+    // instead of a normal pointerup)
+    e.preventDefault()
     setDragXY({ x: e.clientX - g.startX, y: e.clientY - g.startY })
+  }
+
+  // the browser/OS aborted the gesture (e.g. a native selection-drag took over,
+  // losing pointer capture) — reset rather than leave the member stuck
+  // permanently "lifted" with a stray transform and inflated z-index
+  const onPointerCancel = () => {
+    gesture.current = null
+    setDragXY(null)
   }
 
   const onPointerUp = (e: React.PointerEvent) => {
@@ -77,6 +90,7 @@ function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
     >
       <div className={'col-member-chrome card-face-' + card.type}>
         <Body card={card} inColumn readOnly={readOnly} />

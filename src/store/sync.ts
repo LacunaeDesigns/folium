@@ -12,7 +12,7 @@ import {
   writeWorkspace,
 } from './folderSync'
 
-type SyncStatus = 'unsupported' | 'off' | 'linked' | 'needs-reconnect' | 'error' | 'conflict'
+export type SyncStatus = 'unsupported' | 'off' | 'linked' | 'needs-reconnect' | 'error' | 'conflict'
 
 interface SyncUiState {
   status: SyncStatus

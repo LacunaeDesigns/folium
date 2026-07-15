@@ -2,6 +2,7 @@ import React from 'react'
 import { Icon, IconName } from './Icons'
 import { useDb } from '../store/context'
 import { useUpdateCheck, dismissUpdate } from '../store/updateCheck'
+import { FlowDiagram } from './HelpDiagrams'
 import './panels.css'
 
 const SECTIONS: { id: string; title: string }[] = [
@@ -220,6 +221,13 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             {activeSection === 'sync' && (
               <section id="help-sync">
                 <h2>Cross-machine sync</h2>
+                <FlowDiagram
+                  steps={[
+                    { label: 'Home', color: 'var(--accent)' },
+                    { label: 'Folder', color: 'var(--accent-orange)' },
+                    { label: 'Work', color: 'var(--accent)' },
+                  ]}
+                />
                 <p>
                   In Settings, link a folder inside a synced location such as OneDrive, Google Drive,
                   Dropbox or iCloud, and Folium keeps your whole workspace saved there so it appears on
@@ -239,6 +247,14 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             {activeSection === 'live' && (
               <section id="help-live">
                 <h2>Live review</h2>
+                <FlowDiagram
+                  steps={[
+                    { label: 'This board', color: 'var(--accent)' },
+                    { label: 'Export', color: 'var(--accent-orange)' },
+                    { label: 'Reviewer', color: 'var(--accent)' },
+                    { label: 'Comments back', color: 'var(--accent-orange)' },
+                  ]}
+                />
                 <p>
                   Start a live session from the top bar to get a session code. Reviewers open the exported
                   HTML file of this board, click “Join live session” and enter the code — their comments

@@ -522,6 +522,25 @@
 .help-card-list b {
   color: var(--ink);
 }
+.help-flow-diagram {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.help-flow-step {
+  padding: 8px 14px;
+  border-radius: var(--radius-ui);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.help-flow-arrow {
+  color: var(--ink-faint);
+  font-size: 14px;
+}
 .help-keys-table {
   width: 100%;
   border-collapse: collapse;

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createFoliumStore, FoliumStore, collectClip } from './store'
+import { zOrderedIds, zBatchPatches } from '../canvas/useShortcuts'
 import { boardCards, columnCards, breadcrumbs, boardCardCount, trashedCards, boardTodoStats } from './selectors'
 import { HeadingContent, NoteContent, StickyContent, TodoContent } from '../model/types'
 
@@ -61,6 +62,32 @@ describe('cards', () => {
     const b = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
     s().bringToFront(a)
     expect(s().cards[a].z).toBeGreaterThan(s().cards[b].z)
+  })
+
+  it('a multi-select bring-to-front (Ctrl+]/Arrange menu) batches into one undo step', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    const b = s().addCard(s().rootId, 'note', { x: 100, y: 0 })
+    const c = s().addCard(s().rootId, 'note', { x: 200, y: 0 })
+    store.temporal.getState().clear()
+    const ids = zOrderedIds([a, b], (id) => s().cards[id].z, 'front')
+    s().updateCards(zBatchPatches(ids, s().cards, 'front'))
+    expect(s().cards[a].z).toBeGreaterThan(s().cards[c].z)
+    expect(s().cards[b].z).toBeGreaterThan(s().cards[a].z)
+    expect(store.temporal.getState().pastStates.length).toBe(1)
+  })
+
+  it('a multi-select send-to-back (Ctrl+[/Arrange menu) batches into one undo step', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    const b = s().addCard(s().rootId, 'note', { x: 100, y: 0 })
+    const c = s().addCard(s().rootId, 'note', { x: 200, y: 0 })
+    store.temporal.getState().clear()
+    const ids = zOrderedIds([b, c], (id) => s().cards[id].z, 'back')
+    s().updateCards(zBatchPatches(ids, s().cards, 'back'))
+    // both land below the untouched card a, with b/c's original relative
+    // order (b was behind c) preserved
+    expect(s().cards[c].z).toBeLessThan(s().cards[a].z)
+    expect(s().cards[b].z).toBeLessThan(s().cards[c].z)
+    expect(store.temporal.getState().pastStates.length).toBe(1)
   })
 
   it('updateCards applies all patches in one undo step', () => {

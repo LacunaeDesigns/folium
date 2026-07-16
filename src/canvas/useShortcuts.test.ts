@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveCopyTargetIds, zOrderedIds } from './useShortcuts'
+import { resolveCopyTargetIds, zOrderedIds, zBatchPatches } from './useShortcuts'
 
 describe('resolveCopyTargetIds', () => {
   it('returns the ui selection when nothing is focused', () => {
@@ -110,5 +110,31 @@ describe('zOrderedIds', () => {
   })
   it('descends for send-to-back', () => {
     expect(zOrderedIds(['a', 'b', 'c'], (id) => z[id], 'back')).toEqual(['a', 'c', 'b'])
+  })
+})
+
+describe('zBatchPatches', () => {
+  const cards = {
+    a: { boardId: 'b1', z: 3 },
+    b: { boardId: 'b1', z: 1 },
+    c: { boardId: 'b1', z: 2 },
+  }
+  it('assigns front zs sequentially above the board max, preserving relative order', () => {
+    expect(zBatchPatches(['b', 'c', 'a'], cards, 'front')).toEqual([
+      { id: 'b', patch: { z: 4 } },
+      { id: 'c', patch: { z: 5 } },
+      { id: 'a', patch: { z: 6 } },
+    ])
+  })
+  it('assigns back zs sequentially below the board min, preserving relative order', () => {
+    expect(zBatchPatches(['a', 'c', 'b'], cards, 'back')).toEqual([
+      { id: 'a', patch: { z: 0 } },
+      { id: 'c', patch: { z: -1 } },
+      { id: 'b', patch: { z: -2 } },
+    ])
+  })
+  it('ignores cards from other boards when computing the board max/min', () => {
+    const mixed = { ...cards, d: { boardId: 'b2', z: 100 } }
+    expect(zBatchPatches(['b'], mixed, 'front')).toEqual([{ id: 'b', patch: { z: 4 } }])
   })
 })

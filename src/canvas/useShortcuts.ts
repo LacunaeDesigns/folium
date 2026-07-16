@@ -61,6 +61,29 @@ export function zOrderedIds(ids: string[], zOf: (id: string) => number, dir: 'fr
   return dir === 'front' ? s : s.reverse()
 }
 
+/** Compute z patches for a batch bring-to-front/send-to-back in one pass,
+ *  replicating store.ts's bringToFront/sendToBack board max/min z assignment
+ *  applied sequentially (each id lands one step further front/back than the
+ *  last, off the board's original max/min) — but as a single set of patches
+ *  for one `updateCards` call instead of N separate store mutations, so a
+ *  multi-select Ctrl+]/Ctrl+[ (or the Arrange menu's front/back) is one undo
+ *  step. `orderedIds` must already be in `zOrderedIds` order. */
+export function zBatchPatches(
+  orderedIds: string[],
+  cards: Record<string, { boardId: string; z: number } | undefined>,
+  dir: 'front' | 'back',
+): { id: string; patch: { z: number } }[] {
+  const boardId = cards[orderedIds[0]]?.boardId
+  const boardZs = Object.values(cards)
+    .filter((c): c is { boardId: string; z: number } => !!c && c.boardId === boardId)
+    .map((c) => c.z)
+  let z = dir === 'front' ? Math.max(0, ...boardZs) : Math.min(...boardZs)
+  return orderedIds.map((id) => {
+    z += dir === 'front' ? 1 : -1
+    return { id, patch: { z } }
+  })
+}
+
 export function useShortcuts() {
   const store = useFoliumStore()
 
@@ -166,14 +189,14 @@ export function useShortcuts() {
         if (ui.selection.length === 0) return
         e.preventDefault()
         const ids = zOrderedIds(ui.selection, (id) => store.getState().cards[id]?.z ?? 0, 'front')
-        for (const id of ids) store.getState().bringToFront(id)
+        store.getState().updateCards(zBatchPatches(ids, store.getState().cards, 'front'))
         return
       }
       if (mod && e.key === '[') {
         if (ui.selection.length === 0) return
         e.preventDefault()
         const ids = zOrderedIds(ui.selection, (id) => store.getState().cards[id]?.z ?? 0, 'back')
-        for (const id of ids) store.getState().sendToBack(id)
+        store.getState().updateCards(zBatchPatches(ids, store.getState().cards, 'back'))
         return
       }
       if (e.key === 'Escape') {

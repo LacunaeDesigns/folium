@@ -31,7 +31,7 @@ import {
 } from './store/settings'
 import { PexelsPanel } from './ui/PexelsPanel'
 import { useUi } from './store/uiStore'
-import { useShortcuts, zOrderedIds } from './canvas/useShortcuts'
+import { useShortcuts, zOrderedIds, zBatchPatches } from './canvas/useShortcuts'
 import { Icon } from './ui/Icons'
 import './cards'
 
@@ -92,17 +92,15 @@ function ArrangeMenu({ onClose }: { onClose: () => void }) {
     window.dispatchEvent(new CustomEvent('folium:arrange', { detail: { op } }))
     onClose()
   }
-  // Bring to front / Send to back act on the whole selection at once (order
-  // preserved via zOrderedIds); Bring forward / Send backward step a single
-  // card by one z-neighbour and have no coherent multi-select meaning, so
-  // they route through the same single-selection-only shortcut op.
+  // Bring to front / Send to back act on the whole selection at once, in a
+  // single updateCards batch (order preserved via zOrderedIds, z's computed
+  // via zBatchPatches) so it's one undo step; Bring forward / Send backward
+  // step a single card by one z-neighbour and have no coherent multi-select
+  // meaning, so they route through the same single-selection-only shortcut op.
   const zTo = (dir: 'front' | 'back') => () => {
     const sel = useUi.getState().selection
     const ids = zOrderedIds(sel, (id) => store.getState().cards[id]?.z ?? 0, dir)
-    for (const id of ids) {
-      if (dir === 'front') store.getState().bringToFront(id)
-      else store.getState().sendToBack(id)
-    }
+    store.getState().updateCards(zBatchPatches(ids, store.getState().cards, dir))
     onClose()
   }
   const alignDisabled = selCount < 2

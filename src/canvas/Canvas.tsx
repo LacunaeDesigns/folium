@@ -1,5 +1,5 @@
 import React from 'react'
-import { CardType, LineEnd } from '../model/types'
+import { CardType, LineEnd, InkStroke } from '../model/types'
 import { LinesLayer } from './LinesLayer'
 import { InkLayer } from './InkLayer'
 import { StickerPanel } from './StickerPanel'
@@ -50,10 +50,19 @@ export function Canvas({ boardId }: { boardId: string }) {
   const [spaceDown, setSpaceDown] = React.useState(false)
   const [pendingLineFrom, setPendingLineFrom] = React.useState<LineEnd | null>(null)
   const [cursorWorld, setCursorWorld] = React.useState<Pt | null>(null)
+  const [inkEdit, setInkEdit] = React.useState<{ cardId: string; strokes: InkStroke[] } | null>(null)
 
   // reset in-progress line when the tool changes
   React.useEffect(() => {
     if (activeTool !== 'line') setPendingLineFrom(null)
+  }, [activeTool])
+
+  // clear a pending ink-edit session once the draw tool is left (InkLayer's own
+  // unmount-cleanup effect is what actually finalizes it — this just resets Canvas's
+  // side of the handshake so the *next* time the draw tool opens, it's a fresh drawing,
+  // not a stale reference to whatever card was last edited)
+  React.useEffect(() => {
+    if (activeTool !== 'draw') setInkEdit(null)
   }, [activeTool])
 
   const completeLine = (to: LineEnd) => {
@@ -630,6 +639,21 @@ export function Canvas({ boardId }: { boardId: string }) {
     })
   }
 
+  const editInk = (cardId: string) => {
+    const card = store.getState().cards[cardId]
+    if (!card || card.content.kind !== 'ink') return
+    // card.content.strokes are in card-local coordinates; InkLayer draws in world
+    // coordinates, so translate by the card's position on the way in — this is the
+    // exact inverse of the `points.map(... - minX ...)` rebase finalize() does on the
+    // way out (Task 1, Step 2)
+    const strokes: InkStroke[] = card.content.strokes.map((s) => ({
+      ...s,
+      points: s.points.map((v, i) => (i % 2 === 0 ? v + card.x : v + card.y)),
+    }))
+    setInkEdit({ cardId, strokes })
+    setTool('draw')
+  }
+
   // image replace: pick a new file and swap the card's blob in place
   const replaceRef = React.useRef<HTMLInputElement>(null)
   const replaceTarget = React.useRef<string | null>(null)
@@ -731,7 +755,7 @@ export function Canvas({ boardId }: { boardId: string }) {
       </div>
 
       {activeTool === 'draw' && (
-        <InkLayer boardId={boardId} view={view} viewportEl={viewportRef.current} />
+        <InkLayer boardId={boardId} view={view} viewportEl={viewportRef.current} editSession={inkEdit} />
       )}
 
       {activeTool === 'sticker' && <StickerPanel />}
@@ -847,6 +871,14 @@ export function Canvas({ boardId }: { boardId: string }) {
                   </button>
                   <button className="menu-item" onClick={menuAction(() => void downloadImage(cardId))}>
                     <Icon name="download" size={15} /> Download image
+                  </button>
+                  <div className="menu-sep" />
+                </>
+              )}
+              {type === 'ink' && (
+                <>
+                  <button className="menu-item" onClick={menuAction(() => editInk(cardId))}>
+                    <Icon name="draw" size={15} /> Edit ink
                   </button>
                   <div className="menu-sep" />
                 </>

@@ -205,6 +205,7 @@ export function useShortcuts() {
         ui.setSearchOpen(false)
         ui.setTrashOpen(false)
         ui.setHistoryOpen(false)
+        ui.setCaptureOpen(false)
         return
       }
       // Shift+1: fit board, Shift+2: zoom to selection (Figma muscle memory)

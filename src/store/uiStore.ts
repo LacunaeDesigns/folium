@@ -36,6 +36,7 @@ interface UiState {
   trashOpen: boolean
   historyOpen: boolean
   searchOpen: boolean
+  captureOpen: boolean
   unsortedOpen: boolean
   presentationMode: boolean
   /** app-wide appearance, applied to <html>; independent of per-board themes */
@@ -56,6 +57,7 @@ interface UiState {
   setTrashOpen(open: boolean): void
   setHistoryOpen(open: boolean): void
   setSearchOpen(open: boolean): void
+  setCaptureOpen(open: boolean): void
   setUnsortedOpen(open: boolean): void
   setPresentationMode(on: boolean): void
   setAppTheme(theme: AppTheme): void
@@ -74,6 +76,7 @@ export const useUi = create<UiState>((set) => ({
   trashOpen: false,
   historyOpen: false,
   searchOpen: false,
+  captureOpen: false,
   unsortedOpen: false,
   presentationMode: false,
   appTheme: 'light',
@@ -103,6 +106,7 @@ export const useUi = create<UiState>((set) => ({
   setTrashOpen: (open) => set((s) => ({ trashOpen: open, historyOpen: open ? false : s.historyOpen })),
   setHistoryOpen: (open) => set((s) => ({ historyOpen: open, trashOpen: open ? false : s.trashOpen })),
   setSearchOpen: (open) => set({ searchOpen: open }),
+  setCaptureOpen: (open) => set({ captureOpen: open }),
   setUnsortedOpen: (open) => set({ unsortedOpen: open }),
   setPresentationMode: (on) => set({ presentationMode: on }),
   setAppTheme: (theme) => set({ appTheme: theme }),

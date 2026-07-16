@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { afterEach, describe, it, expect } from 'vitest'
 import { Editor } from '@tiptap/core'
 import { AllSelection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
@@ -6,11 +6,22 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { setBulletList, setOrderedList } from './NoteCard'
 
+// destroy every editor a test created — an undestroyed EditorView leaves
+// ProseMirror DOMObserver timers running, which fire after the jsdom
+// environment is torn down and surface as flaky "document is not defined"
+// unhandled errors in unrelated test runs
+const editors: Editor[] = []
+afterEach(() => {
+  while (editors.length) editors.pop()!.destroy()
+})
+
 function makeEditor(html: string) {
-  return new Editor({
+  const editor = new Editor({
     extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true })],
     content: html,
   })
+  editors.push(editor)
+  return editor
 }
 
 describe('list type switching', () => {

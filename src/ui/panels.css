@@ -910,3 +910,9 @@
   background: transparent;
   color: var(--ink-soft);
 }
+
+.capture-hint {
+  font-size: 11px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}

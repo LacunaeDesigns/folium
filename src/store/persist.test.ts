@@ -137,7 +137,7 @@ describe('blob garbage collection', () => {
     const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
 
     store.getState().trashCards([id])
-    const deleted = await gcBlobs(db, docOf(store))
+    const deleted = await gcBlobs(db, [docOf(store)])
 
     expect(deleted).toEqual([])
     expect(await getBlob(db, blobId)).toBeDefined()
@@ -151,13 +151,13 @@ describe('blob garbage collection', () => {
 
     store.getState().trashCards([id])
     store.getState().emptyTrash()
-    const deleted = await gcBlobs(db, docOf(store))
+    const deleted = await gcBlobs(db, [docOf(store)])
 
     expect(deleted).toEqual([blobId])
     expect(await getBlob(db, blobId)).toBeUndefined()
   })
 
-  it('bindBlobGc automatically gcs a blob after emptyTrash completes', async () => {
+  it('bindBlobGc keeps a blob alive after emptyTrash while the undo stack can still restore it', async () => {
     const db = openDb('test-' + nanoid(6))
     const store = createFoliumStore()
     const blobId = await putBlob(db, new Blob(['img']))
@@ -170,7 +170,7 @@ describe('blob garbage collection', () => {
 
     store.getState().emptyTrash()
     await flushAsync()
-    expect(await getBlob(db, blobId)).toBeUndefined()
+    expect(await getBlob(db, blobId)).toBeDefined() // still reachable via undo — Ctrl+Z must not resurrect a blank image
 
     unsub()
   })
@@ -184,10 +184,42 @@ describe('blob garbage collection', () => {
 
     store.getState().trashCards([id])
     store.getState().emptyTrash()
-    const deleted = await gcBlobs(db, docOf(store))
+    const deleted = await gcBlobs(db, [docOf(store)])
 
     expect(deleted).toEqual([])
     expect(await getBlob(db, blobId)).toBeDefined()
+  })
+
+  it('gcBlobs keeps a blob alive while a past undo-stack state still references its card', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    const blobId = await putBlob(db, new Blob(['img']))
+    const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
+
+    store.getState().trashCards([id])
+    store.getState().emptyTrash()
+
+    const temporal = store.temporal.getState()
+    const deleted = await gcBlobs(db, [docOf(store), ...temporal.pastStates, ...temporal.futureStates])
+
+    expect(deleted).toEqual([])
+    expect(await getBlob(db, blobId)).toBeDefined()
+  })
+
+  it('gcBlobs deletes the orphaned blob once the undo stack is cleared', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    const blobId = await putBlob(db, new Blob(['img']))
+    const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
+
+    store.getState().trashCards([id])
+    store.getState().emptyTrash()
+    store.temporal.getState().clear()
+
+    const deleted = await gcBlobs(db, [docOf(store)])
+
+    expect(deleted).toEqual([blobId])
+    expect(await getBlob(db, blobId)).toBeUndefined()
   })
 })
 
@@ -227,7 +259,7 @@ describe('computeReferencedBlobIds', () => {
       },
       lines: {},
     }
-    const referenced = computeReferencedBlobIds(state, [], ['keep-live', 'keep-trashed', 'orphan'])
+    const referenced = computeReferencedBlobIds([state], [], ['keep-live', 'keep-trashed', 'orphan'])
     expect(referenced.has('keep-live')).toBe(true)
     expect(referenced.has('keep-trashed')).toBe(true)
     expect(referenced.has('orphan')).toBe(false)
@@ -258,7 +290,7 @@ describe('computeReferencedBlobIds', () => {
         },
       },
     ]
-    const referenced = computeReferencedBlobIds(state, templates, ['tmpl-blob', 'orphan'])
+    const referenced = computeReferencedBlobIds([state], templates, ['tmpl-blob', 'orphan'])
     expect(referenced.has('tmpl-blob')).toBe(true)
     expect(referenced.has('orphan')).toBe(false)
   })

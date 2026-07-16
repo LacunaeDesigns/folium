@@ -1,7 +1,7 @@
 import React from 'react'
 import { useStore } from 'zustand'
 import { FoliumState, FoliumStore, createFoliumStore } from './store'
-import { FoliumDb, bindAutosave, bindBlobGc, loadDoc, openDb } from './persist'
+import { FoliumDb, bindAutosave, bindBlobGc, gcBlobs, loadDoc, openDb } from './persist'
 import { loadSettings } from './settings'
 import { createTabSync } from './tabSync'
 import { recordLocalSave } from './localSave'
@@ -59,6 +59,11 @@ export async function bootFolium(): Promise<FoliumContextValue> {
     isPaused: tabSync.isPaused,
   })
   bindBlobGc(store, db)
+  // one-shot sweep for blobs orphaned last session: bindBlobGc now keeps a blob alive for as
+  // long as it's reachable via the undo stack, so a permanent deletion right before the tab
+  // closed can leave an orphan behind. The undo stack is empty at boot, so scanning just the
+  // freshly loaded doc here safely collects it.
+  if (doc) void gcBlobs(db, [doc])
   // folder sync (optional, opt-in): reconnect a linked folder and pull newer remote data
   try {
     const { initFolderSync } = await import('./sync')

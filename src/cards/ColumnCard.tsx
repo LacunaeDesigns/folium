@@ -5,17 +5,59 @@ import { useFolium, useFoliumStore } from '../store/context'
 import { columnCards } from '../store/selectors'
 import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { Icon } from '../ui/Icons'
-import { safeCapture } from '../canvas/coords'
 import { resolveCardDrop } from '../canvas/dropTarget'
+import { usePointerDragGesture } from '../canvas/usePointerDragGesture'
 import { useDebouncedCommit } from './useEditing'
 
 function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
   const store = useFoliumStore()
   const selected = useUi((s) => s.selection.includes(card.id))
   const [dragXY, setDragXY] = React.useState<{ x: number; y: number } | null>(null)
-  const gesture = React.useRef<{ startX: number; startY: number; dragging: boolean } | null>(null)
 
   const Body = getCardBody(card.type)
+
+  // this gesture is dragged by a distance threshold (5px) — see
+  // usePointerDragGesture for the shared arm/capture/cancel-recovery machine
+  const gesture = usePointerDragGesture<undefined>({
+    threshold: 5,
+    onDragMove: (e, _data, origin) => {
+      // once dragging, suppress the browser's own selection-drag (e.g. Shift
+      // held during the drag can otherwise start a native text selection
+      // alongside this pointer-based one, which can end the gesture with a
+      // pointercancel instead of a normal pointerup)
+      e.preventDefault()
+      setDragXY({ x: e.clientX - origin.x, y: e.clientY - origin.y })
+    },
+    onDragEnd: (e) => {
+      setDragXY(null)
+      const drop = resolveCardDrop(e.clientX, e.clientY, [card.id])
+      const s = store.getState()
+      if (drop?.kind === 'column') {
+        s.setCardColumn(card.id, drop.colId, drop.index)
+        return
+      }
+      if (drop?.kind === 'unsorted') {
+        s.setCardColumn(card.id, null, 0)
+        s.updateCard(card.id, { inUnsorted: true })
+        return
+      }
+      // released on open canvas -> pop out at world position
+      const vp = document.querySelector('.canvas-viewport')
+      if (vp) {
+        const r = vp.getBoundingClientRect()
+        const boardId = useUi.getState().currentBoardId
+        const view = (boardId && useUi.getState().views[boardId]) || DEFAULT_VIEW
+        const wx = (e.clientX - r.left - view.pan.x) / view.zoom
+        const wy = (e.clientY - r.top - view.pan.y) / view.zoom
+        s.setCardColumn(card.id, null, 0, { x: wx - card.w / 2, y: wy - 20 })
+      }
+    },
+    // the browser/OS aborted the gesture (e.g. a native selection-drag took
+    // over, losing pointer capture) — reset rather than leave the member
+    // stuck permanently "lifted" with a stray transform and inflated z-index
+    onDragCancel: () => setDragXY(null),
+    onClick: () => setDragXY(null),
+  })
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (readOnly || e.button !== 0) return
@@ -23,64 +65,7 @@ function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
     const target = e.target as HTMLElement
     if (target.closest('input, textarea, button, a, [contenteditable="true"], .no-drag')) return
     useUi.getState().setSelection([card.id])
-    gesture.current = { startX: e.clientX, startY: e.clientY, dragging: false }
-  }
-
-  const onPointerMove = (e: React.PointerEvent) => {
-    const g = gesture.current
-    if (!g) return
-    if (!g.dragging) {
-      if (Math.hypot(e.clientX - g.startX, e.clientY - g.startY) < 5) return
-      g.dragging = true
-      // capture only once a drag starts — capturing on pointerdown retargets the
-      // ensuing click/dblclick to the member shell, killing double-click editing
-      safeCapture(e.currentTarget as HTMLElement, e.pointerId)
-    }
-    // once dragging, suppress the browser's own selection-drag (e.g. Shift held
-    // during the drag can otherwise start a native text selection alongside
-    // this pointer-based one, which can end the gesture with a pointercancel
-    // instead of a normal pointerup)
-    e.preventDefault()
-    setDragXY({ x: e.clientX - g.startX, y: e.clientY - g.startY })
-  }
-
-  // the browser/OS aborted the gesture (e.g. a native selection-drag took over,
-  // losing pointer capture) — reset rather than leave the member stuck
-  // permanently "lifted" with a stray transform and inflated z-index
-  const onPointerCancel = () => {
-    gesture.current = null
-    setDragXY(null)
-  }
-
-  const onPointerUp = (e: React.PointerEvent) => {
-    const g = gesture.current
-    gesture.current = null
-    if (!g || !g.dragging) {
-      setDragXY(null)
-      return
-    }
-    setDragXY(null)
-    const drop = resolveCardDrop(e.clientX, e.clientY, [card.id])
-    const s = store.getState()
-    if (drop?.kind === 'column') {
-      s.setCardColumn(card.id, drop.colId, drop.index)
-      return
-    }
-    if (drop?.kind === 'unsorted') {
-      s.setCardColumn(card.id, null, 0)
-      s.updateCard(card.id, { inUnsorted: true })
-      return
-    }
-    // released on open canvas -> pop out at world position
-    const vp = document.querySelector('.canvas-viewport')
-    if (vp) {
-      const r = vp.getBoundingClientRect()
-      const boardId = useUi.getState().currentBoardId
-      const view = (boardId && useUi.getState().views[boardId]) || DEFAULT_VIEW
-      const wx = (e.clientX - r.left - view.pan.x) / view.zoom
-      const wy = (e.clientY - r.top - view.pan.y) / view.zoom
-      s.setCardColumn(card.id, null, 0, { x: wx - card.w / 2, y: wy - 20 })
-    }
+    gesture.start(e, undefined)
   }
 
   return (
@@ -89,9 +74,9 @@ function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
       data-col-member={card.id}
       style={dragXY ? { transform: `translate(${dragXY.x}px, ${dragXY.y}px)`, zIndex: 99 } : undefined}
       onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
+      onPointerMove={gesture.onPointerMove}
+      onPointerUp={gesture.onPointerUp}
+      onPointerCancel={gesture.onPointerCancel}
     >
       <div className={'col-member-chrome card-face-' + card.type}>
         <Body card={card} inColumn readOnly={readOnly} />

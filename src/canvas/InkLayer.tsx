@@ -56,6 +56,16 @@ export function InkLayer({
   const strokesRef = React.useRef<Stroke[]>([])
   strokesRef.current = strokes
   const current = React.useRef<Stroke | null>(null)
+  // true once the user has actually drawn or erased something this session. Guards
+  // finalize() against React StrictMode's dev-only double-invoke of mount effects
+  // (setup → cleanup → setup again, on the same mount, before any real unmount) —
+  // without this, an edit session seeded with non-empty strokes would have that
+  // practice cleanup call finalize() with the untouched seed, prematurely saving (or
+  // even trashing, if seeded empty) the card and wiping local state, before the user
+  // ever got a chance to draw. A fresh (non-edit) session never had this problem only
+  // by coincidence: strokesRef.current is always empty at mount, so the practice
+  // cleanup already hit the `!all.length` no-op branch harmlessly.
+  const touchedRef = React.useRef(false)
   const [, force] = React.useReducer((n: number) => n + 1, 0)
 
   const toWorld = (clientX: number, clientY: number): Pt => {
@@ -67,6 +77,11 @@ export function InkLayer({
   }
 
   const finalize = React.useCallback(() => {
+    // nothing changed since the edit session opened — see touchedRef's comment above.
+    // Leave the seeded strokes/current stroke exactly as they are; this is either
+    // StrictMode's practice invoke (component isn't really unmounting) or a genuine
+    // close-without-editing (which shouldn't push a no-op mutation either way)
+    if (editSession && !touchedRef.current) return
     // include a stroke still being drawn (e.g. Esc pressed mid-stroke)
     const live = current.current
     current.current = null
@@ -156,11 +171,16 @@ export function InkLayer({
     }
     const p = toWorld(e.clientX, e.clientY)
     if (draw.eraser) {
-      setStrokes((prev) => prev.filter((s) => !strokeHits(s, p, 12 / view.zoom)))
+      setStrokes((prev) => {
+        const next = prev.filter((s) => !strokeHits(s, p, 12 / view.zoom))
+        if (next.length !== prev.length) touchedRef.current = true
+        return next
+      })
       current.current = { points: [], color: '', width: 0 } // erase-drag marker
       return
     }
     current.current = { points: [p.x, p.y], color: draw.color, width: draw.width, pressures: [e.pressure || 0] }
+    touchedRef.current = true
     force()
   }
 
@@ -168,7 +188,11 @@ export function InkLayer({
     if (!current.current) return
     const p = toWorld(e.clientX, e.clientY)
     if (draw.eraser) {
-      setStrokes((prev) => prev.filter((s) => !strokeHits(s, p, 12 / view.zoom)))
+      setStrokes((prev) => {
+        const next = prev.filter((s) => !strokeHits(s, p, 12 / view.zoom))
+        if (next.length !== prev.length) touchedRef.current = true
+        return next
+      })
       return
     }
     current.current.points.push(p.x, p.y)

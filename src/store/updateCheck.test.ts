@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isUpdateAvailable, shouldSkipCheck } from './updateCheck'
+import { isUpdateAvailable, shouldSkipCheck, updateNotice, setSwUpdateReady, useUpdateCheck } from './updateCheck'
 
 describe('isUpdateAvailable', () => {
   it('is false when the remote commit is not newer than this build', () => {
@@ -34,5 +34,32 @@ describe('shouldSkipCheck', () => {
     const now = 1_000_000_000
     const dayMs = 24 * 60 * 60 * 1000
     expect(shouldSkipCheck(now - dayMs - 1, now)).toBe(false)
+  })
+})
+
+describe('updateNotice', () => {
+  it('shows nothing when no signal is active', () => {
+    expect(updateNotice(false, false)).toBe(null)
+  })
+
+  it('shows the GitHub notice when only the remote repo moved on', () => {
+    expect(updateNotice(false, true)).toBe('github')
+  })
+
+  it('shows the SW notice when a rebuilt copy is waiting', () => {
+    expect(updateNotice(true, false)).toBe('sw')
+  })
+
+  it('prefers the SW notice when both are active — it reflects the actually-served build', () => {
+    expect(updateNotice(true, true)).toBe('sw')
+  })
+})
+
+describe('setSwUpdateReady', () => {
+  it('flags swWaiting and stores the reload callback', () => {
+    const reload = () => {}
+    setSwUpdateReady(reload)
+    expect(useUpdateCheck.getState().swWaiting).toBe(true)
+    expect(useUpdateCheck.getState().swReload).toBe(reload)
   })
 })

@@ -10,6 +10,16 @@ import './styles/tokens.css'
 import './styles/global.css'
 import App from './App'
 import { FoliumProvider, bootFolium } from './store/context'
+import { registerSW } from 'virtual:pwa-register'
+import { setSwUpdateReady } from './store/updateCheck'
+
+// registerType is 'prompt': a rebuilt SW waits until the user clicks the update
+// banner's Reload, which calls updateSW(true) — activate + reload in one step.
+const updateSW = registerSW({
+  onNeedRefresh() {
+    setSwUpdateReady(() => void updateSW(true))
+  },
+})
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 

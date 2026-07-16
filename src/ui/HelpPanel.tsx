@@ -1,7 +1,7 @@
 import React from 'react'
 import { Icon, IconName } from './Icons'
 import { useDb } from '../store/context'
-import { useUpdateCheck, dismissUpdate } from '../store/updateCheck'
+import { useUpdateCheck, dismissUpdate, updateNotice } from '../store/updateCheck'
 import { FlowDiagram, LinesDiagram, BoardsColumnsFramesDiagram } from './HelpDiagrams'
 import './panels.css'
 
@@ -77,6 +77,8 @@ export function nextSectionIndex(current: number, key: string, count: number): n
 export function HelpPanel({ onClose }: { onClose: () => void }) {
   const db = useDb()
   const updateAvailable = useUpdateCheck((s) => s.available)
+  const swWaiting = useUpdateCheck((s) => s.swWaiting)
+  const notice = updateNotice(swWaiting, updateAvailable)
   const [activeSection, setActiveSection] = React.useState('start')
   const tabRefs = React.useRef<Record<string, HTMLButtonElement | null>>({})
 
@@ -135,7 +137,18 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             ))}
           </nav>
           <div className="help-content">
-            {updateAvailable && (
+            {notice === 'sw' && (
+              <div className="help-update-banner">
+                <span>An update is ready — reload to use the latest version.</span>
+                <button
+                  className="chrome-btn"
+                  onClick={() => useUpdateCheck.getState().swReload?.()}
+                >
+                  Reload
+                </button>
+              </div>
+            )}
+            {notice === 'github' && (
               <div className="help-update-banner">
                 <span>A newer version of Folium is available.</span>
                 <a href="https://github.com/LacunaeDesigns/folium" target="_blank" rel="noreferrer">

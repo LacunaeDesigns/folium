@@ -24,11 +24,17 @@ interface UpdateCheckState {
   /** The remote commit timestamp behind the current `available` verdict, if any — recorded so
    *  dismissUpdate() (added in a later task) knows exactly what to mark as dismissed. */
   remoteTs: number | null
+  /** True when a rebuilt service worker is installed and waiting to take over. */
+  swWaiting: boolean
+  /** Activates the waiting worker and reloads — provided by registerSW in main.tsx. */
+  swReload: (() => void) | null
 }
 
 export const useUpdateCheck = create<UpdateCheckState>(() => ({
   available: false,
   remoteTs: null,
+  swWaiting: false,
+  swReload: null,
 }))
 
 const LAST_CHECKED_KEY = 'updateLastCheckedAt'
@@ -70,4 +76,21 @@ export async function dismissUpdate(db: FoliumDb): Promise<void> {
   if (remoteTs === null) return
   await setSetting(db, DISMISSED_KEY, remoteTs)
   useUpdateCheck.setState({ available: false })
+}
+
+/** Called from main.tsx when a new service worker is installed and waiting. */
+export function setSwUpdateReady(reload: () => void): void {
+  useUpdateCheck.setState({ swWaiting: true, swReload: reload })
+}
+
+/** Which update banner to show. The two signals mean different things — a waiting SW
+ *  says "your local copy was rebuilt, reload"; the GitHub check says "the upstream
+ *  repo moved on, go pull". When both are true the SW wins: it reflects the build
+ *  actually being served, and the GitHub notice resurfaces after the reload if the
+ *  local copy is still behind. */
+export type UpdateNotice = 'sw' | 'github' | null
+export function updateNotice(swWaiting: boolean, githubAvailable: boolean): UpdateNotice {
+  if (swWaiting) return 'sw'
+  if (githubAvailable) return 'github'
+  return null
 }

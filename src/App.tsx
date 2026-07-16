@@ -373,6 +373,7 @@ export default function App() {
   const [helpOpen, setHelpOpen] = React.useState(false)
   const liveActive = useLive((s) => s.active)
   const updateAvailable = useUpdateCheck((s) => s.available)
+  const swWaiting = useUpdateCheck((s) => s.swWaiting)
   const canUndo = useStore(store.temporal, (s) => s.pastStates.length > 0)
   const canRedo = useStore(store.temporal, (s) => s.futureStates.length > 0)
 
@@ -460,7 +461,7 @@ export default function App() {
           canUndo={canUndo}
           canRedo={canRedo}
           liveActive={liveActive}
-          updateAvailable={updateAvailable}
+          updateAvailable={updateAvailable || swWaiting}
           viewMenu={menu === 'view' && <ViewMenu onClose={() => setMenu(null)} />}
           arrangeMenu={menu === 'arrange' && <ArrangeMenu onClose={() => setMenu(null)} />}
           settingsMenu={menu === 'settings' && <SettingsMenu onClose={() => setMenu(null)} />}

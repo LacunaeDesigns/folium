@@ -1,6 +1,6 @@
 import React from 'react'
 import { useFolium, useFoliumStore } from '../store/context'
-import { allBoardStats, breadcrumbs, boardCards } from '../store/selectors'
+import { allBoardStats, breadcrumbs, boardCards, BoardStats } from '../store/selectors'
 import { relTime } from '../cards/CommentCard'
 import { useUi } from '../store/uiStore'
 import { BoardSchematic } from './BoardSchematic'
@@ -10,15 +10,16 @@ import './panels.css'
 
 function BoardTile({
   board,
+  stats,
   onJump,
 }: {
   board: Board
+  stats: BoardStats | undefined
   onJump: (boardId: string) => void
 }) {
   const store = useFoliumStore()
   const crumbs = useFolium((s) => breadcrumbs(s, board.id))
   const cards = useFolium((s) => boardCards(s, board.id))
-  const stats = useFolium((s) => allBoardStats(s)[board.id])
   const [editing, setEditing] = React.useState(false)
   const [draft, setDraft] = React.useState(board.title)
 
@@ -56,7 +57,10 @@ function BoardTile({
         ) : (
           <button
             className="lib-tile-title"
-            onDoubleClick={() => setEditing(true)}
+            onDoubleClick={() => {
+              setDraft(board.title)
+              setEditing(true)
+            }}
             title="Double-click to rename"
           >
             {board.title}
@@ -76,6 +80,10 @@ export function BoardLibrary({ onClose }: { onClose: () => void }) {
   const store = useFoliumStore()
   const rootId = useFolium((s) => s.rootId)
   const boards = useFolium((s) => s.boards)
+  // one pass over s.cards for every board's stats, computed once per render here —
+  // not per tile, which would reintroduce the O(boards*cards) cost allBoardStats
+  // exists to avoid (see its own doc comment in selectors.ts)
+  const stats = useFolium(allBoardStats)
   const [query, setQuery] = React.useState('')
 
   const jump = (boardId: string) => {
@@ -121,7 +129,7 @@ export function BoardLibrary({ onClose }: { onClose: () => void }) {
         </div>
         <div className="lib-grid">
           {list.map((b) => (
-            <BoardTile key={b.id} board={b} onJump={jump} />
+            <BoardTile key={b.id} board={b} stats={stats[b.id]} onJump={jump} />
           ))}
         </div>
       </div>

@@ -579,4 +579,33 @@ describe('Board.updatedAt', () => {
     store.getState().emptyTrash()
     expect(store.getState().boards[rootId].updatedAt).toBe(beforeEmpty)
   })
+
+  it('a no-op on a locked card does not stamp updatedAt', () => {
+    const store = createFoliumStore()
+    const rootId = store.getState().rootId
+    const a = store.getState().addCard(rootId, 'note', { x: 0, y: 0 })
+    store.getState().updateCard(a, { locked: true })
+    const beforeNoOp = store.getState().boards[rootId].updatedAt
+    store.getState().resizeCard(a, 500, 500)
+    expect(store.getState().boards[rootId].updatedAt).toBe(beforeNoOp)
+    store.getState().moveCards([a], 10, 10)
+    expect(store.getState().boards[rootId].updatedAt).toBe(beforeNoOp)
+  })
+
+  it('setCardColumn stamps both the source and destination board on a cross-board drop', () => {
+    const store = createFoliumStore()
+    const rootId = store.getState().rootId
+    const { boardId: otherBoardId } = store.getState().createBoard(rootId, 'Other')
+    const col = store.getState().addCard(otherBoardId, 'column', { x: 0, y: 0 })
+    const a = store.getState().addCard(rootId, 'note', { x: 0, y: 0 })
+    ;(store.getState() as any).boards = {
+      ...store.getState().boards,
+      [rootId]: { ...store.getState().boards[rootId], updatedAt: undefined },
+      [otherBoardId]: { ...store.getState().boards[otherBoardId], updatedAt: undefined },
+    }
+    store.getState().setCardColumn(a, col, 0)
+    expect(store.getState().cards[a].boardId).toBe(otherBoardId)
+    expect(store.getState().boards[rootId].updatedAt).toBeDefined()
+    expect(store.getState().boards[otherBoardId].updatedAt).toBeDefined()
+  })
 })

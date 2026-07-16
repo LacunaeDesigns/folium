@@ -12,7 +12,7 @@ beforeEach(() => {
 describe('searchAll', () => {
   it('finds boards by title', () => {
     s().createBoard(s().rootId, 'Level Design Portfolio')
-    const hits = searchAll(s(), 'portfolio')
+    const { hits } = searchAll(s(), 'portfolio')
     expect(hits.some((h) => h.kind === 'board' && h.title === 'Level Design Portfolio')).toBe(true)
   })
 
@@ -29,7 +29,7 @@ describe('searchAll', () => {
         },
       } as never,
     })
-    const hits = searchAll(s(), 'danish')
+    const { hits } = searchAll(s(), 'danish')
     expect(hits).toHaveLength(1)
     expect(hits[0].snippet).toContain('Danish')
   })
@@ -41,19 +41,56 @@ describe('searchAll', () => {
     s().addCard(b, 'sticky', { x: 0, y: 0, content: { text: 'chairs everywhere' } as never })
     s().addCard(b, 'table', { x: 0, y: 0, content: { rows: [['Item'], ['Egg chair']] } as never })
     s().addCard(b, 'file', { x: 0, y: 0, content: { name: 'chair-render.png', size: 1, mime: '' } as never })
-    expect(searchAll(s(), 'chair')).toHaveLength(5)
+    expect(searchAll(s(), 'chair').hits).toHaveLength(5)
   })
 
   it('ignores trashed cards and is case-insensitive', () => {
     const id = s().addCard(s().rootId, 'sticky', { x: 0, y: 0, content: { text: 'FIND ME' } as never })
-    expect(searchAll(s(), 'find me')).toHaveLength(1)
+    expect(searchAll(s(), 'find me').hits).toHaveLength(1)
     s().trashCards([id])
-    expect(searchAll(s(), 'find me')).toHaveLength(0)
+    expect(searchAll(s(), 'find me').hits).toHaveLength(0)
   })
 
   it('returns empty for blank queries', () => {
     s().addCard(s().rootId, 'sticky', { x: 0, y: 0, content: { text: 'anything' } as never })
-    expect(searchAll(s(), '  ')).toHaveLength(0)
+    expect(searchAll(s(), '  ').hits).toHaveLength(0)
+  })
+})
+
+describe('searchAll filters and paging', () => {
+  it('filters by card type', () => {
+    const b = s().rootId
+    const { boardId: b2 } = s().createBoard(b, 'Board Two')
+    s().addCard(b, 'sticky', { x: 0, y: 0, content: { text: 'foo sticky one' } as never })
+    s().addCard(b, 'sticky', { x: 0, y: 0, content: { text: 'foo sticky two' } as never })
+    s().addCard(b2, 'table', { x: 0, y: 0, content: { rows: [['H'], ['foo']] } as never })
+
+    const { hits } = searchAll(s(), 'foo', { type: 'table' })
+    expect(hits).toHaveLength(1)
+    expect(hits[0].cardType).toBe('table')
+  })
+
+  it('filters by board', () => {
+    const b = s().rootId
+    const { boardId: b2 } = s().createBoard(b, 'Board Two')
+    s().addCard(b, 'sticky', { x: 0, y: 0, content: { text: 'foo here' } as never })
+    s().addCard(b2, 'table', { x: 0, y: 0, content: { rows: [['H'], ['foo']] } as never })
+
+    const { hits } = searchAll(s(), 'foo', { boardId: b2 })
+    expect(hits.length).toBeGreaterThan(0)
+    expect(hits.every((h) => h.boardId === b2)).toBe(true)
+  })
+
+  it('pages past the first 30 with offset and reports total', () => {
+    const b = s().rootId
+    for (let i = 0; i < 35; i++) {
+      s().addCard(b, 'sticky', { x: 0, y: 0, content: { text: `foo item ${i}` } as never })
+    }
+    const first = searchAll(s(), 'foo', { limit: 30, offset: 0 })
+    const second = searchAll(s(), 'foo', { limit: 30, offset: 30 })
+    expect(first.hits).toHaveLength(30)
+    expect(second.hits.length).toBeGreaterThan(0)
+    expect(first.total).toBe(first.hits.length + second.hits.length)
   })
 })
 

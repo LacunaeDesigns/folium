@@ -34,6 +34,7 @@ export function Canvas({ boardId }: { boardId: string }) {
   const activeTool = useUi((s) => s.activeTool)
   const setTool = useUi((s) => s.setTool)
   const snapGuides = useUi((s) => s.snapGuides)
+  const selection = useUi((s) => s.selection)
 
   // kept in sync every render so callbacks with stable identity (e.g.
   // onConnectMove below) can read the latest view without taking it as a
@@ -976,6 +977,9 @@ export function Canvas({ boardId }: { boardId: string }) {
         </button>
         <button onClick={fitToContent} title="Fit to content">
           <Icon name="fit" size={15} />
+        </button>
+        <button onClick={fitToSelection} disabled={selection.length === 0} title="Zoom to selection (Shift+2)">
+          <Icon name="fit-selection" size={15} />
         </button>
       </div>
     </div>

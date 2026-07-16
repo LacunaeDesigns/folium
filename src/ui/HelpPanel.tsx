@@ -152,8 +152,15 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
                 <p className="help-tip">
                   <Icon name="fit" size={14} />
                   <span>
-                    Use the View menu, or Shift+1, to fit the whole board in view. Use Shift+2 to zoom to the
-                    current selection.
+                    Use the View menu, or Shift+1, to fit the whole board in view. Use Shift+2, or the zoom
+                    pill&apos;s fifth button, to zoom to the current selection.
+                  </span>
+                </p>
+                <p className="help-tip">
+                  <Icon name="search" size={14} />
+                  <span>
+                    Ctrl+K opens search across every board. Filter results by card type or restrict them to
+                    the current board, and use &quot;Show more&quot; to page past the first 30 matches.
                   </span>
                 </p>
               </section>

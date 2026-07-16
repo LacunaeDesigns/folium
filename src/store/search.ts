@@ -70,14 +70,29 @@ function snippetAround(text: string, query: string, span = 60): string {
   return (start > 0 ? '…' : '') + cut + (start + span < text.length ? '…' : '')
 }
 
-export function searchAll(state: DocState, rawQuery: string, limit = 30): SearchHit[] {
+export interface SearchOpts {
+  limit?: number
+  offset?: number
+  /** 'board' matches both board-title hits and nested board-tile cards. */
+  type?: Card['type']
+  boardId?: string
+}
+
+export function searchAll(
+  state: DocState,
+  rawQuery: string,
+  opts: SearchOpts = {},
+): { hits: SearchHit[]; total: number } {
+  const { limit = 30, offset = 0, type, boardId } = opts
   const query = rawQuery.trim().toLowerCase()
-  if (!query) return []
-  const hits: SearchHit[] = []
+  if (!query) return { hits: [], total: 0 }
+  const all: SearchHit[] = []
 
   for (const board of Object.values(state.boards)) {
+    if (type && type !== 'board') continue
+    if (boardId && board.id !== boardId) continue
     if (board.title.toLowerCase().includes(query)) {
-      hits.push({
+      all.push({
         kind: 'board',
         id: board.id,
         boardId: board.id,
@@ -90,9 +105,11 @@ export function searchAll(state: DocState, rawQuery: string, limit = 30): Search
   for (const card of Object.values(state.cards)) {
     if (card.trashed) continue
     if (!state.boards[card.boardId]) continue
+    if (type && type !== card.type) continue
+    if (boardId && card.boardId !== boardId) continue
     const text = cardText(card)
     if (!text || !text.toLowerCase().includes(query)) continue
-    hits.push({
+    all.push({
       kind: 'card',
       id: card.id,
       boardId: card.boardId,
@@ -101,8 +118,7 @@ export function searchAll(state: DocState, rawQuery: string, limit = 30): Search
       title: state.boards[card.boardId].title,
       snippet: snippetAround(text, query),
     })
-    if (hits.length >= limit) break
   }
 
-  return hits.slice(0, limit)
+  return { hits: all.slice(offset, offset + limit), total: all.length }
 }

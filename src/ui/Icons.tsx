@@ -49,6 +49,7 @@ export type IconName =
   | 'redo'
   | 'sticker'
   | 'lock'
+  | 'fit-selection'
 
 const paths: Record<IconName, React.ReactNode> = {
   note: (
@@ -335,6 +336,12 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <rect x="5" y="11" width="14" height="9" rx="2" />
       <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
+  ),
+  'fit-selection': (
+    <>
+      <path d="M8.5 3.5H5a1.5 1.5 0 0 0-1.5 1.5v3.5M15.5 3.5H19a1.5 1.5 0 0 1 1.5 1.5v3.5M8.5 20.5H5A1.5 1.5 0 0 1 3.5 19v-3.5M15.5 20.5H19a1.5 1.5 0 0 0 1.5-1.5v-3.5" />
+      <rect x="8" y="8" width="8" height="8" rx="1" />
     </>
   ),
 }

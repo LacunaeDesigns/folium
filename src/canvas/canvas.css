@@ -190,6 +190,12 @@
   background: var(--bg-hover);
 }
 
+.zoom-pill button:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
 .zoom-pill .zoom-value {
   font-size: 12px;
   font-weight: 600;

@@ -64,10 +64,20 @@ const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: 'Escape', action: 'Close menus, clear the selection, or exit the current tool' },
 ]
 
+/** Roving-tabindex arrow-key navigation for the Help sidebar's tab list. */
+export function nextSectionIndex(current: number, key: string, count: number): number | null {
+  if (key === 'ArrowDown') return (current + 1) % count
+  if (key === 'ArrowUp') return (current - 1 + count) % count
+  if (key === 'Home') return 0
+  if (key === 'End') return count - 1
+  return null
+}
+
 export function HelpPanel({ onClose }: { onClose: () => void }) {
   const db = useDb()
   const updateAvailable = useUpdateCheck((s) => s.available)
   const [activeSection, setActiveSection] = React.useState('start')
+  const tabRefs = React.useRef<Record<string, HTMLButtonElement | null>>({})
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -76,6 +86,16 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  const onTocKeyDown = (e: React.KeyboardEvent) => {
+    const idx = SECTIONS.findIndex((s) => s.id === activeSection)
+    const next = nextSectionIndex(idx, e.key, SECTIONS.length)
+    if (next === null) return
+    e.preventDefault()
+    const id = SECTIONS[next].id
+    setActiveSection(id)
+    tabRefs.current[id]?.focus()
+  }
 
   return (
     <div className="overlay" onPointerDown={onClose}>
@@ -88,10 +108,24 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="help-body">
-          <nav className="help-toc">
+          <nav
+            className="help-toc"
+            role="tablist"
+            aria-label="Help sections"
+            aria-orientation="vertical"
+            onKeyDown={onTocKeyDown}
+          >
             {SECTIONS.map((s) => (
               <button
                 key={s.id}
+                ref={(el) => {
+                  tabRefs.current[s.id] = el
+                }}
+                role="tab"
+                id={'tab-' + s.id}
+                aria-selected={activeSection === s.id}
+                aria-controls={'help-' + s.id}
+                tabIndex={activeSection === s.id ? 0 : -1}
                 className={'help-toc-item' + (activeSection === s.id ? ' active' : '')}
                 onClick={() => setActiveSection(s.id)}
               >
@@ -112,7 +146,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
               </div>
             )}
             {activeSection === 'start' && (
-              <section id="help-start">
+              <section id="help-start" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Getting started</h2>
                 <p className="help-tip">
                   <Icon name="plus" size={14} />
@@ -126,7 +160,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'cards' && (
-              <section id="help-cards">
+              <section id="help-cards" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Card types</h2>
                 <ul className="help-card-list">
                   {CARD_TYPES.map((c) => (
@@ -142,7 +176,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'nav' && (
-              <section id="help-nav">
+              <section id="help-nav" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Navigating</h2>
                 <p>Pan the canvas by holding Space and dragging, or by dragging with the middle mouse button.</p>
                 <p className="help-tip">
@@ -167,7 +201,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'select' && (
-              <section id="help-select">
+              <section id="help-select" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Selecting & moving</h2>
                 <p>Drag on empty canvas to draw a marquee and select the cards inside it.</p>
                 <p>Click a card to select it, and shift-click to add more cards to the selection.</p>
@@ -195,7 +229,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'lines' && (
-              <section id="help-lines">
+              <section id="help-lines" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Lines & connections</h2>
                 <LinesDiagram />
                 <p>Drag from a card's edge handle to another card to connect them with a line.</p>
@@ -212,7 +246,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'boards' && (
-              <section id="help-boards">
+              <section id="help-boards" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Boards, columns & frames</h2>
                 <BoardsColumnsFramesDiagram />
                 <p>A board card opens a nested board of its own, so you can organise work in layers.</p>
@@ -222,7 +256,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'templates' && (
-              <section id="help-templates">
+              <section id="help-templates" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Templates</h2>
                 <p className="help-tip">
                   <Icon name="template" size={14} />
@@ -233,7 +267,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'io' && (
-              <section id="help-io">
+              <section id="help-io" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Import & export</h2>
                 <p className="help-tip">
                   <Icon name="download" size={14} />
@@ -260,7 +294,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'photos' && (
-              <section id="help-photos">
+              <section id="help-photos" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Photos via Pexels</h2>
                 <p className="help-tip">
                   <Icon name="image" size={14} />
@@ -274,7 +308,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'sync' && (
-              <section id="help-sync">
+              <section id="help-sync" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Cross-machine sync</h2>
                 <FlowDiagram
                   steps={[
@@ -300,7 +334,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'live' && (
-              <section id="help-live">
+              <section id="help-live" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Live review</h2>
                 <FlowDiagram
                   steps={[
@@ -319,7 +353,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'keys' && (
-              <section id="help-keys">
+              <section id="help-keys" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Keyboard shortcuts</h2>
                 <table className="help-keys-table">
                   <tbody>
@@ -335,7 +369,7 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
             )}
 
             {activeSection === 'feedback' && (
-              <section id="help-feedback">
+              <section id="help-feedback" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
                 <h2>Feedback & bugs</h2>
                 <p>If something breaks, or Folium is missing something you need, open an issue on GitHub.</p>
                 <div className="help-feedback-links">

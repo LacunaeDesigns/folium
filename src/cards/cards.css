@@ -38,8 +38,10 @@
   color: #f0efec;
 }
 
-/* the coloured palette is always light — force dark ink so text stays readable
-   even under a dark board theme, where --ink would otherwise flip to light */
+/* in light theme the coloured palette is light — force dark ink so text stays
+   readable even under a dark board theme, where --ink would otherwise flip to
+   light. In dark theme the palette tokens are themselves dark (tokens.css), so
+   the override below flips to light ink instead. */
 .note-card.bg-yellow, .note-card.bg-yellow .ProseMirror,
 .note-card.bg-orange, .note-card.bg-orange .ProseMirror,
 .note-card.bg-red,    .note-card.bg-red .ProseMirror,
@@ -47,6 +49,14 @@
 .note-card.bg-blue,   .note-card.bg-blue .ProseMirror,
 .note-card.bg-purple, .note-card.bg-purple .ProseMirror {
   color: #2c2a23;
+}
+[data-board-theme='dark'] .note-card.bg-yellow, [data-board-theme='dark'] .note-card.bg-yellow .ProseMirror,
+[data-board-theme='dark'] .note-card.bg-orange, [data-board-theme='dark'] .note-card.bg-orange .ProseMirror,
+[data-board-theme='dark'] .note-card.bg-red,    [data-board-theme='dark'] .note-card.bg-red .ProseMirror,
+[data-board-theme='dark'] .note-card.bg-green,  [data-board-theme='dark'] .note-card.bg-green .ProseMirror,
+[data-board-theme='dark'] .note-card.bg-blue,   [data-board-theme='dark'] .note-card.bg-blue .ProseMirror,
+[data-board-theme='dark'] .note-card.bg-purple, [data-board-theme='dark'] .note-card.bg-purple .ProseMirror {
+  color: #f0efec;
 }
 
 .note-editor .ProseMirror {

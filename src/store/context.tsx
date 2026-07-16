@@ -6,6 +6,7 @@ import { loadSettings } from './settings'
 import { createTabSync } from './tabSync'
 import { recordLocalSave } from './localSave'
 import { checkForUpdates } from './updateCheck'
+import { maybeSnapshot } from './snapshots'
 
 interface FoliumContextValue {
   store: FoliumStore
@@ -55,6 +56,10 @@ export async function bootFolium(): Promise<FoliumContextValue> {
     onWrite: (ts) => {
       tabSync.onWrite(ts)
       recordLocalSave(ts)
+      // version snapshot alongside the save, at most once per interval (db-gated,
+      // so a second open tab can't double-fire); best-effort, never blocks saving
+      const s = store.getState()
+      void maybeSnapshot(db, { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines }, ts).catch(() => {})
     },
     isPaused: tabSync.isPaused,
   })
@@ -64,6 +69,9 @@ export async function bootFolium(): Promise<FoliumContextValue> {
   // closed can leave an orphan behind. The undo stack is empty at boot, so scanning just the
   // freshly loaded doc here safely collects it.
   if (doc) void gcBlobs(db, [doc])
+  // boot snapshot: capture the state the session STARTED from (pre-edits), so
+  // "before today's changes" is always restorable even for short sessions
+  if (doc) void maybeSnapshot(db, doc).catch(() => {})
   // folder sync (optional, opt-in): reconnect a linked folder and pull newer remote data
   try {
     const { initFolderSync } = await import('./sync')

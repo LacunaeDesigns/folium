@@ -5,6 +5,7 @@ import { Toolbar } from './ui/Toolbar'
 import { Canvas } from './canvas/Canvas'
 import { UnsortedTray } from './ui/UnsortedTray'
 import { TrashView } from './ui/TrashView'
+import { HistoryPanel } from './ui/HistoryPanel'
 import { SearchPanel } from './ui/SearchPanel'
 import { TemplateGallery } from './ui/TemplateGallery'
 import { ExportMenu } from './ui/ExportMenu'
@@ -352,6 +353,8 @@ export default function App() {
   const setBoard = useUi((s) => s.setBoard)
   const trashOpen = useUi((s) => s.trashOpen)
   const setTrashOpen = useUi((s) => s.setTrashOpen)
+  const historyOpen = useUi((s) => s.historyOpen)
+  const setHistoryOpen = useUi((s) => s.setHistoryOpen)
   const searchOpen = useUi((s) => s.searchOpen)
   const presentationMode = useUi((s) => s.presentationMode)
   const appTheme = useUi((s) => s.appTheme)
@@ -457,6 +460,8 @@ export default function App() {
           onPickTool={(t) => setTool(activeTool === t ? null : t)}
           onOpenTrash={() => setTrashOpen(!trashOpen)}
           trashActive={trashOpen}
+          onOpenHistory={() => setHistoryOpen(!historyOpen)}
+          historyActive={historyOpen}
           onOpenPhotos={() => setPhotosOpen(true)}
         />
       </nav>
@@ -467,6 +472,7 @@ export default function App() {
         <Canvas boardId={currentBoardId} />
         <UnsortedTray boardId={currentBoardId} />
         {trashOpen && <TrashView />}
+        {historyOpen && <HistoryPanel />}
       </main>
       {searchOpen && <SearchPanel />}
       {templatesOpen && (

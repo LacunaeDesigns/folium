@@ -34,6 +34,7 @@ interface UiState {
   /** active emoji for the sticker tool, chosen from the picker before placing */
   stickerEmoji: string
   trashOpen: boolean
+  historyOpen: boolean
   searchOpen: boolean
   unsortedOpen: boolean
   presentationMode: boolean
@@ -53,6 +54,7 @@ interface UiState {
   setDraw(patch: Partial<DrawSettings>): void
   setStickerEmoji(emoji: string): void
   setTrashOpen(open: boolean): void
+  setHistoryOpen(open: boolean): void
   setSearchOpen(open: boolean): void
   setUnsortedOpen(open: boolean): void
   setPresentationMode(on: boolean): void
@@ -70,6 +72,7 @@ export const useUi = create<UiState>((set) => ({
   draw: { color: '#33373b', width: 3, eraser: false },
   stickerEmoji: '⭐',
   trashOpen: false,
+  historyOpen: false,
   searchOpen: false,
   unsortedOpen: false,
   presentationMode: false,
@@ -78,7 +81,7 @@ export const useUi = create<UiState>((set) => ({
   snapGuides: null,
 
   setBoard: (id) => {
-    set({ currentBoardId: id, selection: [], selectedLine: null, activeTool: null, trashOpen: false })
+    set({ currentBoardId: id, selection: [], selectedLine: null, activeTool: null, trashOpen: false, historyOpen: false })
     const want = '#/b/' + id
     if (typeof location !== 'undefined' && location.hash !== want) location.hash = want
   },
@@ -97,6 +100,7 @@ export const useUi = create<UiState>((set) => ({
   setDraw: (patch) => set((s) => ({ draw: { ...s.draw, ...patch } })),
   setStickerEmoji: (emoji) => set({ stickerEmoji: emoji }),
   setTrashOpen: (open) => set({ trashOpen: open }),
+  setHistoryOpen: (open) => set({ historyOpen: open }),
   setSearchOpen: (open) => set({ searchOpen: open }),
   setUnsortedOpen: (open) => set({ unsortedOpen: open }),
   setPresentationMode: (on) => set({ presentationMode: on }),

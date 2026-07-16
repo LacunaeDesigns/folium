@@ -61,12 +61,16 @@ export function Toolbar({
   onPickTool,
   onOpenTrash,
   trashActive,
+  onOpenHistory,
+  historyActive,
   onOpenPhotos,
 }: {
   activeTool: ToolId | null
   onPickTool: (tool: ToolId) => void
   onOpenTrash: () => void
   trashActive: boolean
+  onOpenHistory: () => void
+  historyActive: boolean
   onOpenPhotos: () => void
 }) {
   const [moreOpen, setMoreOpen] = React.useState(false)
@@ -174,6 +178,12 @@ export function Toolbar({
       </div>
       <div className="toolbar-spacer" />
       <div className="toolbar-group bottom">
+        <button className={'tool-btn' + (historyActive ? ' active' : '')} onClick={onOpenHistory} title="Version history">
+          <span className="tool-icon">
+            <Icon name="history" size={19} />
+          </span>
+          <span className="tool-label">History</span>
+        </button>
         <button className={'tool-btn' + (trashActive ? ' active' : '')} onClick={onOpenTrash} title="Trash">
           <span className="tool-icon">
             <Icon name="trash" size={19} />

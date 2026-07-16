@@ -22,6 +22,18 @@ and unpack it anywhere, then:
 - **macOS / Linux**: run `node serve.mjs` in the folder — same behavior
   (first-run install + build, opens your browser, exits when the last tab closes).
 
+### Install as an app
+
+Folium is a PWA. In Chrome or Edge, use the install icon in the address bar
+(or the menu → *Install Folium*) to get a standalone window with its own
+taskbar icon, plus a jump-list **Quick capture** entry (right-click the
+taskbar icon). Double-click **`create-capture-shortcut.vbs`** once for a
+Desktop shortcut with a global hotkey (**Ctrl+Alt+F**) — Windows activates
+`.lnk` hotkeys with a short (~1s) delay, which is normal.
+
+Boards, editing, search and export all work offline once installed; Pexels
+photo search and Live review sessions need a connection.
+
 Updating later: `git pull` (or unpack a newer ZIP over the folder) and launch —
 it notices the source changed and rebuilds itself before opening. Your boards
 are safe either way: they live in your browser, not in this folder.

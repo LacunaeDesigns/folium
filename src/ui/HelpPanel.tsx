@@ -16,6 +16,7 @@ const SECTIONS: { id: string; title: string }[] = [
   { id: 'io', title: 'Import & export' },
   { id: 'photos', title: 'Photos via Pexels' },
   { id: 'sync', title: 'Cross-machine sync' },
+  { id: 'install', title: 'Install & offline' },
   { id: 'live', title: 'Live review' },
   { id: 'keys', title: 'Keyboard shortcuts' },
   { id: 'feedback', title: 'Feedback & bugs' },
@@ -343,6 +344,36 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
                   folder had already moved on elsewhere — nothing is lost, your edits are still
                   saved locally, but open Settings and either reload to get the newer version, or
                   wait for the other machine to settle and try syncing again.
+                </p>
+              </section>
+            )}
+
+            {activeSection === 'install' && (
+              <section id="help-install" role="tabpanel" aria-labelledby={'tab-' + activeSection}>
+                <h2>Install &amp; offline</h2>
+                <p className="help-tip">
+                  <Icon name="plus" size={14} />
+                  <span>
+                    Install Folium as an app: in Chrome or Edge, open Folium and use the install
+                    icon in the address bar (or menu → "Install Folium"). You get a standalone
+                    window, its own taskbar icon, and a jump-list "Quick capture" entry.
+                  </span>
+                </p>
+                <p className="help-tip">
+                  <Icon name="note" size={14} />
+                  <span>
+                    Quick capture from anywhere: double-click <code>create-capture-shortcut.vbs</code> in
+                    the Folium folder to get a desktop shortcut with a global hotkey
+                    (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>). Windows activates shortcut hotkeys
+                    with a short (~1s) delay — that's the OS, not Folium.
+                  </span>
+                </p>
+                <p className="help-tip">
+                  <Icon name="help" size={14} />
+                  <span>
+                    Offline: boards, editing, search and export all work offline — your data lives in
+                    this browser. Pexels photo search and Live review sessions need a connection.
+                  </span>
                 </p>
               </section>
             )}

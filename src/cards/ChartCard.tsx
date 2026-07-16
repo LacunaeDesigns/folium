@@ -1,10 +1,20 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { CardBodyProps } from './registry'
 import { ChartContent, ChartKind, BOARD_COLORS } from '../model/types'
 import { useFoliumStore } from '../store/context'
 import { useUi } from '../store/uiStore'
 import { renderChartSvg, rowsToChartData } from '../charts/renderChart'
 import { useDebouncedCommit } from './useEditing'
+import {
+  insertRowAt,
+  removeRowAt,
+  moveRow,
+  insertColAt,
+  removeColAt,
+  moveCol,
+  applyTsvPaste,
+  nextCellPos,
+} from './gridOps'
 
 const KINDS: ChartKind[] = ['bar', 'line', 'pie', 'donut']
 
@@ -12,12 +22,22 @@ const KINDS: ChartKind[] = ['bar', 'line', 'pie', 'donut']
 // undo stack with a full-grid copy — mirrors NoteCard's approach
 function ChartCell({
   value,
+  row,
+  col,
   placeholder,
   onCommit,
+  onFocusCell,
+  onNavigate,
+  onPasteGrid,
 }: {
   value: string
+  row: number
+  col: number
   placeholder?: string
   onCommit: (v: string) => void
+  onFocusCell: (r: number, c: number) => void
+  onNavigate: (r: number, c: number, key: 'Tab' | 'ShiftTab' | 'Enter') => void
+  onPasteGrid: (r: number, c: number, text: string) => void
 }) {
   const [draft, setDraft] = useState(value)
   const commit = useDebouncedCommit((v) => onCommit(v as string))
@@ -26,11 +46,30 @@ function ChartCell({
 
   return (
     <input
+      data-row={row}
+      data-col={col}
       value={draft}
       placeholder={placeholder}
+      onFocus={() => onFocusCell(row, col)}
       onChange={(e) => {
         setDraft(e.target.value)
         commit(e.target.value)
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault()
+          onNavigate(row, col, e.shiftKey ? 'ShiftTab' : 'Tab')
+        } else if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault()
+          onNavigate(row, col, 'Enter')
+        }
+      }}
+      onPaste={(e) => {
+        const text = e.clipboardData.getData('text/plain')
+        if (/[\t\n]/.test(text)) {
+          e.preventDefault()
+          onPasteGrid(row, col, text)
+        }
       }}
     />
   )
@@ -42,15 +81,37 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
   const selected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
   const [editing, setEditing] = useState(false)
   const rows = content.rows
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [lastCell, setLastCell] = useState<{ r: number; c: number } | null>(null)
 
   const update = (patch: Partial<ChartContent>) => store.getState().updateContent(card.id, patch)
   const setRows = (next: string[][]) => update({ rows: next })
   const setCell = (r: number, c: number, v: string) =>
     setRows(rows.map((row, ri) => (ri === r ? row.map((cell, ci) => (ci === c ? v : cell)) : row)))
-  const addRow = () => setRows([...rows, rows[0].map(() => '')])
-  const delRow = () => rows.length > 2 && setRows(rows.slice(0, -1))
-  const addCol = () => setRows(rows.map((row, ri) => [...row, ri === 0 ? 'Series ' + row.length : '']))
-  const delCol = () => rows[0].length > 2 && setRows(rows.map((row) => row.slice(0, -1)))
+
+  const focusCell = (r: number, c: number) => {
+    const el = rootRef.current?.querySelector<HTMLElement>(`[data-row="${r}"][data-col="${c}"]`)
+    el?.focus()
+  }
+
+  const navigate = (r: number, c: number, key: 'Tab' | 'ShiftTab' | 'Enter') => {
+    const next = nextCellPos(r, c, rows.length, rows[0].length, key)
+    if (next) focusCell(next.r, next.c)
+  }
+
+  const pasteGrid = (r: number, c: number, text: string) => setRows(applyTsvPaste(rows, r, c, text))
+
+  const rowIdx = lastCell?.r ?? rows.length - 1
+  const colIdx = lastCell?.c ?? rows[0].length - 1
+
+  const addRow = () => setRows(insertRowAt(rows, rowIdx))
+  const delRow = () => setRows(removeRowAt(rows, rowIdx))
+  const addCol = () => setRows(insertColAt(rows, colIdx))
+  const delCol = () => setRows(removeColAt(rows, colIdx, 1, 2))
+  const moveRowUp = () => setRows(moveRow(rows, rowIdx, rowIdx - 1))
+  const moveRowDown = () => setRows(moveRow(rows, rowIdx, rowIdx + 1))
+  const moveColLeft = () => setRows(moveCol(rows, colIdx, colIdx - 1, 1))
+  const moveColRight = () => setRows(moveCol(rows, colIdx, colIdx + 1, 1))
 
   const [titleDraft, setTitleDraft] = useState(content.title)
   const commitTitle = useDebouncedCommit((v) => update({ title: v as string }))
@@ -69,7 +130,7 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
   const showGrid = editing && selected && !readOnly
 
   return (
-    <div className="chart-card">
+    <div className="chart-card" ref={rootRef}>
       {showGrid ? (
         <table className="chart-grid">
           <tbody>
@@ -79,8 +140,13 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
                   <td key={c}>
                     <ChartCell
                       value={cell}
+                      row={r}
+                      col={c}
                       placeholder={r === 0 ? (c === 0 ? 'Label' : 'Value') : ''}
                       onCommit={(v) => setCell(r, c, v)}
+                      onFocusCell={(r2, c2) => setLastCell({ r: r2, c: c2 })}
+                      onNavigate={navigate}
+                      onPasteGrid={pasteGrid}
                     />
                   </td>
                 ))}
@@ -116,6 +182,10 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
               <button onClick={delRow}>− Row</button>
               <button onClick={addCol}>+ Series</button>
               <button onClick={delCol}>− Series</button>
+              <button onClick={moveRowUp}>Row ↑</button>
+              <button onClick={moveRowDown}>Row ↓</button>
+              <button onClick={moveColLeft}>Col ←</button>
+              <button onClick={moveColRight}>Col →</button>
             </>
           )}
         </div>

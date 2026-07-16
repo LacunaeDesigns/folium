@@ -8,6 +8,7 @@ import { TrashView } from './ui/TrashView'
 import { HistoryPanel } from './ui/HistoryPanel'
 import { SearchPanel } from './ui/SearchPanel'
 import { TemplateGallery } from './ui/TemplateGallery'
+import { BoardLibrary } from './ui/BoardLibrary'
 import { CaptureModal } from './ui/CaptureModal'
 import { ExportMenu } from './ui/ExportMenu'
 import { PresentMode } from './ui/PresentMode'
@@ -367,6 +368,7 @@ export default function App() {
   const effectiveTheme: 'light' | 'dark' = appTheme === 'system' ? (systemDark ? 'dark' : 'light') : appTheme
   const [menu, setMenu] = React.useState<'view' | 'arrange' | 'settings' | 'export' | 'live' | null>(null)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
+  const [libraryOpen, setLibraryOpen] = React.useState(false)
   const [photosOpen, setPhotosOpen] = React.useState(false)
   const [helpOpen, setHelpOpen] = React.useState(false)
   const liveActive = useLive((s) => s.active)
@@ -450,6 +452,7 @@ export default function App() {
           onArrange={() => setMenu(menu === 'arrange' ? null : 'arrange')}
           onSettings={() => setMenu(menu === 'settings' ? null : 'settings')}
           onTemplates={() => setTemplatesOpen(true)}
+          onBoardLibrary={() => setLibraryOpen(true)}
           onLive={() => setMenu(menu === 'live' ? null : 'live')}
           onHelp={() => setHelpOpen(true)}
           onUndo={() => store.temporal.getState().undo()}
@@ -490,6 +493,7 @@ export default function App() {
       {templatesOpen && (
         <TemplateGallery boardId={currentBoardId} onClose={() => setTemplatesOpen(false)} />
       )}
+      {libraryOpen && <BoardLibrary onClose={() => setLibraryOpen(false)} />}
       {captureOpen && (
         <CaptureModal rootId={rootId} onClose={() => useUi.getState().setCaptureOpen(false)} />
       )}

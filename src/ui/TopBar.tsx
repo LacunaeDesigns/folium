@@ -19,6 +19,7 @@ export function TopBar({
   onArrange,
   onSettings,
   onTemplates,
+  onBoardLibrary,
   onLive,
   onHelp,
   onUndo,
@@ -44,6 +45,7 @@ export function TopBar({
   onArrange: () => void
   onSettings: () => void
   onTemplates: () => void
+  onBoardLibrary: () => void
   onLive: () => void
   onHelp: () => void
   onUndo: () => void
@@ -137,6 +139,9 @@ export function TopBar({
             </button>
             {liveMenu}
           </span>
+          <button className="chrome-btn" onClick={onBoardLibrary}>
+            <Icon name="board" size={13} /> All boards
+          </button>
           <button className="chrome-btn" onClick={onTemplates}>
             <Icon name="template" size={13} /> Templates
           </button>

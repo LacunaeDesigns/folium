@@ -483,14 +483,15 @@ export function Canvas({ boardId }: { boardId: string }) {
     const maxR = Math.max(...rects.map((r) => r.x + r.w))
     const minY = Math.min(...rects.map((r) => r.y))
     const maxB = Math.max(...rects.map((r) => r.y + r.h))
-    for (const r of rects) {
-      if (mode === 'left') s.updateCard(r.id, { x: Math.round(minX) })
-      else if (mode === 'right') s.updateCard(r.id, { x: Math.round(maxR - r.w) })
-      else if (mode === 'centerX') s.updateCard(r.id, { x: Math.round((minX + maxR) / 2 - r.w / 2) })
-      else if (mode === 'top') s.updateCard(r.id, { y: Math.round(minY) })
-      else if (mode === 'bottom') s.updateCard(r.id, { y: Math.round(maxB - r.h) })
-      else s.updateCard(r.id, { y: Math.round((minY + maxB) / 2 - r.h / 2) })
-    }
+    const patches = rects.map((r) => {
+      if (mode === 'left') return { id: r.id, patch: { x: Math.round(minX) } }
+      if (mode === 'right') return { id: r.id, patch: { x: Math.round(maxR - r.w) } }
+      if (mode === 'centerX') return { id: r.id, patch: { x: Math.round((minX + maxR) / 2 - r.w / 2) } }
+      if (mode === 'top') return { id: r.id, patch: { y: Math.round(minY) } }
+      if (mode === 'bottom') return { id: r.id, patch: { y: Math.round(maxB - r.h) } }
+      return { id: r.id, patch: { y: Math.round((minY + maxB) / 2 - r.h / 2) } }
+    })
+    s.updateCards(patches)
   }
 
   const distributeSelection = (axis: 'h' | 'v') => {
@@ -504,11 +505,13 @@ export function Canvas({ boardId }: { boardId: string }) {
     const sum = sorted.reduce((acc, r) => acc + (axis === 'h' ? r.w : r.h), 0)
     const gap = (span - sum) / (sorted.length - 1)
     let cursor = (axis === 'h' ? first.x + first.w : first.y + first.h) + gap
+    const patches: { id: string; patch: { x: number } | { y: number } }[] = []
     for (const r of sorted.slice(1, -1)) {
-      if (axis === 'h') s.updateCard(r.id, { x: Math.round(cursor) })
-      else s.updateCard(r.id, { y: Math.round(cursor) })
+      if (axis === 'h') patches.push({ id: r.id, patch: { x: Math.round(cursor) } })
+      else patches.push({ id: r.id, patch: { y: Math.round(cursor) } })
       cursor += (axis === 'h' ? r.w : r.h) + gap
     }
+    s.updateCards(patches)
   }
 
   // swap z with the neighbour above/below instead of jumping to the extreme
@@ -518,8 +521,10 @@ export function Canvas({ boardId }: { boardId: string }) {
     const i = list.findIndex((c) => c.id === cardId)
     const j = i + dir
     if (i < 0 || j < 0 || j >= list.length) return
-    s.updateCard(cardId, { z: list[j].z })
-    s.updateCard(list[j].id, { z: list[i].z })
+    s.updateCards([
+      { id: cardId, patch: { z: list[j].z } },
+      { id: list[j].id, patch: { z: list[i].z } },
+    ])
   }
 
   const fitToSelection = () => {

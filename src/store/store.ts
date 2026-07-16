@@ -39,6 +39,7 @@ export interface FoliumState extends DocState {
     },
   ): string
   updateCard(id: string, patch: Partial<Omit<Card, 'id' | 'content'>>): void
+  updateCards(patches: { id: string; patch: Partial<Omit<Card, 'id' | 'content'>> }[]): void
   updateContent(id: string, patch: Record<string, unknown>): void
   moveCards(ids: string[], dx: number, dy: number): void
   resizeCard(id: string, w: number, h?: number): void
@@ -367,6 +368,18 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
             const c = s.cards[id]
             if (!c) return s
             return { cards: { ...s.cards, [id]: { ...c, ...patch } } }
+          })
+        },
+
+        updateCards(patches) {
+          set((s) => {
+            const cards = { ...s.cards }
+            for (const { id, patch } of patches) {
+              const card = cards[id]
+              if (!card) continue
+              cards[id] = { ...card, ...patch }
+            }
+            return { cards }
           })
         },
 

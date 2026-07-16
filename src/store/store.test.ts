@@ -62,6 +62,19 @@ describe('cards', () => {
     s().bringToFront(a)
     expect(s().cards[a].z).toBeGreaterThan(s().cards[b].z)
   })
+
+  it('updateCards applies all patches in one undo step', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    const b = s().addCard(s().rootId, 'note', { x: 100, y: 0 })
+    store.temporal.getState().clear()
+    s().updateCards([
+      { id: a, patch: { x: 50 } },
+      { id: b, patch: { x: 50 } },
+    ])
+    expect(s().cards[a].x).toBe(50)
+    expect(s().cards[b].x).toBe(50)
+    expect(store.temporal.getState().pastStates.length).toBe(1)
+  })
 })
 
 describe('heading', () => {

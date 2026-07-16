@@ -28,7 +28,7 @@ export function useDebouncedCommit(fn: (v: unknown) => void, delay = 350) {
       latest.current(pending.current)
     }
   }, [])
-  return React.useCallback(
+  const commit = React.useCallback(
     (v: unknown) => {
       pending.current = v
       if (timer.current) clearTimeout(timer.current)
@@ -38,5 +38,15 @@ export function useDebouncedCommit(fn: (v: unknown) => void, delay = 350) {
       }, delay)
     },
     [delay],
-  )
+  ) as ((v: unknown) => void) & { cancel: () => void }
+  // discard (don't fire) a pending commit — for callers that immediately
+  // supersede it with their own, differently-derived write (e.g. TodoCard's
+  // split/merge, which must not let a stale pre-split value land later)
+  commit.cancel = () => {
+    if (timer.current) {
+      clearTimeout(timer.current)
+      timer.current = null
+    }
+  }
+  return commit
 }

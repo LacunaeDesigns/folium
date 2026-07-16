@@ -4,6 +4,7 @@ import { CardBodyProps } from './registry'
 import { CommentContent, CommentReply } from '../model/types'
 import { useFoliumStore } from '../store/context'
 import { getUserName } from '../store/settings'
+import { useDebouncedCommit } from './useEditing'
 
 export function relTime(ts: number): string {
   const d = Date.now() - ts
@@ -29,6 +30,10 @@ export function CommentCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as CommentContent
   const store = useFoliumStore()
   const [reply, setReply] = React.useState('')
+  const [textDraft, setTextDraft] = React.useState(content.text)
+  const commitText = useDebouncedCommit((v) => store.getState().updateContent(card.id, { text: v as string }))
+
+  React.useEffect(() => setTextDraft(content.text), [content.text])
 
   const addReply = () => {
     const text = reply.trim()
@@ -48,11 +53,14 @@ export function CommentCard({ card, readOnly }: CardBodyProps) {
       <textarea
         className="cmt-text"
         placeholder="Write a comment…"
-        value={content.text}
+        value={textDraft}
         readOnly={readOnly}
         spellCheck
-        rows={Math.max(1, Math.min(6, content.text.split('\n').length))}
-        onChange={(e) => store.getState().updateContent(card.id, { text: e.target.value })}
+        rows={Math.max(1, Math.min(6, textDraft.split('\n').length))}
+        onChange={(e) => {
+          setTextDraft(e.target.value)
+          commitText(e.target.value)
+        }}
       />
       {content.replies.map((r) => (
         <div key={r.id} className="cmt-reply">

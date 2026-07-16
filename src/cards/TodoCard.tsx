@@ -3,16 +3,43 @@ import { nanoid } from 'nanoid'
 import { CardBodyProps } from './registry'
 import { TodoContent, TodoItem } from '../model/types'
 import { useFoliumStore } from '../store/context'
+import { useDebouncedCommit } from './useEditing'
 
 export function TodoCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as TodoContent
   const store = useFoliumStore()
-  const items = content.items
+  const [titleDraft, setTitleDraft] = React.useState(content.title)
+  const commitTitle = useDebouncedCommit((v) => store.getState().updateContent(card.id, { title: v as string }))
 
-  const setItems = (next: TodoItem[]) => store.getState().updateContent(card.id, { items: next })
+  React.useEffect(() => setTitleDraft(content.title), [content.title])
+
+  // local mirror of the items array so typing renders instantly and stays
+  // live for splitAt/mergeIntoPrevious below, while the store commit (and thus
+  // the undo stack) is debounced — see useDebouncedCommit
+  const [items, setItemsLocal] = React.useState(content.items)
+  const commitItems = useDebouncedCommit((v) => store.getState().updateContent(card.id, { items: v as TodoItem[] }))
+
+  React.useEffect(() => setItemsLocal(content.items), [content.items])
+
+  // structural/discrete changes (checkbox, split, merge, clear done): apply
+  // to the local mirror and commit to the store immediately, one undo entry
+  // each. Cancels any in-flight debounced text commit first so it can't later
+  // land with a stale, pre-change value and clobber this write.
+  const setItems = (next: TodoItem[]) => {
+    commitItems.cancel()
+    setItemsLocal(next)
+    store.getState().updateContent(card.id, { items: next })
+  }
 
   const update = (id: string, patch: Partial<TodoItem>) =>
     setItems(items.map((it) => (it.id === id ? { ...it, ...patch } : it)))
+
+  // continuous typing: update the local mirror right away, debounce the store commit
+  const updateText = (id: string, text: string) => {
+    const next = items.map((it) => (it.id === id ? { ...it, text } : it))
+    setItemsLocal(next)
+    commitItems(next)
+  }
 
   // split the item at the cursor: text before the caret stays, text after moves
   // to a new item below (caret at the end → an empty new row, as before)
@@ -68,9 +95,12 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
       <input
         className="todo-title"
         placeholder="To-do list"
-        value={content.title}
+        value={titleDraft}
         readOnly={readOnly}
-        onChange={(e) => store.getState().updateContent(card.id, { title: e.target.value })}
+        onChange={(e) => {
+          setTitleDraft(e.target.value)
+          commitTitle(e.target.value)
+        }}
       />
       {items.map((it) => (
         <div key={it.id} className={'todo-item' + (it.done ? ' done' : '')}>
@@ -90,7 +120,7 @@ export function TodoCard({ card, readOnly }: CardBodyProps) {
             placeholder="To-do"
             readOnly={readOnly}
             onChange={(e) => {
-              update(it.id, { text: e.target.value })
+              updateText(it.id, e.target.value)
               autoGrow(e.target)
             }}
             onKeyDown={(e) => {

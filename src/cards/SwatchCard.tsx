@@ -2,6 +2,7 @@ import React from 'react'
 import { CardBodyProps } from './registry'
 import { SwatchContent } from '../model/types'
 import { useFoliumStore } from '../store/context'
+import { useDebouncedCommit } from './useEditing'
 
 function isLight(hex: string): boolean {
   const m = hex.replace('#', '')
@@ -15,6 +16,10 @@ function isLight(hex: string): boolean {
 export function SwatchCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as SwatchContent
   const store = useFoliumStore()
+  const [nameDraft, setNameDraft] = React.useState(content.name)
+  const commitName = useDebouncedCommit((v) => store.getState().updateContent(card.id, { name: v as string }))
+
+  React.useEffect(() => setNameDraft(content.name), [content.name])
 
   return (
     <div className="swatch-card">
@@ -33,10 +38,13 @@ export function SwatchCard({ card, readOnly }: CardBodyProps) {
       </label>
       <input
         className="swatch-name"
-        value={content.name}
+        value={nameDraft}
         placeholder="Name"
         readOnly={readOnly}
-        onChange={(e) => store.getState().updateContent(card.id, { name: e.target.value })}
+        onChange={(e) => {
+          setNameDraft(e.target.value)
+          commitName(e.target.value)
+        }}
       />
     </div>
   )

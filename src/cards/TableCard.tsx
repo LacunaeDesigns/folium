@@ -3,6 +3,48 @@ import { CardBodyProps } from './registry'
 import { TableContent } from '../model/types'
 import { useFoliumStore } from '../store/context'
 import { useUi } from '../store/uiStore'
+import { useDebouncedCommit } from './useEditing'
+
+// local draft + debounced commit per cell, so a keystroke doesn't flood the
+// undo stack with an O(all cards) shallow copy — mirrors NoteCard's approach
+function TableCell({
+  value,
+  readOnly,
+  placeholder,
+  onCommit,
+}: {
+  value: string
+  readOnly?: boolean
+  placeholder?: string
+  onCommit: (v: string) => void
+}) {
+  const [draft, setDraft] = React.useState(value)
+  const commit = useDebouncedCommit((v) => onCommit(v as string))
+
+  React.useEffect(() => setDraft(value), [value])
+
+  // grow a cell's textarea to fit its wrapped content, same approach as TodoCard
+  const autoGrow = (el: HTMLTextAreaElement | null) => {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }
+
+  return (
+    <textarea
+      ref={autoGrow}
+      rows={1}
+      value={draft}
+      readOnly={readOnly}
+      placeholder={placeholder}
+      onChange={(e) => {
+        setDraft(e.target.value)
+        commit(e.target.value)
+        autoGrow(e.target)
+      }}
+    />
+  )
+}
 
 export function TableCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as TableContent
@@ -22,13 +64,6 @@ export function TableCard({ card, readOnly }: CardBodyProps) {
   const addCol = () => setRows(rows.map((r) => [...r, '']))
   const delCol = () => rows[0].length > 1 && setRows(rows.map((r) => r.slice(0, -1)))
 
-  // grow a cell's textarea to fit its wrapped content, same approach as TodoCard
-  const autoGrow = (el: HTMLTextAreaElement | null) => {
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = el.scrollHeight + 'px'
-  }
-
   return (
     <div className="table-card">
       <table>
@@ -37,16 +72,11 @@ export function TableCard({ card, readOnly }: CardBodyProps) {
             <tr key={r} className={r === 0 ? 'thead' : undefined}>
               {row.map((cell, c) => (
                 <td key={c}>
-                  <textarea
-                    ref={autoGrow}
-                    rows={1}
+                  <TableCell
                     value={cell}
                     readOnly={readOnly}
                     placeholder={r === 0 ? 'Header' : ''}
-                    onChange={(e) => {
-                      setCell(r, c, e.target.value)
-                      autoGrow(e.target)
-                    }}
+                    onCommit={(v) => setCell(r, c, v)}
                   />
                 </td>
               ))}

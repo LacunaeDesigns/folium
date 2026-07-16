@@ -7,6 +7,7 @@ import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { Icon } from '../ui/Icons'
 import { safeCapture } from '../canvas/coords'
 import { resolveCardDrop } from '../canvas/dropTarget'
+import { useDebouncedCommit } from './useEditing'
 
 function ColumnMember({ card, readOnly }: { card: Card; readOnly?: boolean }) {
   const store = useFoliumStore()
@@ -103,6 +104,10 @@ export function ColumnCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as ColumnContent
   const store = useFoliumStore()
   const members = useFolium((s) => columnCards(s, card.id))
+  const [titleDraft, setTitleDraft] = React.useState(content.title)
+  const commitTitle = useDebouncedCommit((v) => store.getState().updateContent(card.id, { title: v as string }))
+
+  React.useEffect(() => setTitleDraft(content.title), [content.title])
 
   return (
     <div className="column-card">
@@ -110,9 +115,12 @@ export function ColumnCard({ card, readOnly }: CardBodyProps) {
         <input
           className="column-title"
           placeholder="Column"
-          value={content.title}
+          value={titleDraft}
           readOnly={readOnly}
-          onChange={(e) => store.getState().updateContent(card.id, { title: e.target.value })}
+          onChange={(e) => {
+            setTitleDraft(e.target.value)
+            commitTitle(e.target.value)
+          }}
         />
         <span className="column-count">{members.length}</span>
         {!readOnly && (

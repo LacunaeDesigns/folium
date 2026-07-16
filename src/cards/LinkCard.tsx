@@ -3,6 +3,7 @@ import { CardBodyProps } from './registry'
 import { LinkContent } from '../model/types'
 import { useFoliumStore } from '../store/context'
 import { Icon } from '../ui/Icons'
+import { useDebouncedCommit } from './useEditing'
 
 export function youtubeId(url: string): string | null {
   const m = url.match(
@@ -48,6 +49,13 @@ export function LinkCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as LinkContent
   const store = useFoliumStore()
   const [draft, setDraft] = React.useState('')
+  const [titleDraft, setTitleDraft] = React.useState(content.title)
+  const [descDraft, setDescDraft] = React.useState(content.description)
+  const commitTitle = useDebouncedCommit((v) => store.getState().updateContent(card.id, { title: v as string }))
+  const commitDesc = useDebouncedCommit((v) => store.getState().updateContent(card.id, { description: v as string }))
+
+  React.useEffect(() => setTitleDraft(content.title), [content.title])
+  React.useEffect(() => setDescDraft(content.description), [content.description])
 
   const commitUrl = (raw: string) => {
     let url = raw.trim()
@@ -138,18 +146,24 @@ export function LinkCard({ card, readOnly }: CardBodyProps) {
         </div>
         <input
           className="link-title"
-          value={content.title}
+          value={titleDraft}
           placeholder="Title"
           readOnly={readOnly}
-          onChange={(e) => store.getState().updateContent(card.id, { title: e.target.value })}
+          onChange={(e) => {
+            setTitleDraft(e.target.value)
+            commitTitle(e.target.value)
+          }}
         />
         <textarea
           className="link-desc"
-          value={content.description}
+          value={descDraft}
           placeholder={readOnly ? '' : 'Add a description'}
           readOnly={readOnly}
-          rows={content.description ? undefined : 1}
-          onChange={(e) => store.getState().updateContent(card.id, { description: e.target.value })}
+          rows={descDraft ? undefined : 1}
+          onChange={(e) => {
+            setDescDraft(e.target.value)
+            commitDesc(e.target.value)
+          }}
         />
       </div>
     </div>

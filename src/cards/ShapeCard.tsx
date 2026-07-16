@@ -3,6 +3,7 @@ import { CardBodyProps } from './registry'
 import { ShapeContent, ShapeKind } from '../model/types'
 import { useFoliumStore } from '../store/context'
 import { useUi } from '../store/uiStore'
+import { useDebouncedCommit } from './useEditing'
 
 const SHAPE_COLORS = ['blue', 'green', 'yellow', 'orange', 'red', 'purple', 'gray'] as const
 const KINDS: { kind: ShapeKind; label: string }[] = [
@@ -26,6 +27,10 @@ export function ShapeCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as ShapeContent
   const store = useFoliumStore()
   const selected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
+  const [textDraft, setTextDraft] = React.useState(content.text)
+  const commitText = useDebouncedCommit((v) => store.getState().updateContent(card.id, { text: v as string }))
+
+  React.useEffect(() => setTextDraft(content.text), [content.text])
 
   return (
     <div className="shape-card">
@@ -56,9 +61,12 @@ export function ShapeCard({ card, readOnly }: CardBodyProps) {
       <textarea
         className={'shape-text' + (content.fill === 'gray' ? '' : '')}
         placeholder={readOnly ? '' : 'Text'}
-        value={content.text}
+        value={textDraft}
         readOnly={readOnly}
-        onChange={(e) => store.getState().updateContent(card.id, { text: e.target.value })}
+        onChange={(e) => {
+          setTextDraft(e.target.value)
+          commitText(e.target.value)
+        }}
       />
     </div>
   )

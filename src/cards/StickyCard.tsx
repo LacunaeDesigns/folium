@@ -3,6 +3,7 @@ import { CardBodyProps } from './registry'
 import { StickyContent } from '../model/types'
 import { useFoliumStore } from '../store/context'
 import { useUi } from '../store/uiStore'
+import { useDebouncedCommit } from './useEditing'
 
 const STICKY_COLORS = ['yellow', 'orange', 'red', 'green', 'blue', 'purple'] as const
 
@@ -10,6 +11,10 @@ export function StickyCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as StickyContent
   const store = useFoliumStore()
   const selected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
+  const [textDraft, setTextDraft] = React.useState(content.text)
+  const commitText = useDebouncedCommit((v) => store.getState().updateContent(card.id, { text: v as string }))
+
+  React.useEffect(() => setTextDraft(content.text), [content.text])
 
   return (
     <div className={'sticky-card bg-' + content.color}>
@@ -28,9 +33,12 @@ export function StickyCard({ card, readOnly }: CardBodyProps) {
       <textarea
         className="sticky-text"
         placeholder={readOnly ? '' : 'Sticky note'}
-        value={content.text}
+        value={textDraft}
         readOnly={readOnly}
-        onChange={(e) => store.getState().updateContent(card.id, { text: e.target.value })}
+        onChange={(e) => {
+          setTextDraft(e.target.value)
+          commitText(e.target.value)
+        }}
       />
     </div>
   )

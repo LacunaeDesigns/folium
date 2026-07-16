@@ -1,11 +1,40 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { CardBodyProps } from './registry'
 import { ChartContent, ChartKind, BOARD_COLORS } from '../model/types'
 import { useFoliumStore } from '../store/context'
 import { useUi } from '../store/uiStore'
 import { renderChartSvg, rowsToChartData } from '../charts/renderChart'
+import { useDebouncedCommit } from './useEditing'
 
 const KINDS: ChartKind[] = ['bar', 'line', 'pie', 'donut']
+
+// local draft + debounced commit per cell, so a keystroke doesn't flood the
+// undo stack with a full-grid copy — mirrors NoteCard's approach
+function ChartCell({
+  value,
+  placeholder,
+  onCommit,
+}: {
+  value: string
+  placeholder?: string
+  onCommit: (v: string) => void
+}) {
+  const [draft, setDraft] = useState(value)
+  const commit = useDebouncedCommit((v) => onCommit(v as string))
+
+  useEffect(() => setDraft(value), [value])
+
+  return (
+    <input
+      value={draft}
+      placeholder={placeholder}
+      onChange={(e) => {
+        setDraft(e.target.value)
+        commit(e.target.value)
+      }}
+    />
+  )
+}
 
 export function ChartCard({ card, readOnly }: CardBodyProps) {
   const content = card.content as ChartContent
@@ -22,6 +51,11 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
   const delRow = () => rows.length > 2 && setRows(rows.slice(0, -1))
   const addCol = () => setRows(rows.map((row, ri) => [...row, ri === 0 ? 'Series ' + row.length : '']))
   const delCol = () => rows[0].length > 2 && setRows(rows.map((row) => row.slice(0, -1)))
+
+  const [titleDraft, setTitleDraft] = useState(content.title)
+  const commitTitle = useDebouncedCommit((v) => update({ title: v as string }))
+
+  useEffect(() => setTitleDraft(content.title), [content.title])
 
   const data = rowsToChartData(content.rows)
   const svg = renderChartSvg({
@@ -43,10 +77,10 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
               <tr key={r} className={r === 0 ? 'thead' : undefined}>
                 {row.map((cell, c) => (
                   <td key={c}>
-                    <input
+                    <ChartCell
                       value={cell}
                       placeholder={r === 0 ? (c === 0 ? 'Label' : 'Value') : ''}
-                      onChange={(e) => setCell(r, c, e.target.value)}
+                      onCommit={(v) => setCell(r, c, v)}
                     />
                   </td>
                 ))}
@@ -68,9 +102,12 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
           </div>
           <input
             className="chart-title-input"
-            value={content.title}
+            value={titleDraft}
             placeholder="Title"
-            onChange={(e) => update({ title: e.target.value })}
+            onChange={(e) => {
+              setTitleDraft(e.target.value)
+              commitTitle(e.target.value)
+            }}
           />
           <button onClick={() => setEditing((v) => !v)}>{editing ? 'Done' : 'Edit data'}</button>
           {showGrid && (

@@ -9,6 +9,7 @@ import { Icon } from '../ui/Icons'
 import { useUi } from '../store/uiStore'
 import { getUserName } from '../store/settings'
 import { Avatar, relTime } from './CommentCard'
+import { useDebouncedCommit } from './useEditing'
 
 function PinPopover({
   pin,
@@ -149,6 +150,10 @@ function ImageView({
   const isSelected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
   const [pinMode, setPinMode] = React.useState(false)
   const [openPin, setOpenPin] = React.useState<string | null>(null)
+  const [captionDraft, setCaptionDraft] = React.useState(content.caption)
+  const commitCaption = useDebouncedCommit((v) => store.getState().updateContent(card.id, { caption: v as string }))
+
+  React.useEffect(() => setCaptionDraft(content.caption), [content.caption])
 
   React.useEffect(() => {
     if (!isSelected) {
@@ -256,10 +261,13 @@ function ImageView({
         <figcaption>
           <input
             className="image-caption"
-            value={content.caption}
+            value={captionDraft}
             placeholder={readOnly ? '' : 'Add a caption'}
             readOnly={readOnly}
-            onChange={(e) => store.getState().updateContent(card.id, { caption: e.target.value })}
+            onChange={(e) => {
+              setCaptionDraft(e.target.value)
+              commitCaption(e.target.value)
+            }}
           />
         </figcaption>
       )}

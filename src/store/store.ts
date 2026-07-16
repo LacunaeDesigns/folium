@@ -177,6 +177,23 @@ function makeBoard(parentId: string | null, title: string, colorIndex: number): 
   }
 }
 
+/** Bump a board's updatedAt (backs the board library's "last edited"). No-op (returns
+ *  the same reference) if the board no longer exists — e.g. its parent board card was
+ *  trashed in the same gesture that's touching it. */
+function touchBoard(boards: Record<string, Board>, boardId: string): Record<string, Board> {
+  const b = boards[boardId]
+  if (!b) return boards
+  return { ...boards, [boardId]: { ...b, updatedAt: Date.now() } }
+}
+
+/** touchBoard for several boards in one pass (e.g. a multi-select drag spanning
+ *  boards, or a column drop that moves a card onto a different board). */
+function touchBoards(boards: Record<string, Board>, boardIds: Iterable<string>): Record<string, Board> {
+  let out = boards
+  for (const id of boardIds) out = touchBoard(out, id)
+  return out
+}
+
 export function emptyDoc(): DocState {
   const root = makeBoard(null, 'Home', 0)
   return { rootId: root.id, boards: { [root.id]: root }, cards: {}, lines: {} }
@@ -364,7 +381,10 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
             createdAt: Date.now(),
             content: { ...base, ...(opts.content as object) } as CardContent,
           }
-          set((s) => ({ cards: { ...s.cards, [id]: card } }))
+          set((s) => ({
+            cards: { ...s.cards, [id]: card },
+            boards: touchBoard(s.boards, boardId),
+          }))
           return id
         },
 
@@ -372,19 +392,24 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
           set((s) => {
             const c = s.cards[id]
             if (!c) return s
-            return { cards: { ...s.cards, [id]: { ...c, ...patch } } }
+            return {
+              cards: { ...s.cards, [id]: { ...c, ...patch } },
+              boards: touchBoard(s.boards, c.boardId),
+            }
           })
         },
 
         updateCards(patches) {
           set((s) => {
             const cards = { ...s.cards }
+            const boardIds = new Set<string>()
             for (const { id, patch } of patches) {
               const card = cards[id]
               if (!card) continue
               cards[id] = { ...card, ...patch }
+              boardIds.add(card.boardId)
             }
-            return { cards }
+            return { cards, boards: touchBoards(s.boards, boardIds) }
           })
         },
 
@@ -397,6 +422,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
                 ...s.cards,
                 [id]: { ...c, content: { ...c.content, ...patch } as CardContent },
               },
+              boards: touchBoard(s.boards, c.boardId),
             }
           })
         },
@@ -459,7 +485,12 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
               const c = cards[id]
               if (c?.type === 'frame') reassignFrameMembership(cards, c.boardId)
             }
-            return { cards }
+            const boardIds = new Set<string>()
+            for (const id of liveIds) {
+              const c = cards[id]
+              if (c) boardIds.add(c.boardId)
+            }
+            return { cards, boards: touchBoards(s.boards, boardIds) }
           })
         },
 
@@ -467,7 +498,10 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
           set((s) => {
             const c = s.cards[id]
             if (!c || c.locked) return s
-            return { cards: { ...s.cards, [id]: { ...c, w, h } } }
+            return {
+              cards: { ...s.cards, [id]: { ...c, w, h } },
+              boards: touchBoard(s.boards, c.boardId),
+            }
           })
         },
 
@@ -498,7 +532,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
             // resizing (not just moving) a frame can also newly cover or
             // uncover stationary cards that were never dragged
             reassignFrameMembership(cards, frame.boardId)
-            return { cards }
+            return { cards, boards: touchBoard(s.boards, frame.boardId) }
           })
         },
 
@@ -510,7 +544,10 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
               (m, k) => (k.boardId === c.boardId ? Math.max(m, k.z) : m),
               0,
             )
-            return { cards: { ...s.cards, [id]: { ...c, z: maxZ + 1 } } }
+            return {
+              cards: { ...s.cards, [id]: { ...c, z: maxZ + 1 } },
+              boards: touchBoard(s.boards, c.boardId),
+            }
           })
         },
 
@@ -522,7 +559,10 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
               (m, k) => (k.boardId === c.boardId ? Math.min(m, k.z) : m),
               c.z,
             )
-            return { cards: { ...s.cards, [id]: { ...c, z: minZ - 1 } } }
+            return {
+              cards: { ...s.cards, [id]: { ...c, z: minZ - 1 } },
+              boards: touchBoard(s.boards, c.boardId),
+            }
           })
         },
 
@@ -557,7 +597,12 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
               const touches = (e: LineEnd) => 'cardId' in e && expand.has(e.cardId)
               if (!touches(l.from) && !touches(l.to)) lines[lid] = l
             }
-            return { cards, lines }
+            const boardIds = new Set<string>()
+            for (const id of expand) {
+              const c = s.cards[id]
+              if (c) boardIds.add(c.boardId)
+            }
+            return { cards, lines, boards: touchBoards(s.boards, boardIds) }
           })
         },
 
@@ -571,7 +616,12 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
               const boardId = s.boards[c.boardId] ? c.boardId : s.rootId
               cards[id] = { ...c, boardId, trashed: false, colId: null, frameId: null, inUnsorted: false }
             }
-            return { cards }
+            const boardIds = new Set<string>()
+            for (const id of ids) {
+              const c = cards[id]
+              if (c) boardIds.add(c.boardId)
+            }
+            return { cards, boards: touchBoards(s.boards, boardIds) }
           })
         },
 
@@ -609,6 +659,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
             const boards = { ...s.boards }
             const lines = { ...s.lines }
             const touchedColumns = new Set<string>()
+            const boardIds = new Set<string>()
 
             // duplicating a frame duplicates its members too
             const expandedIds = [...ids]
@@ -658,6 +709,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
                 content,
                 createdAt: Date.now(),
               }
+              boardIds.add(cards[newId].boardId)
               if (src.colId) touchedColumns.add(src.colId)
               newIds.push(newId)
             }
@@ -670,7 +722,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
                   cards[c.id] = { ...cards[c.id], colIndex: i }
                 })
             }
-            return { cards, boards, lines }
+            return { cards, boards: touchBoards(boards, boardIds), lines }
           })
           return newIds
         },
@@ -692,7 +744,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
           set((s) => {
             const b = s.boards[id]
             if (!b) return s
-            return { boards: { ...s.boards, [id]: { ...b, title } } }
+            return { boards: { ...s.boards, [id]: { ...b, title, updatedAt: Date.now() } } }
           })
         },
 
@@ -700,7 +752,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
           set((s) => {
             const b = s.boards[id]
             if (!b) return s
-            return { boards: { ...s.boards, [id]: { ...b, ...patch } } }
+            return { boards: { ...s.boards, [id]: { ...b, ...patch, updatedAt: Date.now() } } }
           })
         },
 
@@ -708,6 +760,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
           set((s) => {
             const card = s.cards[cardId]
             if (!card) return s
+            const oldBoardId = card.boardId
             const cards = { ...s.cards }
 
             // pull out of the old column and compact
@@ -745,7 +798,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
                 y: dropPos?.y ?? cards[cardId].y,
               }
             }
-            return { cards }
+            return { cards, boards: touchBoards(s.boards, new Set([oldBoardId, cards[cardId].boardId])) }
           })
         },
 
@@ -761,7 +814,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
             arrowEnd: false,
             label: '',
           }
-          set((s) => ({ lines: { ...s.lines, [id]: line } }))
+          set((s) => ({ lines: { ...s.lines, [id]: line }, boards: touchBoard(s.boards, boardId) }))
           return id
         },
 
@@ -769,15 +822,19 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
           set((s) => {
             const l = s.lines[id]
             if (!l) return s
-            return { lines: { ...s.lines, [id]: { ...l, ...patch } } }
+            return {
+              lines: { ...s.lines, [id]: { ...l, ...patch } },
+              boards: touchBoard(s.boards, l.boardId),
+            }
           })
         },
 
         deleteLine(id) {
           set((s) => {
+            const l = s.lines[id]
             const lines = { ...s.lines }
             delete lines[id]
-            return { lines }
+            return { lines, boards: l ? touchBoard(s.boards, l.boardId) : s.boards }
           })
         },
 
@@ -858,7 +915,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
               }
             }
 
-            return { boards, cards, lines }
+            return { boards: touchBoard(boards, targetBoardId), cards, lines }
           })
           return newIds
         },

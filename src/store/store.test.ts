@@ -531,3 +531,52 @@ describe('undo/redo', () => {
     expect(s().cards[id].x).toBe(10)
   })
 })
+
+describe('Board.updatedAt', () => {
+  it('addCard stamps the target board and leaves other boards alone', () => {
+    const store = createFoliumStore()
+    const rootId = store.getState().rootId
+    const { boardId: otherBoardId } = store.getState().createBoard(rootId, 'Other')
+    const otherBeforeTouch = store.getState().boards[otherBoardId].updatedAt
+    store.getState().addCard(rootId, 'note', { x: 0, y: 0 })
+    expect(store.getState().boards[rootId].updatedAt).toBeDefined()
+    // createBoard's own addCard call already stamped otherBoardId's PARENT (rootId) —
+    // otherBoardId itself (the new board) was never written into directly, so its own
+    // updatedAt is untouched by the addCard call above (a different board)
+    expect(store.getState().boards[otherBoardId].updatedAt).toBe(otherBeforeTouch)
+  })
+
+  it('renameBoard stamps its own updatedAt', () => {
+    const store = createFoliumStore()
+    const rootId = store.getState().rootId
+    store.getState().renameBoard(rootId, 'Renamed')
+    expect(store.getState().boards[rootId].updatedAt).toBeDefined()
+  })
+
+  it('moveCards across a single drag stamps every board a moved card belongs to', () => {
+    const store = createFoliumStore()
+    const rootId = store.getState().rootId
+    const { boardId: otherBoardId } = store.getState().createBoard(rootId, 'Other')
+    const idOnRoot = store.getState().addCard(rootId, 'note', { x: 0, y: 0 })
+    const idOnOther = store.getState().addCard(otherBoardId, 'note', { x: 0, y: 0 })
+    // reset both to a known "untouched" baseline before the call under test
+    ;(store.getState() as any).boards = {
+      ...store.getState().boards,
+      [rootId]: { ...store.getState().boards[rootId], updatedAt: undefined },
+      [otherBoardId]: { ...store.getState().boards[otherBoardId], updatedAt: undefined },
+    }
+    store.getState().moveCards([idOnRoot, idOnOther], 5, 5)
+    expect(store.getState().boards[rootId].updatedAt).toBeDefined()
+    expect(store.getState().boards[otherBoardId].updatedAt).toBeDefined()
+  })
+
+  it('emptyTrash does not stamp updatedAt on the boards it clears', () => {
+    const store = createFoliumStore()
+    const rootId = store.getState().rootId
+    const id = store.getState().addCard(rootId, 'note', { x: 0, y: 0 })
+    store.getState().trashCards([id])
+    const beforeEmpty = store.getState().boards[rootId].updatedAt
+    store.getState().emptyTrash()
+    expect(store.getState().boards[rootId].updatedAt).toBe(beforeEmpty)
+  })
+})

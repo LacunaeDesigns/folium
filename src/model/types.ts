@@ -10,6 +10,10 @@ export interface Board {
   color: string
   theme: BoardTheme
   createdAt: number
+  /** bumped by any store action that changes this board's own cards/lines (see
+   *  touchBoard in store.ts) or the board's own metadata; absent on boards created
+   *  before this field existed or never touched since — fall back to createdAt */
+  updatedAt?: number
   /** per-board override for the canvas dot grid; undefined = follow the global preference */
   gridHidden?: boolean
   /** per-board canvas background id (see model/backgrounds.ts); undefined = default paper */

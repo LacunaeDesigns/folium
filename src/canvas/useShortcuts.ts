@@ -110,6 +110,11 @@ export function useShortcuts() {
         ui.setSearchOpen(!ui.searchOpen)
         return
       }
+      if (e.altKey && !mod && e.key.toLowerCase() === 'n') {
+        e.preventDefault()
+        ui.setCaptureOpen(true)
+        return
+      }
       // copy / cut selected cards to the in-app clipboard (paste is handled by
       // the canvas 'paste' listener so files/URLs keep working too) — handled
       // ahead of the blanket isTyping() gate below, since resolveCopyTargetIds

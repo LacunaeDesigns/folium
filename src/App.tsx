@@ -13,7 +13,7 @@ import { LiveSessionPanel } from './ui/LiveSessionPanel'
 import { HelpPanel } from './ui/HelpPanel'
 import { SaveStatusIndicator } from './ui/SaveStatusIndicator'
 import { useLive } from './live/host'
-import { useSync, linkFolder, unlinkFolder, reconnect, syncNow } from './store/sync'
+import { useSync, linkFolder, unlinkFolder, reconnect, syncNow, forcePushMine } from './store/sync'
 import { useUpdateCheck } from './store/updateCheck'
 import { relTime } from './cards/CommentCard'
 import { useFolium, useFoliumStore, useDb } from './store/context'
@@ -146,11 +146,30 @@ function SyncSection() {
           <p className="sync-hint error">
             Newer changes were saved to “{sync.dirName}” from elsewhere, so this machine's edits
             weren't pushed (to avoid overwriting them). Reloading replaces this machine's boards
-            with that newer version — anything edited here since the last sync will be lost.
+            with that newer version — anything edited here since the last sync will be lost;
+            keeping this machine's boards instead overwrites the folder with them, losing the
+            other machine's changes.
           </p>
-          <button className="sync-btn primary" disabled={sync.busy} onClick={() => void reconnect()}>
-            Reload with the newer changes
-          </button>
+          <div className="sync-row">
+            <button className="sync-btn primary" disabled={sync.busy} onClick={() => void reconnect()}>
+              Reload with the newer changes
+            </button>
+            <button
+              className="sync-btn ghost"
+              disabled={sync.busy}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `This will overwrite the newer changes saved in “${sync.dirName}” from another machine with this machine's boards. The other machine's changes will be lost.\n\nContinue?`,
+                  )
+                ) {
+                  void forcePushMine()
+                }
+              }}
+            >
+              Keep this machine's boards
+            </button>
+          </div>
         </>
       )}
       {sync.status === 'error' && (

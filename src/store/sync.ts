@@ -240,6 +240,31 @@ export async function reconnect(): Promise<void> {
   }
 }
 
+/** User deliberately overwrites the linked folder with this machine's boards, discarding a
+ *  flagged conflict. Mirrors linkFolder()'s "keep this machine's boards" branch: read the
+ *  remote and, if it parses, record its version as seen so push() below doesn't mistake our
+ *  own overwrite for an unseen external change and re-flag the conflict. An unparseable remote
+ *  is overwritten anyway — we're deliberately replacing it. */
+export async function forcePushMine(): Promise<void> {
+  if (!db || !store || !handle) return
+  useSync.setState({ busy: true, error: null })
+  try {
+    try {
+      const remoteText = await readWorkspace(handle)
+      if (remoteText) {
+        const remote = parseBackup(remoteText)
+        await setSetting(db, DOC_TS_KEY, remote.exportedAt)
+      }
+    } catch {
+      // unreadable or malformed remote — proceed anyway, we're overwriting it deliberately
+    }
+    useSync.setState({ status: 'linked', error: null })
+    await push()
+  } finally {
+    useSync.setState({ busy: false })
+  }
+}
+
 export async function syncNow(): Promise<void> {
   if (useSync.getState().status === 'linked') await push()
 }

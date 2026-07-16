@@ -6,7 +6,7 @@ import * as persist from './persist'
 import * as folderSync from './folderSync'
 import { writeWorkspace, WORKSPACE_FILE } from './folderSync'
 import { exportBackup } from '../export/json'
-import { initFolderSync, useSync, syncNow, linkFolder, unlinkFolder } from './sync'
+import { initFolderSync, useSync, syncNow, linkFolder, unlinkFolder, forcePushMine } from './sync'
 
 // FS_SUPPORTED is `typeof window.showDirectoryPicker === 'function'`, which jsdom never has —
 // stub it on so these tests can exercise the 'linked' path (a real browser would supply it).
@@ -141,6 +141,55 @@ describe('reconcile — unreadable remote (regression: must not push over an unp
     expect(useSync.getState().status).toBe('error')
     expect(useSync.getState().error).toBeTruthy()
     expect(dir.files[WORKSPACE_FILE]).toBe('{not valid json') // not overwritten by a push
+  })
+})
+
+describe('forcePushMine — deliberately overwrite the folder with this machine\'s boards', () => {
+  it('overwrites a newer remote, ends linked, and supersedes the adopted DOC_TS_KEY with its own', async () => {
+    const dir = fakeDir()
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    stubHandlePersistence(dir)
+    await initFolderSync(store, db)
+    expect(useSync.getState().status).toBe('linked')
+
+    // Another machine synced something newer into the shared folder after our boot reconcile.
+    const remoteJson = await exportBackup(db, docOf(store), 'machine-b')
+    const remote = { ...JSON.parse(remoteJson), exportedAt: Date.now() + 10_000 }
+    await writeWorkspace(dir, JSON.stringify(remote))
+
+    // We edit locally, unaware the folder has moved on; syncing flags the conflict.
+    store.getState().addCard(store.getState().rootId, 'note', { x: 1, y: 1 })
+    await syncNow()
+    expect(useSync.getState().status).toBe('conflict')
+
+    await forcePushMine()
+
+    expect(useSync.getState().status).toBe('linked')
+    const written = JSON.parse(dir.files[WORKSPACE_FILE])
+    expect(written.doc.cards).toEqual(store.getState().cards)
+    // forcePushMine first adopts the remote's timestamp (so push()'s own conflict check ties
+    // rather than re-flags), but push() then overwrites DOC_TS_KEY with the backup it just wrote.
+    const recordedTs = await persist.getSetting<number>(db, 'docUpdatedAt', 0)
+    expect(recordedTs).toBe(written.exportedAt)
+  })
+
+  it('pushes anyway when the remote cannot be parsed', async () => {
+    const dir = fakeDir()
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    stubHandlePersistence(dir)
+    await initFolderSync(store, db)
+    expect(useSync.getState().status).toBe('linked')
+
+    // Folder's workspace file is corrupted / mid-write from elsewhere.
+    await writeWorkspace(dir, '{not valid json')
+
+    await forcePushMine()
+
+    expect(useSync.getState().status).toBe('linked')
+    const written = JSON.parse(dir.files[WORKSPACE_FILE])
+    expect(written.doc.cards).toEqual(store.getState().cards)
   })
 })
 

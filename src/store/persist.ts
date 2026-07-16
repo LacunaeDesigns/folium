@@ -26,6 +26,20 @@ interface HandleRow {
   handle: FileSystemDirectoryHandle
 }
 
+/** Snapshot metadata — small rows so listing history never loads doc payloads. */
+export interface SnapshotMetaRow {
+  id: string
+  ts: number
+  nBoards: number
+  nCards: number
+}
+
+/** Snapshot payload, fetched individually on restore. */
+export interface SnapshotDocRow {
+  id: string
+  doc: DocState
+}
+
 /** NOTE: the Dexie database keeps its original 'atlasnote' id so pre-rebrand data survives. */
 export class FoliumDb extends Dexie {
   doc!: Table<DocRow, string>
@@ -33,6 +47,8 @@ export class FoliumDb extends Dexie {
   templates!: Table<Template, string>
   settings!: Table<SettingRow, string>
   handles!: Table<HandleRow, string>
+  snapshots!: Table<SnapshotMetaRow, string>
+  snapshotDocs!: Table<SnapshotDocRow, string>
 
   constructor(name = 'atlasnote') {
     super(name)
@@ -44,6 +60,9 @@ export class FoliumDb extends Dexie {
     })
     // v2 adds the folder-sync directory handle store; existing tables carry forward
     this.version(2).stores({ handles: 'key' })
+    // v3 adds local version snapshots: meta (indexed by ts) split from payloads so the
+    // Version history list stays cheap to load
+    this.version(3).stores({ snapshots: 'id, ts', snapshotDocs: 'id' })
   }
 }
 

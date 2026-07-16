@@ -9,6 +9,22 @@
 .bg-purple { background: var(--card-purple); }
 .bg-dark { background: var(--card-dark); }
 
+/* text contrast for a free-picked hex background (Sticky / Shape / Note) —
+   named colors keep their own fixed overrides below; hex ones pick one of
+   these two via isLight() since the background isn't known ahead of time */
+.sticky-card.on-light .sticky-text,
+.shape-card.on-light .shape-text,
+.note-card.on-light,
+.note-card.on-light .ProseMirror {
+  color: #33373b;
+}
+.sticky-card.on-dark .sticky-text,
+.shape-card.on-dark .shape-text,
+.note-card.on-dark,
+.note-card.on-dark .ProseMirror {
+  color: #f0efec;
+}
+
 /* ---------- note ---------- */
 .note-card {
   position: relative;
@@ -178,6 +194,21 @@
 }
 .color-dot.on {
   outline: 2px solid var(--selection);
+}
+.color-dot-custom {
+  position: relative;
+  overflow: hidden;
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+}
+.color-dot-custom input[type='color'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
 }
 
 /* ---------- todo ---------- */

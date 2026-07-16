@@ -13,6 +13,7 @@ import { NoteContent, NOTE_COLORS } from '../model/types'
 import { useFoliumStore } from '../store/context'
 import { useEditing, useDebouncedCommit } from './useEditing'
 import { Icon } from '../ui/Icons'
+import { isHexColor, isLight } from './color'
 
 // Ctrl+A/Cmd+A produces a ProseMirror AllSelection, not a plain TextSelection.
 // The list wrap/lift commands (toggleBulletList/toggleOrderedList) silently
@@ -60,6 +61,7 @@ export function shouldCommitUpdate(editor: { isEditable: boolean }): boolean {
 
 function FormatBar({ editor, noteId, bg }: { editor: Editor; noteId: string; bg: string }) {
   const store = useFoliumStore()
+  const commitBg = useDebouncedCommit((hex) => store.getState().updateContent(noteId, { bg: hex as string }))
   const btn = (
     label: React.ReactNode,
     action: () => void,
@@ -106,6 +108,18 @@ function FormatBar({ editor, noteId, bg }: { editor: Editor; noteId: string; bg:
           }}
         />
       ))}
+      <label
+        className="color-dot color-dot-custom"
+        style={isHexColor(bg) ? { background: bg } : undefined}
+        title="Custom color"
+      >
+        <input
+          type="color"
+          value={isHexColor(bg) ? bg : '#ffffff'}
+          onMouseDown={(e) => e.stopPropagation()}
+          onChange={(e) => commitBg(e.target.value)}
+        />
+      </label>
     </div>
   )
 }
@@ -153,10 +167,12 @@ export function NoteCard({ card, readOnly }: CardBodyProps) {
   }, [editor, editing, content.doc])
 
   const words = editor ? editor.getText().split(/\s+/).filter(Boolean).length : 0
+  const hex = isHexColor(content.bg) ? content.bg : null
 
   return (
     <div
-      className={'note-card bg-' + content.bg}
+      className={'note-card' + (hex ? (isLight(hex) ? ' on-light' : ' on-dark') : ' bg-' + content.bg)}
+      style={hex ? { background: hex } : undefined}
       onDoubleClick={(e) => {
         if (readOnly) return
         e.stopPropagation()

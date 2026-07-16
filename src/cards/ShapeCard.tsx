@@ -4,6 +4,7 @@ import { ShapeContent, ShapeKind } from '../model/types'
 import { useFoliumStore } from '../store/context'
 import { useUi } from '../store/uiStore'
 import { useDebouncedCommit } from './useEditing'
+import { isHexColor, isLight } from './color'
 
 const SHAPE_COLORS = ['blue', 'green', 'yellow', 'orange', 'red', 'purple', 'gray'] as const
 const KINDS: { kind: ShapeKind; label: string }[] = [
@@ -13,7 +14,7 @@ const KINDS: { kind: ShapeKind; label: string }[] = [
 ]
 
 function ShapeSvg({ kind, fill }: { kind: ShapeKind; fill: string }) {
-  const color = `var(--card-${fill})`
+  const color = isHexColor(fill) ? fill : `var(--card-${fill})`
   return (
     <svg className="shape-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
       {kind === 'rect' && <rect x="2" y="2" width="96" height="96" rx="6" fill={color} />}
@@ -29,11 +30,14 @@ export function ShapeCard({ card, readOnly }: CardBodyProps) {
   const selected = useUi((s) => s.selection.length === 1 && s.selection[0] === card.id)
   const [textDraft, setTextDraft] = React.useState(content.text)
   const commitText = useDebouncedCommit((v) => store.getState().updateContent(card.id, { text: v as string }))
+  const commitFill = useDebouncedCommit((hex) => store.getState().updateContent(card.id, { fill: hex as string }))
 
   React.useEffect(() => setTextDraft(content.text), [content.text])
 
+  const hex = isHexColor(content.fill) ? content.fill : null
+
   return (
-    <div className="shape-card">
+    <div className={'shape-card' + (hex ? (isLight(hex) ? ' on-light' : ' on-dark') : '')}>
       {selected && !readOnly && (
         <div className="format-bar sticky-bar no-drag" onPointerDown={(e) => e.stopPropagation()}>
           {KINDS.map((k) => (
@@ -55,6 +59,18 @@ export function ShapeCard({ card, readOnly }: CardBodyProps) {
               title={c}
             />
           ))}
+          <label
+            className="color-dot color-dot-custom"
+            style={hex ? { background: hex } : undefined}
+            title="Custom color"
+          >
+            <input
+              type="color"
+              value={hex ?? '#4a90d9'}
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => commitFill(e.target.value)}
+            />
+          </label>
         </div>
       )}
       <ShapeSvg kind={content.shape} fill={content.fill} />

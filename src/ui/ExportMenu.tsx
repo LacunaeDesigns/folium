@@ -7,7 +7,6 @@ import { exportBackup, importBackup } from '../export/json'
 import { getUserName } from '../store/settings'
 import { VIEWER_LIVE_JS } from '../live/viewerScript'
 import peerjsRaw from 'peerjs/dist/peerjs.min.js?raw'
-import { importMarkdownBoard } from '../import/importBoard'
 import { useUi } from '../store/uiStore'
 import { Icon } from './Icons'
 
@@ -65,6 +64,7 @@ export function ExportMenu({ boardId, onClose }: { boardId: string; onClose: () 
   const mdRef = React.useRef<HTMLInputElement>(null)
 
   const onImportMarkdown = async (files: FileList) => {
+    const { importMarkdownBoard } = await import('../import/importBoard')
     let lastBoard: string | null = null
     let i = 0
     for (const file of Array.from(files)) {

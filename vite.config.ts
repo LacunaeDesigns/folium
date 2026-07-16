@@ -30,6 +30,12 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    // The main chunk carries TipTap/ProseMirror + React, all needed on first
+    // paint of any board, and the PWA precaches everything anyway — the
+    // default 500 kB warning doesn't apply. Raised to keep builds warning-free.
+    chunkSizeWarningLimit: 1000,
+  },
   define: {
     __BUILD_TIME__: JSON.stringify(Date.now()),
   },

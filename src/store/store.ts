@@ -398,11 +398,16 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
 
         moveCards(ids, dx, dy) {
           set((s) => {
+            // locked cards don't move — drag, arrow-nudge and a moved frame
+            // dragging its members all funnel through here, so gating in one
+            // place covers all of them
+            const liveIds = ids.filter((id) => !s.cards[id]?.locked)
+            if (liveIds.length === 0) return s
             const cards = { ...s.cards }
-            const idSet = new Set(ids)
+            const idSet = new Set(liveIds)
             // a moved frame drags its (unselected) members along
             const extra = new Set<string>()
-            for (const id of ids) {
+            for (const id of liveIds) {
               const c = cards[id]
               if (c?.type === 'frame') {
                 for (const k of Object.values(cards)) {
@@ -410,7 +415,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
                 }
               }
             }
-            for (const id of ids) {
+            for (const id of liveIds) {
               const c = cards[id]
               if (c) cards[id] = { ...c, x: c.x + dx, y: c.y + dy }
             }
@@ -423,7 +428,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
             // on drag-and-drop, since frames don't nest there's nothing to do for
             // cascaded members (they moved with their frame, so stay contained) or
             // for frame cards themselves
-            for (const id of ids) {
+            for (const id of liveIds) {
               const c = cards[id]
               if (!c || c.type === 'frame') continue
               const cx = c.x + c.w / 2
@@ -436,7 +441,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
             // pre-existing cards) — the loop above only re-checks cards that were
             // directly dragged, so those stationary cards would otherwise never
             // pick up or release membership
-            for (const id of ids) {
+            for (const id of liveIds) {
               const c = cards[id]
               if (c?.type === 'frame') reassignFrameMembership(cards, c.boardId)
             }
@@ -447,7 +452,7 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
         resizeCard(id, w, h) {
           set((s) => {
             const c = s.cards[id]
-            if (!c) return s
+            if (!c || c.locked) return s
             return { cards: { ...s.cards, [id]: { ...c, w, h } } }
           })
         },
@@ -509,15 +514,25 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
 
         trashCards(ids) {
           set((s) => {
-            const expand = new Set(ids)
-            // a trashed column takes its members with it
+            const isLocked = (id: string) => !!s.cards[id]?.locked
+            const expand = new Set(ids.filter((id) => !isLocked(id)))
+            // a trashed column takes its unlocked members with it; a locked
+            // member stays on the board but is released from the column,
+            // same as a locked card being released from a trashed frame below
+            const releasedFromColumn = new Set<string>()
             for (const c of Object.values(s.cards)) {
-              if (c.colId && expand.has(c.colId)) expand.add(c.id)
+              if (!c.colId || !expand.has(c.colId)) continue
+              if (isLocked(c.id)) releasedFromColumn.add(c.id)
+              else expand.add(c.id)
             }
             const cards = { ...s.cards }
             for (const id of expand) {
               const c = cards[id]
               if (c) cards[id] = { ...c, trashed: true, colId: null, frameId: null, inUnsorted: false }
+            }
+            for (const id of releasedFromColumn) {
+              const c = cards[id]
+              if (c) cards[id] = { ...c, colId: null }
             }
             // trashing a frame releases (not deletes) its members
             for (const c of Object.values(cards)) {

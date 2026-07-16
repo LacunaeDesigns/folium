@@ -215,6 +215,9 @@ export interface Card {
   trashed: boolean
   createdAt: number
   content: CardContent
+  /** Miro-style lock: blocks move/resize/delete via the store gates in
+   *  store.ts; undefined = unlocked, so old persisted docs load unchanged */
+  locked?: boolean
 }
 
 // A card-attached end may carry a normalized drop anchor (ax, ay in 0..1): the

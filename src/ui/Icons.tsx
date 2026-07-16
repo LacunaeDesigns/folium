@@ -48,6 +48,7 @@ export type IconName =
   | 'undo'
   | 'redo'
   | 'sticker'
+  | 'lock'
 
 const paths: Record<IconName, React.ReactNode> = {
   note: (
@@ -329,6 +330,12 @@ const paths: Record<IconName, React.ReactNode> = {
   ),
   sticker: (
     <path d="M12 4.2l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7Z" />
+  ),
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
   ),
 }
 

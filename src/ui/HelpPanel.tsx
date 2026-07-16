@@ -176,6 +176,14 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
                   With cards selected, the Arrange menu in the top bar (or a right-click) aligns and
                   distributes them and reorders their front-to-back stacking.
                 </p>
+                <p className="help-tip">
+                  <Icon name="lock" size={14} />
+                  <span>
+                    Right-click a card and choose Lock to stop it from being dragged, resized or
+                    deleted. A locked card still shows a badge and can be selected — right-click it
+                    again to unlock.
+                  </span>
+                </p>
               </section>
             )}
 

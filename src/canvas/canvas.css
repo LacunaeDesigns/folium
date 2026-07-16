@@ -112,6 +112,24 @@
 .connect-handle:hover {
   background: var(--accent);
 }
+/* badge shown on a locked card */
+.lock-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-chrome);
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  color: var(--ink-soft);
+  z-index: 6;
+  pointer-events: none;
+}
+
 .ch-top { left: 50%; top: 0; transform: translate(-50%, -50%); }
 .ch-bottom { left: 50%; top: 100%; transform: translate(-50%, -50%); }
 .ch-left { left: 0; top: 50%; transform: translate(-50%, -50%); }

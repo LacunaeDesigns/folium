@@ -476,7 +476,7 @@ export function Canvas({ boardId }: { boardId: string }) {
 
   type AlignMode = 'left' | 'centerX' | 'right' | 'top' | 'middleY' | 'bottom'
   const alignSelection = (mode: AlignMode) => {
-    const rects = selectionWorldRects()
+    const rects = selectionWorldRects().filter((r) => !store.getState().cards[r.id]?.locked)
     if (rects.length < 2) return
     const s = store.getState()
     const minX = Math.min(...rects.map((r) => r.x))
@@ -495,7 +495,7 @@ export function Canvas({ boardId }: { boardId: string }) {
   }
 
   const distributeSelection = (axis: 'h' | 'v') => {
-    const rects = selectionWorldRects()
+    const rects = selectionWorldRects().filter((r) => !store.getState().cards[r.id]?.locked)
     if (rects.length < 3) return
     const s = store.getState()
     const sorted = rects.slice().sort((a, b) => (axis === 'h' ? a.x - b.x : a.y - b.y))
@@ -749,7 +749,7 @@ export function Canvas({ boardId }: { boardId: string }) {
         const vp = viewportRef.current
         const rect = vp?.getBoundingClientRect()
         const MENU_W = 200
-        const MENU_H = cardId ? (selCount >= 2 ? 420 : 340) : 340
+        const MENU_H = cardId ? (selCount >= 2 ? 456 : 376) : 340
         const PAD = 8
         const rawX = ctxMenu.x - (rect?.left ?? 0)
         const rawY = ctxMenu.y - (rect?.top ?? 0)
@@ -819,6 +819,14 @@ export function Canvas({ boardId }: { boardId: string }) {
               </button>
               <button className="menu-item" onClick={menuAction(copySelection)}>
                 {gap} Copy
+              </button>
+              <button
+                className="menu-item"
+                onClick={menuAction(() =>
+                  store.getState().updateCard(cardId, { locked: !store.getState().cards[cardId]?.locked }),
+                )}
+              >
+                <Icon name="lock" size={15} /> {card?.locked ? 'Unlock' : 'Lock'}
               </button>
               <div className="menu-sep" />
               {type === 'image' && (

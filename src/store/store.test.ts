@@ -455,6 +455,36 @@ describe('frames', () => {
   })
 })
 
+describe('locking', () => {
+  it('moveCards skips locked cards', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    const b = s().addCard(s().rootId, 'note', { x: 100, y: 0 })
+    s().updateCard(a, { locked: true })
+    s().moveCards([a, b], 10, 10)
+    expect(s().cards[a].x).toBe(0)
+    expect(s().cards[b].x).toBe(110)
+  })
+  it('resizeCard is a no-op on a locked card', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    s().updateCard(a, { locked: true })
+    s().resizeCard(a, 500, 500)
+    expect(s().cards[a].w).not.toBe(500)
+  })
+  it('trashCards skips locked cards', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    s().updateCard(a, { locked: true })
+    s().trashCards([a])
+    expect(s().cards[a].trashed).toBeFalsy()
+  })
+  it('a locked card can still be unlocked', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    s().updateCard(a, { locked: true })
+    s().updateCard(a, { locked: false })
+    s().trashCards([a])
+    expect(s().cards[a].trashed).toBe(true)
+  })
+})
+
 describe('lines', () => {
   it('addLine connects two cards and updateLine patches it', () => {
     const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })

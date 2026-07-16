@@ -6,6 +6,7 @@ import { SnapGuides, useUi } from '../store/uiStore'
 import { getCardBody } from '../cards/registry'
 import { resolveCardDrop } from './dropTarget'
 import { usePointerDragGesture } from './usePointerDragGesture'
+import { Icon } from '../ui/Icons'
 
 // stable reference for non-column cards, so the members subscription below
 // never causes them to re-render just because some other card's selection changed
@@ -326,6 +327,10 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       ui.setSelection([card.id])
     }
 
+    // a locked card is still selectable (above) so it can be unlocked, but it
+    // must not arm a drag
+    if (card.locked) return
+
     cardDrag.start(e, {
       ids: fromFormField ? (ui.selection.includes(card.id) ? ui.selection : [card.id]) : useUi.getState().selection,
       alt: e.altKey,
@@ -453,7 +458,13 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       }}
     >
       <Body card={card} />
+      {card.locked && (
+        <div className="lock-badge" aria-hidden>
+          <Icon name="lock" size={12} />
+        </div>
+      )}
       {isSolo &&
+        !card.locked &&
         card.type !== 'board' &&
         RESIZE_CORNERS.map(([cls, dirX, dirY]) => (
           <div

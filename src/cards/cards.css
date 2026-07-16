@@ -1028,6 +1028,13 @@
   margin: auto 0;
   max-height: 100%;
 }
+/* in dark theme the named palette tokens are themselves dark (tokens.css), so
+   the fixed dark ink above must flip to light — but only for named colors:
+   a free-picked hex background is theme-fixed and carries .on-light/.on-dark
+   from isLight() instead */
+[data-board-theme='dark'] .sticky-card:not(.on-light):not(.on-dark) .sticky-text {
+  color: #f0efec;
+}
 .sticky-bar {
   top: -42px;
   left: 0;
@@ -1060,6 +1067,10 @@
   font-size: 13px;
   font-weight: 500;
   color: #33373b;
+}
+/* same dark-theme ink flip as .sticky-text above, for the same reason */
+[data-board-theme='dark'] .shape-card:not(.on-light):not(.on-dark) .shape-text {
+  color: #f0efec;
 }
 
 /* ---------- ink ---------- */

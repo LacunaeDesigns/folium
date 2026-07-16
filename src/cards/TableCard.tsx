@@ -13,6 +13,7 @@ import {
   moveCol,
   applyTsvPaste,
   nextCellPos,
+  moveSucceeded,
 } from './gridOps'
 
 // local draft + debounced commit per cell, so a keystroke doesn't flood the
@@ -120,10 +121,30 @@ export function TableCard({ card, readOnly }: CardBodyProps) {
   const delRow = () => setRows(removeRowAt(rows, rowIdx))
   const addCol = () => setRows(insertColAt(rows, colIdx))
   const delCol = () => setRows(removeColAt(rows, colIdx, 0, 1))
-  const moveRowUp = () => setRows(moveRow(rows, rowIdx, rowIdx - 1))
-  const moveRowDown = () => setRows(moveRow(rows, rowIdx, rowIdx + 1))
-  const moveColLeft = () => setRows(moveCol(rows, colIdx, colIdx - 1))
-  const moveColRight = () => setRows(moveCol(rows, colIdx, colIdx + 1))
+  // After a successful move, advance lastCell to the moved row/col's new
+  // position — clicking a button (rather than a cell) never re-fires
+  // onFocusCell, so without this the anchor never moves and repeated clicks
+  // just swap the same two rows/cols back and forth.
+  const moveRowUp = () => {
+    const next = moveRow(rows, rowIdx, rowIdx - 1)
+    if (moveSucceeded(rows, next)) setLastCell({ r: rowIdx - 1, c: colIdx })
+    setRows(next)
+  }
+  const moveRowDown = () => {
+    const next = moveRow(rows, rowIdx, rowIdx + 1)
+    if (moveSucceeded(rows, next)) setLastCell({ r: rowIdx + 1, c: colIdx })
+    setRows(next)
+  }
+  const moveColLeft = () => {
+    const next = moveCol(rows, colIdx, colIdx - 1)
+    if (moveSucceeded(rows, next)) setLastCell({ r: rowIdx, c: colIdx - 1 })
+    setRows(next)
+  }
+  const moveColRight = () => {
+    const next = moveCol(rows, colIdx, colIdx + 1)
+    if (moveSucceeded(rows, next)) setLastCell({ r: rowIdx, c: colIdx + 1 })
+    setRows(next)
+  }
 
   return (
     <div className="table-card" ref={rootRef}>

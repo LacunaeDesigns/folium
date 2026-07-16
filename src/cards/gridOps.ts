@@ -82,6 +82,17 @@ export function applyTsvPaste(rows: string[][], anchorRow: number, anchorCol: nu
   return next
 }
 
+/** True when a moveRow/moveCol call actually changed the grid — the guards in
+ *  both functions return the input array by reference when a move is blocked
+ *  (header row, protected column, out of bounds). Callers use this to decide
+ *  whether to advance the UI's "last focused" cell, so repeated move-button
+ *  clicks keep progressing the same logical row/column instead of oscillating
+ *  between two positions (clicking a button doesn't refocus a cell, so nothing
+ *  else updates that tracked position). */
+export function moveSucceeded(before: string[][], after: string[][]): boolean {
+  return before !== after
+}
+
 export function nextCellPos(
   r: number,
   c: number,

@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { insertRowAt, removeRowAt, moveRow, insertColAt, removeColAt, moveCol, applyTsvPaste, nextCellPos } from './gridOps'
+import {
+  insertRowAt,
+  removeRowAt,
+  moveRow,
+  insertColAt,
+  removeColAt,
+  moveCol,
+  applyTsvPaste,
+  nextCellPos,
+  moveSucceeded,
+} from './gridOps'
 
 const g = () => [
   ['H1', 'H2'],
@@ -38,6 +48,18 @@ describe('applyTsvPaste', () => {
       ['c', 'x', 'y'],
       ['', 'z', 'w'],
     ])
+  })
+})
+
+describe('moveSucceeded', () => {
+  it('is true when the grid actually changed', () => {
+    const rows = g()
+    expect(moveSucceeded(rows, moveRow(rows, 2, 1))).toBe(true)
+  })
+  it('is false when the move was blocked (guard returns the same reference)', () => {
+    const rows = g()
+    expect(moveSucceeded(rows, moveRow(rows, 1, 0))).toBe(false)
+    expect(moveSucceeded(rows, moveCol(rows, 1, 0, 1))).toBe(false)
   })
 })
 

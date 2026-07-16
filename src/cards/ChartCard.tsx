@@ -14,7 +14,17 @@ import {
   moveCol,
   applyTsvPaste,
   nextCellPos,
+  moveSucceeded,
 } from './gridOps'
+
+/** Default header label for a newly inserted series column (chart col 0 is
+ *  always the label column, so colIndex also equals the series' 1-based
+ *  ordinal). Restores the pre-rewrite auto-naming that insertColAt's generic
+ *  blank-cell insert dropped — without it, a new series' header (and thus its
+ *  legend/markdown-export name, which read straight from that cell) is blank. */
+export function labelNewSeriesHeader(rows: string[][], colIndex: number): string[][] {
+  return rows.map((row, ri) => (ri === 0 ? row.map((cell, ci) => (ci === colIndex ? 'Series ' + colIndex : cell)) : row))
+}
 
 const KINDS: ChartKind[] = ['bar', 'line', 'pie', 'donut']
 
@@ -106,12 +116,32 @@ export function ChartCard({ card, readOnly }: CardBodyProps) {
 
   const addRow = () => setRows(insertRowAt(rows, rowIdx))
   const delRow = () => setRows(removeRowAt(rows, rowIdx))
-  const addCol = () => setRows(insertColAt(rows, colIdx))
+  const addCol = () => setRows(labelNewSeriesHeader(insertColAt(rows, colIdx), colIdx + 1))
   const delCol = () => setRows(removeColAt(rows, colIdx, 1, 2))
-  const moveRowUp = () => setRows(moveRow(rows, rowIdx, rowIdx - 1))
-  const moveRowDown = () => setRows(moveRow(rows, rowIdx, rowIdx + 1))
-  const moveColLeft = () => setRows(moveCol(rows, colIdx, colIdx - 1, 1))
-  const moveColRight = () => setRows(moveCol(rows, colIdx, colIdx + 1, 1))
+  // After a successful move, advance lastCell to the moved row/col's new
+  // position — clicking a button (rather than a cell) never re-fires
+  // onFocusCell, so without this the anchor never moves and repeated clicks
+  // just swap the same two rows/cols back and forth.
+  const moveRowUp = () => {
+    const next = moveRow(rows, rowIdx, rowIdx - 1)
+    if (moveSucceeded(rows, next)) setLastCell({ r: rowIdx - 1, c: colIdx })
+    setRows(next)
+  }
+  const moveRowDown = () => {
+    const next = moveRow(rows, rowIdx, rowIdx + 1)
+    if (moveSucceeded(rows, next)) setLastCell({ r: rowIdx + 1, c: colIdx })
+    setRows(next)
+  }
+  const moveColLeft = () => {
+    const next = moveCol(rows, colIdx, colIdx - 1, 1)
+    if (moveSucceeded(rows, next)) setLastCell({ r: rowIdx, c: colIdx - 1 })
+    setRows(next)
+  }
+  const moveColRight = () => {
+    const next = moveCol(rows, colIdx, colIdx + 1, 1)
+    if (moveSucceeded(rows, next)) setLastCell({ r: rowIdx, c: colIdx + 1 })
+    setRows(next)
+  }
 
   const [titleDraft, setTitleDraft] = useState(content.title)
   const commitTitle = useDebouncedCommit((v) => update({ title: v as string }))

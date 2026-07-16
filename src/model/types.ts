@@ -14,6 +14,8 @@ export interface Board {
   gridHidden?: boolean
   /** per-board canvas background id (see model/backgrounds.ts); undefined = default paper */
   background?: string
+  /** per-board opt-in: drags/resizes snap to the dot grid; undefined/false = off */
+  snapToGrid?: boolean
 }
 
 export type CardType =

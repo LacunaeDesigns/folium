@@ -57,7 +57,7 @@ export interface FoliumState extends DocState {
     at?: { x: number; y: number },
   ): { boardId: string; cardId: string }
   renameBoard(id: string, title: string): void
-  setBoardMeta(id: string, patch: Partial<Pick<Board, 'icon' | 'color' | 'theme' | 'gridHidden' | 'background'>>): void
+  setBoardMeta(id: string, patch: Partial<Pick<Board, 'icon' | 'color' | 'theme' | 'gridHidden' | 'background' | 'snapToGrid'>>): void
   setCardColumn(cardId: string, colId: string | null, index: number, dropPos?: { x: number; y: number }): void
   addLine(boardId: string, from: LineEnd, to: LineEnd): string
   updateLine(id: string, patch: Partial<Omit<Line, 'id'>>): void

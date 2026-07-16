@@ -1,5 +1,9 @@
 import { BoardView } from '../store/uiStore'
 
+/** world-space spacing of the canvas dot grid; must match the
+ *  `background-size` values in src/styles/global.css (currently 24px 24px). */
+export const GRID_SIZE = 24
+
 export interface Pt {
   x: number
   y: number

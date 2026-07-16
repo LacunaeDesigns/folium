@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cardZIndex, columnContainsSelection, blurActiveFormField, isCardDragging } from './CardShell'
+import { cardZIndex, columnContainsSelection, blurActiveFormField, isCardDragging, gridSnapDelta } from './CardShell'
 import { Card } from '../model/types'
 
 function makeCard(patch: Partial<Card> = {}): Card {
@@ -110,5 +110,17 @@ describe('blurActiveFormField', () => {
   it('does nothing when nothing is focused', () => {
     document.body.focus()
     expect(() => blurActiveFormField()).not.toThrow()
+  })
+})
+
+describe('gridSnapDelta', () => {
+  it('snaps the projected origin to the nearest grid line', () => {
+    // origin+dx: 10+9=19 -> nearest multiple of 24 is 24 (dx: 24-10=14)
+    // origin+dy: 10+3=13 -> nearest multiple of 24 is 24 (dy: 24-10=14)
+    expect(gridSnapDelta(10, 10, 9, 3, 24)).toEqual({ dx: 14, dy: 14 })
+  })
+
+  it('is identity when already on the grid', () => {
+    expect(gridSnapDelta(24, 48, 24, -24, 24)).toEqual({ dx: 24, dy: -24 })
   })
 })

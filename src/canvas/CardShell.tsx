@@ -7,6 +7,7 @@ import { getCardBody } from '../cards/registry'
 import { resolveCardDrop } from './dropTarget'
 import { usePointerDragGesture } from './usePointerDragGesture'
 import { Icon } from '../ui/Icons'
+import { GRID_SIZE } from './coords'
 
 // stable reference for non-column cards, so the members subscription below
 // never causes them to re-render just because some other card's selection changed
@@ -64,6 +65,14 @@ interface WRect {
   y: number
   w: number
   h: number
+}
+
+/** Snap a dragged card's projected origin to the grid; returns the adjusted delta. */
+export function gridSnapDelta(originX: number, originY: number, dx: number, dy: number, grid: number): { dx: number; dy: number } {
+  return {
+    dx: Math.round((originX + dx) / grid) * grid - originX,
+    dy: Math.round((originY + dy) / grid) * grid - originY,
+  }
 }
 
 /** how close (in screen px) a card edge must be to another card's edge to snap */
@@ -164,6 +173,7 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
   const members = useFolium((s) => (card.type === 'column' ? columnCards(s, card.id) : EMPTY_MEMBERS))
   const hasSelectedMember = useUi((s) => card.type === 'column' && columnContainsSelection(members, s.selection))
   const isDragging = isCardDragging(drag, card)
+  const snapToGrid = useFolium((s) => !!s.boards[card.boardId]?.snapToGrid)
 
   const [resizePreview, setResizePreview] = React.useState<{ w: number; h?: number; x: number; y: number } | null>(null)
 
@@ -240,7 +250,12 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       let dy = (e.clientY - origin.y) / zoom
       // smart-guide snapping (hold Ctrl to move freely)
       let guides: SnapGuides | null = null
-      if (data.bbox && data.targets?.length && !e.ctrlKey) {
+      if (snapToGrid && !e.ctrlKey) {
+        // grid snap wins over smart guides when the board has it enabled
+        const snapped = gridSnapDelta(card.x, card.y, dx, dy, GRID_SIZE)
+        dx = snapped.dx
+        dy = snapped.dy
+      } else if (data.bbox && data.targets?.length && !e.ctrlKey) {
         const snapped = snapDelta(data.bbox, data.targets, dx, dy, SNAP_SCREEN_PX / zoom)
         dx = snapped.dx
         dy = snapped.dy
@@ -403,10 +418,21 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       setResizePreview(null)
       const preview = data.preview
       if (!preview) return
+      const snap = (v: number) => Math.round(v / GRID_SIZE) * GRID_SIZE
+      // only the edge that actually moved (the anchor stays put) gets its
+      // origin coordinate snapped — w/h always snap when the flag is on
+      const committed = snapToGrid
+        ? {
+            x: data.dirX < 0 ? snap(preview.x) : preview.x,
+            y: data.dirY < 0 ? snap(preview.y) : preview.y,
+            w: snap(preview.w),
+            h: preview.h === undefined ? undefined : snap(preview.h),
+          }
+        : preview
       if (card.type === 'frame') {
-        store.getState().resizeFrame(card.id, preview.x, preview.y, preview.w, preview.h ?? card.h ?? 320)
+        store.getState().resizeFrame(card.id, committed.x, committed.y, committed.w, committed.h ?? card.h ?? 320)
       } else {
-        store.getState().updateCard(card.id, { x: preview.x, y: preview.y, w: preview.w, h: preview.h })
+        store.getState().updateCard(card.id, { x: committed.x, y: committed.y, w: committed.w, h: committed.h })
       }
     },
     // discard rather than commit — reverts to the card's original size

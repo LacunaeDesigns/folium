@@ -752,7 +752,7 @@ export function Canvas({ boardId }: { boardId: string }) {
         const vp = viewportRef.current
         const rect = vp?.getBoundingClientRect()
         const MENU_W = 200
-        const MENU_H = cardId ? (selCount >= 2 ? 456 : 376) : 340
+        const MENU_H = cardId ? (selCount >= 2 ? 456 : 376) : 376
         const PAD = 8
         const rawX = ctxMenu.x - (rect?.left ?? 0)
         const rawY = ctxMenu.y - (rect?.top ?? 0)
@@ -802,6 +802,14 @@ export function Canvas({ boardId }: { boardId: string }) {
                 )}
               >
                 {gap} {gridShown ? 'Hide grid' : 'Show grid'}
+              </button>
+              <button
+                className="menu-item"
+                onClick={menuAction(() =>
+                  store.getState().setBoardMeta(boardId, { snapToGrid: !board?.snapToGrid }),
+                )}
+              >
+                {gap} Snap to grid {board?.snapToGrid ? '✓' : ''}
               </button>
               {([
                 ['board', 'board'],

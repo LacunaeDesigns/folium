@@ -99,8 +99,9 @@ export const useUi = create<UiState>((set) => ({
   setView: (boardId, view) => set((s) => ({ views: { ...s.views, [boardId]: view } })),
   setDraw: (patch) => set((s) => ({ draw: { ...s.draw, ...patch } })),
   setStickerEmoji: (emoji) => set({ stickerEmoji: emoji }),
-  setTrashOpen: (open) => set({ trashOpen: open }),
-  setHistoryOpen: (open) => set({ historyOpen: open }),
+  // trash and history are both right-docked side panels — opening one closes the other
+  setTrashOpen: (open) => set((s) => ({ trashOpen: open, historyOpen: open ? false : s.historyOpen })),
+  setHistoryOpen: (open) => set((s) => ({ historyOpen: open, trashOpen: open ? false : s.trashOpen })),
   setSearchOpen: (open) => set({ searchOpen: open }),
   setUnsortedOpen: (open) => set({ unsortedOpen: open }),
   setPresentationMode: (on) => set({ presentationMode: on }),

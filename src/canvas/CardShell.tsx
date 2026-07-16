@@ -75,6 +75,43 @@ export function gridSnapDelta(originX: number, originY: number, dx: number, dy: 
   }
 }
 
+/** Snap a resize preview to the grid without moving the anchored (opposite)
+ *  corner: only the coordinate of the edge the handle actually drives gets
+ *  snapped, and the paired dimension is derived from the fixed start-anchor
+ *  sum (start.x + start.w / start.y + start.h) rather than rounded on its
+ *  own — mirrors gridSnapDelta deriving a delta from a snapped origin instead
+ *  of snapping components independently. The edge whose handle direction is
+ *  non-negative never moves its origin (x/y already equal the anchor), so its
+ *  dimension can snap directly. */
+export function gridSnapResize(
+  preview: { x: number; y: number; w: number; h?: number },
+  start: { x: number; y: number; w: number; h?: number },
+  dirX: number,
+  dirY: number,
+  grid: number,
+): { x: number; y: number; w: number; h?: number } {
+  const snap = (v: number) => Math.round(v / grid) * grid
+  let x = preview.x
+  let y = preview.y
+  let w = preview.w
+  let h = preview.h
+  if (dirX < 0) {
+    x = snap(preview.x)
+    w = start.x + start.w - x
+  } else {
+    w = snap(preview.w)
+  }
+  if (start.h !== undefined && preview.h !== undefined) {
+    if (dirY < 0) {
+      y = snap(preview.y)
+      h = start.y + start.h - y
+    } else {
+      h = snap(preview.h)
+    }
+  }
+  return { x, y, w, h }
+}
+
 /** how close (in screen px) a card edge must be to another card's edge to snap */
 const SNAP_SCREEN_PX = 6
 
@@ -418,16 +455,16 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
       setResizePreview(null)
       const preview = data.preview
       if (!preview) return
-      const snap = (v: number) => Math.round(v / GRID_SIZE) * GRID_SIZE
-      // only the edge that actually moved (the anchor stays put) gets its
-      // origin coordinate snapped — w/h always snap when the flag is on
+      // snap the moved edge to the grid and derive the paired dimension from
+      // the fixed anchor so the untouched opposite corner never moves
       const committed = snapToGrid
-        ? {
-            x: data.dirX < 0 ? snap(preview.x) : preview.x,
-            y: data.dirY < 0 ? snap(preview.y) : preview.y,
-            w: snap(preview.w),
-            h: preview.h === undefined ? undefined : snap(preview.h),
-          }
+        ? gridSnapResize(
+            preview,
+            { x: data.startCardX, y: data.startCardY, w: data.startW, h: data.startH },
+            data.dirX,
+            data.dirY,
+            GRID_SIZE,
+          )
         : preview
       if (card.type === 'frame') {
         store.getState().resizeFrame(card.id, committed.x, committed.y, committed.w, committed.h ?? card.h ?? 320)

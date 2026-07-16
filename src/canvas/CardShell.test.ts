@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cardZIndex, columnContainsSelection, blurActiveFormField, isCardDragging, gridSnapDelta } from './CardShell'
+import { cardZIndex, columnContainsSelection, blurActiveFormField, isCardDragging, gridSnapDelta, gridSnapResize } from './CardShell'
 import { Card } from '../model/types'
 
 function makeCard(patch: Partial<Card> = {}): Card {
@@ -122,5 +122,48 @@ describe('gridSnapDelta', () => {
 
   it('is identity when already on the grid', () => {
     expect(gridSnapDelta(24, 48, 24, -24, 24)).toEqual({ dx: 24, dy: -24 })
+  })
+})
+
+describe('gridSnapResize', () => {
+  const start = { x: 100, y: 100, w: 200, h: 150 }
+
+  it('top-left handle (rc-tl): snaps the dragged corner but keeps the opposite (bottom-right) corner fixed', () => {
+    // unsnapped preview from dragging rc-tl by (dx=5, dy=5): anchor is
+    // start.x+start.w=300, start.y+start.h=250
+    const preview = { x: 105, y: 105, w: 195, h: 145 }
+    const result = gridSnapResize(preview, start, -1, -1, 24)
+    expect(result).toEqual({ x: 96, y: 96, w: 204, h: 154 })
+    expect(result.x + result.w).toBe(start.x + start.w)
+    expect(result.y! + result.h!).toBe(start.y + start.h)
+  })
+
+  it('top-right handle (rc-tr): x stays anchored, y snaps and the bottom-left corner stays fixed', () => {
+    const preview = { x: 100, y: 105, w: 205, h: 145 }
+    const result = gridSnapResize(preview, start, 1, -1, 24)
+    expect(result.x).toBe(100)
+    expect(result.y).toBe(96)
+    expect(result.y! + result.h!).toBe(start.y + start.h)
+  })
+
+  it('bottom-left handle (rc-bl): y stays anchored, x snaps and the top-right corner stays fixed', () => {
+    const preview = { x: 105, y: 100, w: 195, h: 155 }
+    const result = gridSnapResize(preview, start, -1, 1, 24)
+    expect(result.y).toBe(100)
+    expect(result.x).toBe(96)
+    expect(result.x + result.w).toBe(start.x + start.w)
+  })
+
+  it('bottom-right handle (rc-br): both origin coordinates stay anchored (unaffected by the fix)', () => {
+    const preview = { x: 100, y: 100, w: 205, h: 155 }
+    const result = gridSnapResize(preview, start, 1, 1, 24)
+    expect(result).toEqual({ x: 100, y: 100, w: 216, h: 144 })
+  })
+
+  it('leaves h undefined for auto-height cards', () => {
+    const autoStart = { x: 100, y: 100, w: 200 }
+    const preview = { x: 105, y: 100, w: 195 }
+    const result = gridSnapResize(preview, autoStart, -1, -1, 24)
+    expect(result.h).toBeUndefined()
   })
 })

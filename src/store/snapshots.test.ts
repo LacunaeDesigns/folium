@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { nanoid } from 'nanoid'
-import { openDb } from './persist'
+import { loadDoc, openDb } from './persist'
 import { createFoliumStore } from './store'
 import {
   SNAPSHOT_INTERVAL_MS,
   computeRetainedIds,
   listSnapshots,
   maybeSnapshot,
+  restoreSnapshot,
   writeSnapshot,
 } from './snapshots'
 
@@ -76,5 +77,37 @@ describe('maybeSnapshot', () => {
     expect(await maybeSnapshot(db, docOf(store), t0 + SNAPSHOT_INTERVAL_MS - 1)).toBe(false)
     expect(await maybeSnapshot(db, docOf(store), t0 + SNAPSHOT_INTERVAL_MS)).toBe(true)
     expect((await listSnapshots(db)).length).toBe(2)
+  })
+})
+
+describe('restoreSnapshot', () => {
+  it('hydrates the store, persists the doc, clears undo, and safety-snapshots first', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    const s = store.getState()
+    const id = await writeSnapshot(db, docOf(store), Date.now() - 5 * 60_000)
+    // mutate after the snapshot
+    s.addCard(s.rootId, 'sticky', { content: { text: 'later edit' } as never })
+    const cardCountBefore = Object.keys(store.getState().cards).length
+    await restoreSnapshot(db, store, id)
+    // store reverted to snapshot state
+    expect(Object.keys(store.getState().cards).length).toBeLessThan(cardCountBefore)
+    // undo cannot cross the restore boundary
+    expect(store.temporal.getState().pastStates.length).toBe(0)
+    // restored doc is persisted immediately (not waiting for autosave)
+    const persisted = await loadDoc(db)
+    expect(Object.keys(persisted!.cards)).toEqual(Object.keys(store.getState().cards))
+    // the pre-restore state was snapshotted, so restore is itself reversible
+    const metas = await listSnapshots(db)
+    expect(metas.length).toBe(2)
+    expect(metas[0].nCards).toBe(cardCountBefore)
+  })
+
+  it('throws on an unknown snapshot id and leaves state untouched', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    const before = docOf(store)
+    await expect(restoreSnapshot(db, store, 'nope')).rejects.toThrow()
+    expect(docOf(store)).toEqual(before)
   })
 })

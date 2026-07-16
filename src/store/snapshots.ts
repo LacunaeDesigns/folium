@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import { DocState } from '../model/types'
-import { FoliumDb, SnapshotMetaRow } from './persist'
+import { FoliumDb, SnapshotMetaRow, saveDoc } from './persist'
+import type { FoliumStore } from './store'
 
 /** Minimum gap between automatic snapshots. */
 export const SNAPSHOT_INTERVAL_MS = 10 * 60_000
@@ -74,4 +75,21 @@ export async function maybeSnapshot(db: FoliumDb, doc: DocState, now = Date.now(
   if (newest && now - newest.ts < SNAPSHOT_INTERVAL_MS) return false
   await writeSnapshot(db, doc, now)
   return true
+}
+
+/**
+ * Replace the live document with a stored snapshot. Mirrors the backup-import pattern
+ * (export/json.ts applyBackup): persist first, hydrate, then clear the undo stack so
+ * Ctrl+Z can't reach back across the restore boundary. The pre-restore state is
+ * snapshotted unconditionally first, so a restore can always be un-restored.
+ */
+export async function restoreSnapshot(db: FoliumDb, store: FoliumStore, id: string): Promise<void> {
+  const row = await db.snapshotDocs.get(id)
+  if (!row) throw new Error('Snapshot not found')
+  const s = store.getState()
+  await writeSnapshot(db, { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines })
+  // persist NOW — like applyBackup, don't wait for autosave's debounce
+  await saveDoc(db, row.doc)
+  store.getState().hydrate(row.doc)
+  store.temporal.getState().clear()
 }

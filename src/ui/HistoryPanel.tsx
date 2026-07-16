@@ -37,6 +37,9 @@ export function HistoryPanel() {
       // the open board may not exist in the restored doc — fall back to root
       if (!s.boards[ui.currentBoardId ?? '']) ui.setBoard(s.rootId)
       refresh()
+    } catch {
+      // nothing was touched (restore fails before mutating on any error) — say so
+      alert('Restore failed — your workspace was not changed.')
     } finally {
       setBusy(false)
     }

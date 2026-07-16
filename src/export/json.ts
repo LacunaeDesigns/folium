@@ -63,13 +63,25 @@ export function parseBackup(text: string): Backup {
 
 /** Write a (validated) backup into the db + store, replacing everything. */
 export async function applyBackup(db: FoliumDb, store: FoliumStore, backup: Backup): Promise<void> {
-  await db.blobs.clear()
-  await db.blobs.bulkPut(backup.blobs.map((b) => ({ id: b.id, type: b.type, buf: b64ToBuf(b.b64) })))
-  await db.templates.clear()
-  if (backup.templates?.length) await db.templates.bulkPut(backup.templates)
+  // Decode every incoming blob BEFORE touching the db. atob (inside b64ToBuf) throws on a
+  // corrupt/truncated base64 string — surfacing that failure here, before blobs.clear() ever
+  // commits, is what keeps one bad blob from wiping every blob already on disk.
+  const blobRows = backup.blobs.map((b) => ({ id: b.id, type: b.type, buf: b64ToBuf(b.b64) }))
+  // Both clear+bulkPut pairs run in one transaction so a mid-write failure (e.g. a storage
+  // quota error on bulkPut) rolls back instead of leaving a table cleared with nothing restored.
+  await db.transaction('rw', db.blobs, db.templates, async () => {
+    await db.blobs.clear()
+    await db.blobs.bulkPut(blobRows)
+    await db.templates.clear()
+    if (backup.templates?.length) await db.templates.bulkPut(backup.templates)
+  })
   // persist the doc NOW — callers may reload immediately, before autosave's debounce fires
   await saveDoc(db, backup.doc)
   store.getState().hydrate(backup.doc)
+  // hydrate is a plain `set()`, which zundo's temporal middleware records like any other
+  // change. Leaving that entry on the undo stack would let Ctrl+Z reach back across this
+  // import boundary and resurrect doc state — and blobs — that this import just replaced.
+  store.temporal.getState().clear()
 }
 
 /** Replaces the entire document, blobs and user templates from backup text. */

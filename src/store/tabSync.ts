@@ -70,6 +70,10 @@ export function createTabSync(store: FoliumStore, db: FoliumDb): TabSync {
     applying = true
     try {
       store.getState().hydrate(doc)
+      // hydrate is a plain `set()`, which zundo's temporal middleware records like any other
+      // change. Leaving that entry on the undo stack would let Ctrl+Z reach back across this
+      // cross-tab sync boundary and resurrect this tab's stale pre-sync state.
+      store.temporal.getState().clear()
     } finally {
       applying = false
     }

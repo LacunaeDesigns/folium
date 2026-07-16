@@ -157,6 +157,35 @@ describe('createTabSync: echo suppression', () => {
   })
 })
 
+describe('createTabSync: undo stack (regression: cross-tab sync must not pollute undo)', () => {
+  it('clears undo history on the receiving tab after applying a remote reload', async () => {
+    const dbName = 'test-' + nanoid(6)
+    const dbA = openDb(dbName)
+    const dbB = openDb(dbName)
+    const storeA = createFoliumStore()
+    const storeB = createFoliumStore()
+    const syncA = createTabSync(storeA, dbA)
+    const syncB = createTabSync(storeB, dbB)
+
+    // storeB has its own (older) local edit sitting on its undo stack before the remote reload arrives.
+    vi.spyOn(Date, 'now').mockReturnValue(1000)
+    storeB.getState().addCard(storeB.getState().rootId, 'note', { x: 5, y: 5 })
+    vi.restoreAllMocks()
+    expect(storeB.temporal.getState().pastStates.length).toBeGreaterThan(0)
+
+    storeA.getState().addCard(storeA.getState().rootId, 'note', { x: 1, y: 2 })
+    await saveDoc(dbA, docOf(storeA))
+    syncA.onWrite(2000) // newer than storeB's local edit at 1000, so B must apply the reload
+
+    await flushAsync()
+
+    expect(storeB.temporal.getState().pastStates.length).toBe(0)
+
+    syncA.dispose()
+    syncB.dispose()
+  })
+})
+
 describe('createTabSync: pause during apply', () => {
   it('flags isPaused while a remote reload is being applied to the store', async () => {
     const dbName = 'test-' + nanoid(6)

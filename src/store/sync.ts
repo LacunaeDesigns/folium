@@ -101,12 +101,21 @@ async function reconcile(): Promise<'loaded' | 'pushed'> {
   const remoteText = await readWorkspace(handle)
   const localTs = await getSetting<number>(db, DOC_TS_KEY, 0)
   if (remoteText) {
-    const remote = parseBackup(remoteText)
-    if (chooseSource(localTs, remote.exportedAt) === 'remote') {
-      await applyBackup(db, store, remote)
-      await setSetting(db, DOC_TS_KEY, remote.exportedAt)
-      useSync.setState({ lastSyncedAt: remote.exportedAt })
-      return 'loaded'
+    try {
+      const remote = parseBackup(remoteText)
+      if (chooseSource(localTs, remote.exportedAt) === 'remote') {
+        await applyBackup(db, store, remote)
+        await setSetting(db, DOC_TS_KEY, remote.exportedAt)
+        useSync.setState({ lastSyncedAt: remote.exportedAt })
+        return 'loaded'
+      }
+    } catch (err) {
+      // Unlike push()'s defensive read (there, a truncated remote just means "no signal, push
+      // ours"), a remote we can see but can't parse must not be silently overwritten — pushing
+      // local over it could clobber a newer write we simply failed to read. Surface the error
+      // and leave the folder untouched instead of falling through to push().
+      useSync.setState({ status: 'error', error: (err as Error).message })
+      return 'pushed'
     }
   }
   await push()

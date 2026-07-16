@@ -128,6 +128,22 @@ describe('linkFolder — keep local, overwrite the folder', () => {
   })
 })
 
+describe('reconcile — unreadable remote (regression: must not push over an unparseable remote)', () => {
+  it('surfaces an error and leaves the remote workspace untouched instead of falling through to push', async () => {
+    const dir = fakeDir()
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    stubHandlePersistence(dir)
+    await writeWorkspace(dir, '{not valid json')
+
+    await initFolderSync(store, db) // boot path runs reconcile() while a handle is already saved
+
+    expect(useSync.getState().status).toBe('error')
+    expect(useSync.getState().error).toBeTruthy()
+    expect(dir.files[WORKSPACE_FILE]).toBe('{not valid json') // not overwritten by a push
+  })
+})
+
 function docOf(store: ReturnType<typeof createFoliumStore>) {
   const s = store.getState()
   return { rootId: s.rootId, boards: s.boards, cards: s.cards, lines: s.lines }

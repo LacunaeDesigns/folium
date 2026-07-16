@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveCopyTargetIds } from './useShortcuts'
+import { resolveCopyTargetIds, zOrderedIds } from './useShortcuts'
 
 describe('resolveCopyTargetIds', () => {
   it('returns the ui selection when nothing is focused', () => {
@@ -100,5 +100,15 @@ describe('resolveCopyTargetIds', () => {
 
     expect(resolveCopyTargetIds(editable, ['stale-selection'])).toEqual(['note1'])
     wrapper.remove()
+  })
+})
+
+describe('zOrderedIds', () => {
+  const z: Record<string, number> = { a: 3, b: 1, c: 2 }
+  it('ascends for bring-to-front so stacking is preserved', () => {
+    expect(zOrderedIds(['a', 'b', 'c'], (id) => z[id], 'front')).toEqual(['b', 'c', 'a'])
+  })
+  it('descends for send-to-back', () => {
+    expect(zOrderedIds(['a', 'b', 'c'], (id) => z[id], 'back')).toEqual(['a', 'c', 'b'])
   })
 })

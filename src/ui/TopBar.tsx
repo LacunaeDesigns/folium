@@ -16,6 +16,7 @@ export function TopBar({
   onSearch,
   onExport,
   onView,
+  onArrange,
   onSettings,
   onTemplates,
   onLive,
@@ -29,6 +30,7 @@ export function TopBar({
   liveMenu,
   exportMenu,
   viewMenu,
+  arrangeMenu,
   settingsMenu,
   saveStatus,
 }: {
@@ -39,6 +41,7 @@ export function TopBar({
   onSearch: () => void
   onExport: () => void
   onView: () => void
+  onArrange: () => void
   onSettings: () => void
   onTemplates: () => void
   onLive: () => void
@@ -53,6 +56,7 @@ export function TopBar({
   liveMenu?: React.ReactNode
   exportMenu?: React.ReactNode
   viewMenu?: React.ReactNode
+  arrangeMenu?: React.ReactNode
   settingsMenu?: React.ReactNode
   saveStatus?: React.ReactNode
 }) {
@@ -147,6 +151,12 @@ export function TopBar({
               View <Icon name="chevron-down" size={13} />
             </button>
             {viewMenu}
+          </span>
+          <span className="menu-anchor">
+            <button className="chrome-btn" onClick={onArrange}>
+              Arrange <Icon name="chevron-down" size={13} />
+            </button>
+            {arrangeMenu}
           </span>
           <span className="menu-anchor">
             <button className="icon-btn" title="Settings" onClick={onSettings}>

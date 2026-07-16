@@ -56,6 +56,10 @@ const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: 'Ctrl + wheel', action: 'Zoom in or out' },
   { keys: 'Shift+1', action: 'Fit the whole board in view' },
   { keys: 'Shift+2', action: 'Zoom to the current selection' },
+  { keys: 'Ctrl+]', action: 'Bring the selection to front' },
+  { keys: 'Ctrl+[', action: 'Send the selection to back' },
+  { keys: 'Ctrl+Alt+]', action: 'Bring the selected card forward one step' },
+  { keys: 'Ctrl+Alt+[', action: 'Send the selected card backward one step' },
   { keys: 'Alt + drag', action: 'Duplicate the selection and drag the copies' },
   { keys: 'Escape', action: 'Close menus, clear the selection, or exit the current tool' },
 ]
@@ -167,6 +171,10 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
                 <p>
                   Dragging a card shows snap guides against nearby cards. Hold Ctrl while dragging to move
                   freely, ignoring the guides.
+                </p>
+                <p>
+                  With cards selected, the Arrange menu in the top bar (or a right-click) aligns and
+                  distributes them and reorders their front-to-back stacking.
                 </p>
               </section>
             )}

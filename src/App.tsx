@@ -31,7 +31,7 @@ import {
 } from './store/settings'
 import { PexelsPanel } from './ui/PexelsPanel'
 import { useUi } from './store/uiStore'
-import { useShortcuts } from './canvas/useShortcuts'
+import { useShortcuts, zOrderedIds } from './canvas/useShortcuts'
 import { Icon } from './ui/Icons'
 import './cards'
 
@@ -79,6 +79,95 @@ function ViewMenu({ onClose }: { onClose: () => void }) {
         }}
       >
         <Icon name="play" size={15} /> Present
+      </button>
+    </div>
+  )
+}
+
+function ArrangeMenu({ onClose }: { onClose: () => void }) {
+  const store = useFoliumStore()
+  const selCount = useUi((s) => s.selection.length)
+  const gap = <span style={{ display: 'inline-block', width: 15 }} />
+  const fire = (op: string) => {
+    window.dispatchEvent(new CustomEvent('folium:arrange', { detail: { op } }))
+    onClose()
+  }
+  // Bring to front / Send to back act on the whole selection at once (order
+  // preserved via zOrderedIds); Bring forward / Send backward step a single
+  // card by one z-neighbour and have no coherent multi-select meaning, so
+  // they route through the same single-selection-only shortcut op.
+  const zTo = (dir: 'front' | 'back') => () => {
+    const sel = useUi.getState().selection
+    const ids = zOrderedIds(sel, (id) => store.getState().cards[id]?.z ?? 0, dir)
+    for (const id of ids) {
+      if (dir === 'front') store.getState().bringToFront(id)
+      else store.getState().sendToBack(id)
+    }
+    onClose()
+  }
+  const alignDisabled = selCount < 2
+  const distributeDisabled = selCount < 3
+  const zDisabled = selCount < 1
+  const stepDisabled = selCount !== 1
+  return (
+    <div className="menu-pop topbar-menu" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="menu-row">
+        {(
+          [
+            ['align-left', 'Left'],
+            ['align-centerX', 'Center'],
+            ['align-right', 'Right'],
+          ] as const
+        ).map(([op, label]) => (
+          <button
+            key={op}
+            className="menu-item"
+            disabled={alignDisabled}
+            title={'Align ' + label.toLowerCase()}
+            onClick={() => fire(op)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="menu-row">
+        {(
+          [
+            ['align-top', 'Top'],
+            ['align-middleY', 'Middle'],
+            ['align-bottom', 'Bottom'],
+          ] as const
+        ).map(([op, label]) => (
+          <button
+            key={op}
+            className="menu-item"
+            disabled={alignDisabled}
+            title={'Align ' + label.toLowerCase()}
+            onClick={() => fire(op)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="menu-sep" />
+      <button className="menu-item" disabled={distributeDisabled} onClick={() => fire('distribute-h')}>
+        {gap} Distribute horizontally
+      </button>
+      <button className="menu-item" disabled={distributeDisabled} onClick={() => fire('distribute-v')}>
+        {gap} Distribute vertically
+      </button>
+      <div className="menu-sep" />
+      <button className="menu-item" disabled={zDisabled} onClick={zTo('front')}>
+        {gap} Bring to front
+      </button>
+      <button className="menu-item" disabled={stepDisabled} onClick={() => fire('step-forward')}>
+        {gap} Bring forward
+      </button>
+      <button className="menu-item" disabled={stepDisabled} onClick={() => fire('step-back')}>
+        {gap} Send backward
+      </button>
+      <button className="menu-item" disabled={zDisabled} onClick={zTo('back')}>
+        {gap} Send to back
       </button>
     </div>
   )
@@ -273,7 +362,7 @@ export default function App() {
     () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches,
   )
   const effectiveTheme: 'light' | 'dark' = appTheme === 'system' ? (systemDark ? 'dark' : 'light') : appTheme
-  const [menu, setMenu] = React.useState<'view' | 'settings' | 'export' | 'live' | null>(null)
+  const [menu, setMenu] = React.useState<'view' | 'arrange' | 'settings' | 'export' | 'live' | null>(null)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
   const [photosOpen, setPhotosOpen] = React.useState(false)
   const [helpOpen, setHelpOpen] = React.useState(false)
@@ -345,6 +434,7 @@ export default function App() {
           onSearch={() => useUi.getState().setSearchOpen(true)}
           onExport={() => setMenu(menu === 'export' ? null : 'export')}
           onView={() => setMenu(menu === 'view' ? null : 'view')}
+          onArrange={() => setMenu(menu === 'arrange' ? null : 'arrange')}
           onSettings={() => setMenu(menu === 'settings' ? null : 'settings')}
           onTemplates={() => setTemplatesOpen(true)}
           onLive={() => setMenu(menu === 'live' ? null : 'live')}
@@ -356,6 +446,7 @@ export default function App() {
           liveActive={liveActive}
           updateAvailable={updateAvailable}
           viewMenu={menu === 'view' && <ViewMenu onClose={() => setMenu(null)} />}
+          arrangeMenu={menu === 'arrange' && <ArrangeMenu onClose={() => setMenu(null)} />}
           settingsMenu={menu === 'settings' && <SettingsMenu onClose={() => setMenu(null)} />}
           exportMenu={menu === 'export' && <ExportMenu boardId={currentBoardId} onClose={() => setMenu(null)} />}
           liveMenu={menu === 'live' && <LiveSessionPanel boardId={currentBoardId} />}

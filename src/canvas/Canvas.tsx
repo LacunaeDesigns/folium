@@ -562,6 +562,27 @@ export function Canvas({ boardId }: { boardId: string }) {
     return () => window.removeEventListener('folium:view', onView)
   })
 
+  // Arrange-menu commands from the top bar (align/distribute) and z-order shortcuts
+  React.useEffect(() => {
+    const onArrange = (e: Event) => {
+      const op = (e as CustomEvent).detail?.op as string
+      if (op === 'align-left') alignSelection('left')
+      else if (op === 'align-centerX') alignSelection('centerX')
+      else if (op === 'align-right') alignSelection('right')
+      else if (op === 'align-top') alignSelection('top')
+      else if (op === 'align-middleY') alignSelection('middleY')
+      else if (op === 'align-bottom') alignSelection('bottom')
+      else if (op === 'distribute-h') distributeSelection('h')
+      else if (op === 'distribute-v') distributeSelection('v')
+      else if (op === 'step-forward' || op === 'step-back') {
+        const sel = useUi.getState().selection
+        if (sel.length === 1) stepZ(sel[0], op === 'step-forward' ? 1 : -1)
+      }
+    }
+    window.addEventListener('folium:arrange', onArrange)
+    return () => window.removeEventListener('folium:arrange', onArrange)
+  })
+
   const menuAction = (fn: () => void) => () => {
     fn()
     setCtxMenu(null)

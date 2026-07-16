@@ -55,6 +55,12 @@ export function resolveCopyTargetIds(activeEl: Element | null, selection: string
   return cardId ? [cardId] : []
 }
 
+/** Sort ids so z-order actions preserve relative stacking when applied in a loop. */
+export function zOrderedIds(ids: string[], zOf: (id: string) => number, dir: 'front' | 'back'): string[] {
+  const s = [...ids].sort((a, b) => zOf(a) - zOf(b))
+  return dir === 'front' ? s : s.reverse()
+}
+
 export function useShortcuts() {
   const store = useFoliumStore()
 
@@ -138,6 +144,36 @@ export function useShortcuts() {
         if (!ui.currentBoardId) return
         e.preventDefault()
         ui.setSelection(boardCards(store.getState(), ui.currentBoardId).map((c) => c.id))
+        return
+      }
+      // z-order: Ctrl/Cmd+]/[ move the whole selection to front/back in one
+      // shortcut; Ctrl/Cmd+Alt+]/[ step a single card one neighbour at a
+      // time (stepping several cards one z-neighbour at once has no
+      // coherent semantics, so that variant is single-selection only)
+      if (mod && e.altKey && e.key === ']') {
+        if (ui.selection.length !== 1) return
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('folium:arrange', { detail: { op: 'step-forward' } }))
+        return
+      }
+      if (mod && e.altKey && e.key === '[') {
+        if (ui.selection.length !== 1) return
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('folium:arrange', { detail: { op: 'step-back' } }))
+        return
+      }
+      if (mod && e.key === ']') {
+        if (ui.selection.length === 0) return
+        e.preventDefault()
+        const ids = zOrderedIds(ui.selection, (id) => store.getState().cards[id]?.z ?? 0, 'front')
+        for (const id of ids) store.getState().bringToFront(id)
+        return
+      }
+      if (mod && e.key === '[') {
+        if (ui.selection.length === 0) return
+        e.preventDefault()
+        const ids = zOrderedIds(ui.selection, (id) => store.getState().cards[id]?.z ?? 0, 'back')
+        for (const id of ids) store.getState().sendToBack(id)
         return
       }
       if (e.key === 'Escape') {

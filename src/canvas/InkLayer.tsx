@@ -39,15 +39,20 @@ export function InkLayer({
   boardId,
   view,
   viewportEl,
+  editSession,
 }: {
   boardId: string
   view: BoardView
   viewportEl: HTMLElement | null
+  /** re-opening an existing ink card's strokes for append/erase editing, instead of
+   *  starting a brand-new drawing. Strokes here are already in WORLD coordinates
+   *  (the caller translates from the card's local coordinates before passing them in). */
+  editSession?: { cardId: string; strokes: Stroke[] } | null
 }) {
   const store = useFoliumStore()
   const draw = useUi((s) => s.draw)
   const setDraw = useUi((s) => s.setDraw)
-  const [strokes, setStrokes] = React.useState<Stroke[]>([])
+  const [strokes, setStrokes] = React.useState<Stroke[]>(editSession?.strokes ?? [])
   const strokesRef = React.useRef<Stroke[]>([])
   strokesRef.current = strokes
   const current = React.useRef<Stroke | null>(null)
@@ -70,7 +75,11 @@ export function InkLayer({
       liveClean && liveClean.width > 0 && liveClean.points.length >= 4
         ? [...strokesRef.current, liveClean]
         : strokesRef.current
-    if (!all.length) return
+    if (!all.length) {
+      // erased every stroke of an existing card down to nothing: the card goes too
+      if (editSession) store.getState().trashCards([editSession.cardId])
+      return
+    }
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
@@ -94,16 +103,29 @@ export function InkLayer({
       ...s,
       points: s.points.map((v, i) => (i % 2 === 0 ? v - minX : v - minY)),
     }))
-    const st = store.getState()
-    const id = st.addCard(boardId, 'ink', {
-      x: minX,
-      y: minY,
-      content: { kind: 'ink', strokes: rebased, natW, natH } as never,
-    })
-    st.resizeCard(id, natW, natH)
+    if (editSession) {
+      // one single set() call = one undo entry for the whole append/erase session,
+      // regardless of how many strokes were drawn or erased along the way (those all
+      // happened in local React state above, never touching the store until now)
+      store.getState().updateCard(editSession.cardId, {
+        x: minX,
+        y: minY,
+        w: natW,
+        h: natH,
+        content: { kind: 'ink', strokes: rebased, natW, natH },
+      } as never)
+    } else {
+      const st = store.getState()
+      const id = st.addCard(boardId, 'ink', {
+        x: minX,
+        y: minY,
+        content: { kind: 'ink', strokes: rebased, natW, natH } as never,
+      })
+      st.resizeCard(id, natW, natH)
+    }
     strokesRef.current = []
     setStrokes([])
-  }, [boardId, store])
+  }, [boardId, store, editSession])
 
   // finalize when the draw tool is dropped (unmount)
   React.useEffect(() => () => finalize(), [finalize])
@@ -222,13 +244,7 @@ export function InkLayer({
         >
           <Icon name="eraser" size={15} />
         </button>
-        <button
-          className="draw-done"
-          onClick={() => {
-            finalize()
-            useUi.getState().setTool(null)
-          }}
-        >
+        <button className="draw-done" onClick={() => useUi.getState().setTool(null)}>
           Done
         </button>
       </div>

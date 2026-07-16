@@ -422,6 +422,17 @@ export default function App() {
     return () => window.removeEventListener('hashchange', apply)
   }, [rootId, store])
 
+  // PWA relaunch glue: with launch_handler 'focus-existing', activating the OS
+  // "Quick capture" shortcut while a window is open focuses it WITHOUT navigating —
+  // no hashchange fires, so the hash route above never sees #/capture. The target
+  // URL arrives through launchQueue instead. Cold launches navigate normally and
+  // are handled by the hash route.
+  React.useEffect(() => {
+    window.launchQueue?.setConsumer((params) => {
+      if (params.targetURL?.includes('#/capture')) useUi.getState().setCaptureOpen(true)
+    })
+  }, [])
+
   // close top bar menus on outside click
   React.useEffect(() => {
     if (!menu) return

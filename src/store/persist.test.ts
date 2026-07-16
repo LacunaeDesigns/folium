@@ -15,6 +15,8 @@ import {
   flushAutosave,
 } from './persist'
 import { saveBoardAsTemplate } from './templates'
+import { noteDoc } from '../templates/builder'
+import { welcomeNoteDoc } from './welcome'
 import { DocState, Template } from '../model/types'
 
 function docOf(store: ReturnType<typeof createFoliumStore>) {
@@ -57,6 +59,34 @@ describe('document persistence', () => {
 })
 
 describe('legacy asset healing', () => {
+  it('replaces the untouched AtlasNote-era welcome note with the current one', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    const st = store.getState()
+    const legacy = st.addCard(st.rootId, 'note', {
+      x: 0,
+      y: 0,
+      content: {
+        doc: noteDoc(
+          '# Welcome to AtlasNote 👋',
+          'Your local Milanote-style board. Everything lives on this machine.',
+          '',
+          '## The basics',
+          'Pick a tool on the left, then click the canvas.',
+        ),
+      } as never,
+    })
+    const mine = store.getState().addCard(st.rootId, 'note', {
+      x: 100,
+      y: 0,
+      content: { doc: noteDoc('My own note about moodboards') } as never,
+    })
+    await saveDoc(db, docOf(store))
+    const loaded = await loadDoc(db)
+    expect((loaded!.cards[legacy].content as { doc: unknown }).doc).toEqual(welcomeNoteDoc())
+    expect(loaded!.cards[mine].content).toEqual(docOf(store).cards[mine].content)
+  })
+
   it('rewrites the AtlasNote-era welcome image to the current asset on load', async () => {
     const db = openDb('test-' + nanoid(6))
     const store = createFoliumStore()

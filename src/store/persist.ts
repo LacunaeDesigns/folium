@@ -1,6 +1,7 @@
 import Dexie, { Table } from 'dexie'
 import { nanoid } from 'nanoid'
 import { Card, DocState, Template } from '../model/types'
+import { LEGACY_WELCOME_SNIPPET, welcomeNoteDoc } from './welcome'
 import { FoliumStore } from './store'
 
 interface DocRow extends DocState {
@@ -55,21 +56,38 @@ export async function saveDoc(db: FoliumDb, doc: DocState): Promise<void> {
 }
 
 /* Pre-rebrand (AtlasNote-era) workspaces were seeded with a welcome image
- * pointing at an asset the 2026-07-13 rebrand deleted; the card is data, so
- * those docs 404 forever unless healed on load. */
+ * pointing at an asset the 2026-07-13 rebrand deleted, and a welcome note
+ * naming the old brand; the cards are data, so those docs stay stale forever
+ * unless healed on load. The note is only replaced when it still contains the
+ * legacy seed sentence verbatim — an edited note is user content and is left
+ * alone. */
 const LEGACY_ASSET_URLS: Record<string, string> = {
   '/brand/welcome-moodboard.png': '/brand/welcome.svg',
+}
+
+function tipTapText(node: unknown): string {
+  if (!node || typeof node !== 'object') return ''
+  const n = node as { text?: string; content?: unknown[] }
+  const own = typeof n.text === 'string' ? n.text : ''
+  const kids = Array.isArray(n.content) ? n.content.map(tipTapText).join(' ') : ''
+  return own + kids
 }
 
 export function healLegacyAssetUrls(doc: DocState): DocState {
   let cards: DocState['cards'] | null = null
   for (const [id, card] of Object.entries(doc.cards)) {
-    if (card.type !== 'image') continue
-    const content = card.content as { url?: string }
-    const next = content.url ? LEGACY_ASSET_URLS[content.url] : undefined
-    if (!next) continue
-    cards = cards ?? { ...doc.cards }
-    cards[id] = { ...card, content: { ...content, url: next } as Card['content'] }
+    if (card.type === 'image') {
+      const content = card.content as { url?: string }
+      const next = content.url ? LEGACY_ASSET_URLS[content.url] : undefined
+      if (!next) continue
+      cards = cards ?? { ...doc.cards }
+      cards[id] = { ...card, content: { ...content, url: next } as Card['content'] }
+    } else if (card.type === 'note') {
+      const content = card.content as { doc?: unknown }
+      if (!tipTapText(content.doc).includes(LEGACY_WELCOME_SNIPPET)) continue
+      cards = cards ?? { ...doc.cards }
+      cards[id] = { ...card, content: { ...content, doc: welcomeNoteDoc() } as Card['content'] }
+    }
   }
   return cards ? { ...doc, cards } : doc
 }

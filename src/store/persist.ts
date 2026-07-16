@@ -208,16 +208,22 @@ export function computeReferencedBlobIds(
   return referenced
 }
 
-/** Delete every stored blob not referenced by a card (in any of `states`) or a saved template.
- *  Pass the current doc plus zundo's past/future states so a blob still reachable via undo/redo
- *  is never collected. Returns the deleted ids. */
+/** Delete every stored blob not referenced by a card (in any of `states`), a saved template, or
+ *  a retained version snapshot. Pass the current doc plus zundo's past/future states so a blob
+ *  still reachable via undo/redo is never collected. Returns the deleted ids. */
 export async function gcBlobs(db: FoliumDb, states: readonly Partial<DocState>[]): Promise<string[]> {
-  const [allIdsRaw, templates] = await Promise.all([
+  const [allIdsRaw, templates, snapshotDocs] = await Promise.all([
     db.blobs.toCollection().primaryKeys(),
     db.templates.toArray(),
+    db.snapshotDocs.toArray(),
   ])
   const allIds = allIdsRaw as unknown as string[]
-  const referenced = computeReferencedBlobIds(states, templates, allIds)
+  // retained version snapshots count as referencers — restoring one must find its images
+  const referenced = computeReferencedBlobIds(
+    [...states, ...snapshotDocs.map((r) => r.doc)],
+    templates,
+    allIds,
+  )
   const orphaned = allIds.filter((id) => !referenced.has(id))
   await Promise.all(orphaned.map((id) => deleteBlob(db, id)))
   return orphaned

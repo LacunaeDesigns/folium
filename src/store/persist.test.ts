@@ -287,6 +287,27 @@ describe('blob garbage collection', () => {
     expect(deleted).toEqual([blobId])
     expect(await getBlob(db, blobId)).toBeUndefined()
   })
+
+  it('keeps a blob alive while a snapshot still references it', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    const blobId = await putBlob(db, new Blob(['img'], { type: 'image/png' }))
+    const id = store.getState().addCard(store.getState().rootId, 'image', { content: { blobId } as never })
+    const { writeSnapshot } = await import('./snapshots')
+    await writeSnapshot(db, docOf(store), Date.now())
+
+    // permanently delete the card from the live doc, then GC with an empty undo stack
+    store.getState().trashCards([id])
+    store.getState().emptyTrash()
+    store.temporal.getState().clear()
+    expect(await gcBlobs(db, [docOf(store)])).toEqual([])
+    expect(await getBlob(db, blobId)).toBeDefined() // snapshot still holds it
+
+    await db.snapshots.clear()
+    await db.snapshotDocs.clear()
+    expect(await gcBlobs(db, [docOf(store)])).toEqual([blobId])
+    expect(await getBlob(db, blobId)).toBeUndefined() // no referencer left
+  })
 })
 
 describe('computeReferencedBlobIds', () => {

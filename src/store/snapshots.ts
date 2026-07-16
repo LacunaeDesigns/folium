@@ -35,7 +35,9 @@ export function computeRetainedIds(
   return keep
 }
 
-/** Write a snapshot of the doc slice, then prune both tables to the retention ladder. */
+/** Write a snapshot of the doc slice, then prune both tables to the retention ladder. Pruning
+ *  does not run blob GC itself — a blob whose last referencer was a pruned snapshot is collected
+ *  by the next natural GC (permanent card deletion or the boot sweep). */
 export async function writeSnapshot(db: FoliumDb, doc: DocState, now = Date.now()): Promise<string> {
   const id = nanoid(12)
   const meta: SnapshotMetaRow = {

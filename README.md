@@ -87,6 +87,9 @@ Tests: `npm test` (Vitest).
   pins and replies land on your board in real time over an encrypted peer-to-peer
   connection (PeerJS signaling, no accounts, comment-only access).
 - **Presentation mode**: fullscreen step-through of a board (View → Present).
+- **Install as an app**: PWA — standalone window with its own taskbar icon, a
+  quick-capture jump list + global hotkey, and full offline use (see
+  [Install as an app](#install-as-an-app) above).
 
 ## Portfolio review workflow
 
@@ -145,8 +148,10 @@ just won't see stock-photo search results.
 
 Folium is built and tested against current **Chrome** and **Edge**. Other
 Chromium-based browsers should work for core features. Cross-machine sync
-specifically requires the File System Access API (Chrome/Edge only — see above).
-Firefox and Safari aren't actively tested and may be missing features.
+specifically requires the File System Access API (Chrome/Edge only — see above),
+and installing as an app is also Chrome/Edge-specific (Firefox and Safari don't
+support desktop PWA install). Firefox and Safari aren't actively tested and may
+be missing features.
 
 ## License
 

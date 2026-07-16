@@ -8,6 +8,7 @@ import { TrashView } from './ui/TrashView'
 import { HistoryPanel } from './ui/HistoryPanel'
 import { SearchPanel } from './ui/SearchPanel'
 import { TemplateGallery } from './ui/TemplateGallery'
+import { CaptureModal } from './ui/CaptureModal'
 import { ExportMenu } from './ui/ExportMenu'
 import { PresentMode } from './ui/PresentMode'
 import { LiveSessionPanel } from './ui/LiveSessionPanel'
@@ -356,6 +357,7 @@ export default function App() {
   const historyOpen = useUi((s) => s.historyOpen)
   const setHistoryOpen = useUi((s) => s.setHistoryOpen)
   const searchOpen = useUi((s) => s.searchOpen)
+  const captureOpen = useUi((s) => s.captureOpen)
   const presentationMode = useUi((s) => s.presentationMode)
   const appTheme = useUi((s) => s.appTheme)
   const showGrid = useUi((s) => s.showGrid)
@@ -394,9 +396,18 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', effectiveTheme)
   }, [effectiveTheme])
 
-  // hash routing: #/b/<boardId>; back/forward supported
+  // hash routing: #/b/<boardId>; #/capture opens quick-capture then normalizes back;
+  // back/forward supported
   React.useEffect(() => {
     const apply = () => {
+      if (location.hash === '#/capture') {
+        useUi.getState().setCaptureOpen(true)
+        const board = useUi.getState().currentBoardId ?? rootId
+        // replaceState (not location.hash=) so this doesn't push a history entry or
+        // re-trigger 'hashchange' — otherwise this handler would loop on itself
+        history.replaceState(null, '', '#/b/' + board)
+        return
+      }
       const m = location.hash.match(/^#\/b\/(.+)$/)
       const id = m ? m[1] : rootId
       const target = store.getState().boards[id] ? id : rootId
@@ -477,6 +488,9 @@ export default function App() {
       {searchOpen && <SearchPanel />}
       {templatesOpen && (
         <TemplateGallery boardId={currentBoardId} onClose={() => setTemplatesOpen(false)} />
+      )}
+      {captureOpen && (
+        <CaptureModal rootId={rootId} onClose={() => useUi.getState().setCaptureOpen(false)} />
       )}
       {photosOpen && (
         <PexelsPanel boardId={currentBoardId} onClose={() => setPhotosOpen(false)} />

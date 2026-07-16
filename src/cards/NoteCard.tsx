@@ -51,6 +51,13 @@ export function setOrderedList(editor: Editor) {
   editor.chain().focus().toggleOrderedList().run()
 }
 
+/** Commits from onUpdate are only valid once the editor is user-editable;
+ *  TipTap's mount-time normalization of the stored doc fires onUpdate on a
+ *  non-editable editor and must not reach the store (undo + autosave). */
+export function shouldCommitUpdate(editor: { isEditable: boolean }): boolean {
+  return editor.isEditable
+}
+
 function FormatBar({ editor, noteId, bg }: { editor: Editor; noteId: string; bg: string }) {
   const store = useFoliumStore()
   const btn = (
@@ -122,7 +129,7 @@ export function NoteCard({ card, readOnly }: CardBodyProps) {
     content: (content.doc as object) ?? '',
     editable: false,
     editorProps: { attributes: { spellcheck: 'true' } },
-    onUpdate: ({ editor }) => commit(editor.getJSON()),
+    onUpdate: ({ editor }) => { if (shouldCommitUpdate(editor)) commit(editor.getJSON()) },
   })
 
   React.useEffect(() => {

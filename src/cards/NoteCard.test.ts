@@ -4,7 +4,7 @@ import { AllSelection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
-import { setBulletList, setOrderedList } from './NoteCard'
+import { setBulletList, setOrderedList, shouldCommitUpdate } from './NoteCard'
 
 // destroy every editor a test created — an undestroyed EditorView leaves
 // ProseMirror DOMObserver timers running, which fire after the jsdom
@@ -113,5 +113,19 @@ describe('list type switching', () => {
 
     expect(editor.isActive('orderedList')).toBe(false)
     expect(editor.getText().trim()).toBe('solo')
+  })
+})
+
+describe('shouldCommitUpdate', () => {
+  it('blocks the mount-time normalization update (editor not editable)', () => {
+    const editor = makeEditor('<p>hi</p>')
+    editor.setEditable(false)
+    expect(shouldCommitUpdate(editor)).toBe(false)
+  })
+
+  it('allows updates while editing', () => {
+    const editor = makeEditor('<p>hi</p>')
+    editor.setEditable(true)
+    expect(shouldCommitUpdate(editor)).toBe(true)
   })
 })

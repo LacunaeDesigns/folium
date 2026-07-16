@@ -1,6 +1,6 @@
 import Dexie, { Table } from 'dexie'
 import { nanoid } from 'nanoid'
-import { DocState, Template } from '../model/types'
+import { Card, DocState, Template } from '../model/types'
 import { FoliumStore } from './store'
 
 interface DocRow extends DocState {
@@ -54,11 +54,31 @@ export async function saveDoc(db: FoliumDb, doc: DocState): Promise<void> {
   await db.doc.put({ id: 'doc', ...doc })
 }
 
+/* Pre-rebrand (AtlasNote-era) workspaces were seeded with a welcome image
+ * pointing at an asset the 2026-07-13 rebrand deleted; the card is data, so
+ * those docs 404 forever unless healed on load. */
+const LEGACY_ASSET_URLS: Record<string, string> = {
+  '/brand/welcome-moodboard.png': '/brand/welcome.svg',
+}
+
+export function healLegacyAssetUrls(doc: DocState): DocState {
+  let cards: DocState['cards'] | null = null
+  for (const [id, card] of Object.entries(doc.cards)) {
+    if (card.type !== 'image') continue
+    const content = card.content as { url?: string }
+    const next = content.url ? LEGACY_ASSET_URLS[content.url] : undefined
+    if (!next) continue
+    cards = cards ?? { ...doc.cards }
+    cards[id] = { ...card, content: { ...content, url: next } as Card['content'] }
+  }
+  return cards ? { ...doc, cards } : doc
+}
+
 export async function loadDoc(db: FoliumDb): Promise<DocState | null> {
   const row = await db.doc.get('doc')
   if (!row) return null
   const { id: _id, ...doc } = row
-  return doc
+  return healLegacyAssetUrls(doc)
 }
 
 function blobToBuffer(blob: Blob): Promise<ArrayBuffer> {

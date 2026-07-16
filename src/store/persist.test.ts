@@ -56,6 +56,42 @@ describe('document persistence', () => {
   })
 })
 
+describe('legacy asset healing', () => {
+  it('rewrites the AtlasNote-era welcome image to the current asset on load', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    const st = store.getState()
+    const id = st.addCard(st.rootId, 'image', {
+      x: 0,
+      y: 0,
+      content: { kind: 'image', url: '/brand/welcome-moodboard.png', caption: 'Boards can hold anything' } as never,
+    })
+    await saveDoc(db, docOf(store))
+    const loaded = await loadDoc(db)
+    expect((loaded!.cards[id].content as { url?: string }).url).toBe('/brand/welcome.svg')
+  })
+
+  it('leaves current urls and blob-backed images alone', async () => {
+    const db = openDb('test-' + nanoid(6))
+    const store = createFoliumStore()
+    const st = store.getState()
+    const current = st.addCard(st.rootId, 'image', {
+      x: 0,
+      y: 0,
+      content: { kind: 'image', url: '/brand/welcome.svg', caption: '' } as never,
+    })
+    const blobbed = store.getState().addCard(st.rootId, 'image', {
+      x: 0,
+      y: 0,
+      content: { kind: 'image', blobId: 'blob-1', caption: '' } as never,
+    })
+    await saveDoc(db, docOf(store))
+    const loaded = await loadDoc(db)
+    expect(loaded!.cards[current].content).toEqual(docOf(store).cards[current].content)
+    expect(loaded!.cards[blobbed].content).toEqual(docOf(store).cards[blobbed].content)
+  })
+})
+
 /** fake-indexeddb clones lack Blob.text(); FileReader works in both jsdom and browsers */
 function readBlobText(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {

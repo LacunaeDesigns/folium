@@ -39,6 +39,15 @@ export function columnContainsSelection(members: Pick<Card, 'id'>[], selection: 
   return members.some((m) => selection.includes(m.id))
 }
 
+// a locked card never visually follows a drag, even when it's swept along in
+// a multi-selection dragged by a different (unlocked) card — the store's
+// moveCards already refuses to move it, so the live-drag CSS transform must
+// agree, or the card would visually jump for the whole gesture and only
+// snap back to its real (unmoved) position after drop
+export function isCardDragging(drag: DragState | null, card: Pick<Card, 'id' | 'locked'>): boolean {
+  return !!drag && drag.ids.includes(card.id) && !card.locked
+}
+
 // a plain click on a card only ever moves selection, never blurs — so a text
 // field focused elsewhere (e.g. a column title clicked earlier) stays "active"
 // after selecting a different card, and isTyping()-gated shortcuts like
@@ -154,7 +163,7 @@ export const CardShell = React.memo(function CardShell({ card, zoom, drag, setDr
   // reference back, so this subscription is a no-op for the common case
   const members = useFolium((s) => (card.type === 'column' ? columnCards(s, card.id) : EMPTY_MEMBERS))
   const hasSelectedMember = useUi((s) => card.type === 'column' && columnContainsSelection(members, s.selection))
-  const isDragging = !!drag && drag.ids.includes(card.id)
+  const isDragging = isCardDragging(drag, card)
 
   const [resizePreview, setResizePreview] = React.useState<{ w: number; h?: number; x: number; y: number } | null>(null)
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cardZIndex, columnContainsSelection, blurActiveFormField } from './CardShell'
+import { cardZIndex, columnContainsSelection, blurActiveFormField, isCardDragging } from './CardShell'
 import { Card } from '../model/types'
 
 function makeCard(patch: Partial<Card> = {}): Card {
@@ -58,6 +58,27 @@ describe('columnContainsSelection', () => {
 
   it('is false for an empty member list', () => {
     expect(columnContainsSelection([], ['m1'])).toBe(false)
+  })
+})
+
+describe('isCardDragging', () => {
+  it('is false when there is no drag in progress', () => {
+    expect(isCardDragging(null, makeCard())).toBe(false)
+  })
+
+  it('is true when the card is part of the drag and unlocked', () => {
+    const drag = { ids: ['c1', 'c2'], dx: 5, dy: 5 }
+    expect(isCardDragging(drag, makeCard({ id: 'c1' }))).toBe(true)
+  })
+
+  it('is false for a locked card even when swept along in a multi-selection drag', () => {
+    const drag = { ids: ['c1', 'c2'], dx: 5, dy: 5 }
+    expect(isCardDragging(drag, makeCard({ id: 'c1', locked: true }))).toBe(false)
+  })
+
+  it('is false for a card not included in the drag', () => {
+    const drag = { ids: ['c2'], dx: 5, dy: 5 }
+    expect(isCardDragging(drag, makeCard({ id: 'c1' }))).toBe(false)
   })
 })
 

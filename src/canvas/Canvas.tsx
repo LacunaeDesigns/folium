@@ -10,7 +10,7 @@ import { getClipboard, setClipboardStamped, hasClipboard, clipMatchesNative } fr
 import { boardCards } from '../store/selectors'
 import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { ToolId } from '../ui/Toolbar'
-import { CardShell, DragState } from './CardShell'
+import { CardShell, DragState, isCardDragging } from './CardShell'
 import { Icon } from '../ui/Icons'
 import { normRect, Rect, rectsIntersect, screenToWorld, zoomAt, clampZoom, Pt, safeCapture } from './coords'
 import './canvas.css'
@@ -702,8 +702,10 @@ export function Canvas({ boardId }: { boardId: string }) {
             key={card.id}
             card={card}
             zoom={view.zoom}
-            // pass null to cards not being dragged so React.memo can skip them
-            drag={drag && drag.ids.includes(card.id) ? drag : null}
+            // pass null to cards not being dragged so React.memo can skip
+            // them — also true of a locked card swept into a group drag,
+            // since it never actually moves
+            drag={isCardDragging(drag, card) ? drag : null}
             setDrag={setDrag}
             onContextMenu={onCardContextMenu}
             lineToolActive={activeTool === 'line'}

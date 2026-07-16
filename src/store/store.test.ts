@@ -483,6 +483,23 @@ describe('locking', () => {
     s().trashCards([a])
     expect(s().cards[a].trashed).toBe(true)
   })
+  it('moving a frame does not drag a locked member along', () => {
+    const frame = s().addCard(s().rootId, 'frame', { x: 0, y: 0, w: 400, h: 300 })
+    const a = s().addCard(s().rootId, 'note', { x: 50, y: 50 })
+    s().updateCard(a, { locked: true })
+    s().moveCards([frame], 30, 40)
+    expect(s().cards[frame].x).toBe(30)
+    expect(s().cards[a].x).toBe(50)
+    expect(s().cards[a].y).toBe(50)
+  })
+  it('moveCards on an all-locked selection pushes no undo entry', () => {
+    const a = s().addCard(s().rootId, 'note', { x: 0, y: 0 })
+    s().updateCard(a, { locked: true })
+    store.temporal.getState().clear()
+    s().moveCards([a], 5, 5)
+    expect(s().cards[a].x).toBe(0)
+    expect(store.temporal.getState().pastStates.length).toBe(0)
+  })
 })
 
 describe('lines', () => {

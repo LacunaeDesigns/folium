@@ -397,21 +397,30 @@ export function createFoliumStore(initial?: DocState): FoliumStore {
         },
 
         moveCards(ids, dx, dy) {
+          // locked cards don't move — drag, arrow-nudge and a moved frame
+          // dragging its members all funnel through here, so gating in one
+          // place covers all of them. Bail out before calling set() at all
+          // when there's nothing to move: zundo has no equality/diff option
+          // configured, so it pushes a new undo entry on every set() call
+          // regardless of whether the returned state actually changed —
+          // returning state unchanged from inside the updater does not
+          // prevent that push, so an all-locked selection (e.g. holding an
+          // arrow key on a locked card) would otherwise flood the undo stack
+          // with phantom no-op entries.
+          const liveIds = ids.filter((id) => !get().cards[id]?.locked)
+          if (liveIds.length === 0) return
           set((s) => {
-            // locked cards don't move — drag, arrow-nudge and a moved frame
-            // dragging its members all funnel through here, so gating in one
-            // place covers all of them
-            const liveIds = ids.filter((id) => !s.cards[id]?.locked)
-            if (liveIds.length === 0) return s
             const cards = { ...s.cards }
             const idSet = new Set(liveIds)
-            // a moved frame drags its (unselected) members along
+            // a moved frame drags its (unselected) members along — but never
+            // a locked one; the store's contract is that locked cards don't
+            // move regardless of what drags them
             const extra = new Set<string>()
             for (const id of liveIds) {
               const c = cards[id]
               if (c?.type === 'frame') {
                 for (const k of Object.values(cards)) {
-                  if (k.frameId === id && !idSet.has(k.id)) extra.add(k.id)
+                  if (k.frameId === id && !idSet.has(k.id) && !k.locked) extra.add(k.id)
                 }
               }
             }

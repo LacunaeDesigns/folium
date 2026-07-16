@@ -1,5 +1,6 @@
 import React from 'react'
 import { useFoliumStore } from '../store/context'
+import { plainTextNoteDoc } from '../store/store'
 import { Icon } from './Icons'
 import './panels.css'
 
@@ -12,9 +13,7 @@ export function CaptureModal({ rootId, onClose }: { rootId: string; onClose: () 
     if (!value) return
     store.getState().addCard(rootId, 'note', {
       inUnsorted: true,
-      content: {
-        doc: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: value }] }] },
-      } as never,
+      content: { doc: plainTextNoteDoc(value) } as never,
     })
     setText('')
   }

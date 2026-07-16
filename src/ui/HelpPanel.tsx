@@ -42,6 +42,7 @@ const CARD_TYPES: { icon: IconName; name: string; desc: string }[] = [
 
 const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: 'Ctrl+K', action: 'Open search' },
+  { keys: 'Alt+N', action: 'Quick capture a note to Inbox' },
   { keys: 'Ctrl+S', action: 'Save/sync now' },
   { keys: 'Ctrl+Z', action: 'Undo' },
   { keys: 'Ctrl+Shift+Z / Ctrl+Y', action: 'Redo' },

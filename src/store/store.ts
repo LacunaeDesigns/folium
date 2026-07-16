@@ -76,6 +76,11 @@ export type FoliumStore = StoreApi<FoliumState> & {
   temporal: StoreApi<TemporalState<DocSlice>>
 }
 
+/** Minimal single-paragraph TipTap doc for a plain-text note (unsorted quick-add, quick capture). */
+export function plainTextNoteDoc(text: string) {
+  return { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] }
+}
+
 export function defaultContent(type: CardType): CardContent {
   switch (type) {
     case 'note':

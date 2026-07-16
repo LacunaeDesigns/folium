@@ -402,7 +402,8 @@ export default function App() {
     const apply = () => {
       if (location.hash === '#/capture') {
         useUi.getState().setCaptureOpen(true)
-        const board = useUi.getState().currentBoardId ?? rootId
+        const current = useUi.getState().currentBoardId
+        const board = current && store.getState().boards[current] ? current : rootId
         // replaceState (not location.hash=) so this doesn't push a history entry or
         // re-trigger 'hashchange' — otherwise this handler would loop on itself
         history.replaceState(null, '', '#/b/' + board)

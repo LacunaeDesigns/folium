@@ -6,6 +6,7 @@ import { getCardBody } from '../cards/registry'
 import { Card } from '../model/types'
 import { Icon } from './Icons'
 import { safeCapture } from '../canvas/coords'
+import { plainTextNoteDoc } from '../store/store'
 import './panels.css'
 
 function TrayItem({ card }: { card: Card }) {
@@ -80,9 +81,7 @@ export function UnsortedTray({ boardId }: { boardId: string }) {
     if (!text) return
     store.getState().addCard(boardId, 'note', {
       inUnsorted: true,
-      content: {
-        doc: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] },
-      } as never,
+      content: { doc: plainTextNoteDoc(text) } as never,
     })
     setQuick('')
   }

@@ -1,5 +1,7 @@
 // Regenerates the PWA icons in public/icons/ from the brand SVG.
-// Run manually when the brand mark changes: node scripts/generate-icons.mjs
+// sharp is intentionally NOT a project dependency (end-user installs would
+// ship its native binary via serve.mjs's npm install). To regenerate:
+//   npm install --no-save sharp && node scripts/generate-icons.mjs
 import sharp from 'sharp'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'

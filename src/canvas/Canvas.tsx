@@ -6,7 +6,7 @@ import { StickerPanel } from './StickerPanel'
 import { useFolium, useFoliumStore, useDb } from '../store/context'
 import { putBlob, getBlob } from '../store/persist'
 import { collectClip } from '../store/store'
-import { getClipboard, setClipboard, hasClipboard } from '../store/clipboard'
+import { getClipboard, setClipboardStamped, hasClipboard, clipMatchesNative } from '../store/clipboard'
 import { boardCards } from '../store/selectors'
 import { DEFAULT_VIEW, useUi } from '../store/uiStore'
 import { ToolId } from '../ui/Toolbar'
@@ -34,6 +34,13 @@ export function Canvas({ boardId }: { boardId: string }) {
   const activeTool = useUi((s) => s.activeTool)
   const setTool = useUi((s) => s.setTool)
   const snapGuides = useUi((s) => s.snapGuides)
+
+  // kept in sync every render so callbacks with stable identity (e.g.
+  // onConnectMove below) can read the latest view without taking it as a
+  // dep — `view` is a new object every pan/zoom tick, and depending on it
+  // directly would give every memoized CardShell a new prop each frame
+  const viewRef = React.useRef(view)
+  viewRef.current = view
 
   const viewportRef = React.useRef<HTMLDivElement>(null)
   const [drag, setDrag] = React.useState<DragState | null>(null)
@@ -68,9 +75,8 @@ export function Canvas({ boardId }: { boardId: string }) {
   const onConnectMove = React.useCallback((clientX: number, clientY: number) => {
     if (!connectFrom.current) return
     const local = clientToLocal(clientX, clientY)
-    setCursorWorld(screenToWorld(view, local.x, local.y))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view])
+    setCursorWorld(screenToWorld(viewRef.current, local.x, local.y))
+  }, [])
   const onConnectEnd = React.useCallback((clientX: number, clientY: number, ctrlKey: boolean) => {
     const from = connectFrom.current
     connectFrom.current = null
@@ -208,11 +214,17 @@ export function Canvas({ boardId }: { boardId: string }) {
         vp.clientWidth / 2,
         vp.clientHeight / 2,
       )
-      // the in-app card clipboard always wins, even while focused in a form
-      // field — e.g. clicking a column's title to select+copy it (see
-      // resolveCopyTargetIds) naturally leaves focus right there, and Ctrl+V
-      // right after is clearly meant to paste that card, not native text
-      if (hasClipboard()) {
+      // the in-app card clipboard wins only while the native (OS) clipboard
+      // still carries the freshness stamp written when it was set (see
+      // clipboard.ts) — that's true even while focused in a form field, e.g.
+      // clicking a column's title to select+copy it (see resolveCopyTargetIds)
+      // naturally leaves focus right there, and Ctrl+V right after is clearly
+      // meant to paste that card, not native text. Once something copied
+      // outside the app (browser text, an OS screenshot) replaces the native
+      // clipboard, the stamp no longer matches and we fall through to the
+      // native handling below instead of resurrecting a stale card.
+      const nativeText = e.clipboardData?.getData('text/plain')
+      if (hasClipboard() && clipMatchesNative(nativeText)) {
         e.preventDefault()
         const ids = store.getState().pasteClip(getClipboard()!, boardId, center)
         if (ids.length) useUi.getState().setSelection(ids)
@@ -356,6 +368,23 @@ export function Canvas({ boardId }: { boardId: string }) {
       }
       setMarquee(null)
     }
+  }
+
+  // the browser/OS aborted the gesture outright (e.g. losing capture) — reset
+  // both gesture refs and the marquee overlay unconditionally rather than
+  // committing anything, so a cancelled marquee mid-drag can't survive into
+  // (and get misread by) a subsequent pan gesture
+  const onPointerCancel = (e: React.PointerEvent) => {
+    try {
+      const el = e.currentTarget as HTMLElement
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId)
+    } catch {
+      /* capture already gone, or the capture APIs aren't available (e.g. jsdom) */
+    }
+    panGesture.current = null
+    marqueeGesture.current = null
+    marqueeRect.current = null
+    setMarquee(null)
   }
 
   const onWheel = (e: WheelEvent) => {
@@ -550,10 +579,10 @@ export function Canvas({ boardId }: { boardId: string }) {
   }
 
   const copySelection = () =>
-    setClipboard(collectClip(store.getState(), useUi.getState().selection))
+    setClipboardStamped(collectClip(store.getState(), useUi.getState().selection))
   const cutSelection = () => {
     const sel = useUi.getState().selection
-    setClipboard(collectClip(store.getState(), sel))
+    setClipboardStamped(collectClip(store.getState(), sel))
     store.getState().trashCards(sel)
     useUi.getState().clearSelection()
   }
@@ -610,6 +639,7 @@ export function Canvas({ boardId }: { boardId: string }) {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       onDoubleClick={onDoubleClick}
       onDragOver={(e) => {
         if (

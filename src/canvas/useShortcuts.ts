@@ -1,7 +1,7 @@
 import React from 'react'
 import { useFoliumStore } from '../store/context'
 import { collectClip } from '../store/store'
-import { setClipboard } from '../store/clipboard'
+import { setClipboard, setClipboardStamped } from '../store/clipboard'
 import { boardCards } from '../store/selectors'
 import { useUi } from '../store/uiStore'
 
@@ -96,7 +96,7 @@ export function useShortcuts() {
           return
         }
         e.preventDefault()
-        setClipboard(collectClip(store.getState(), ids))
+        setClipboardStamped(collectClip(store.getState(), ids))
         return
       }
       if (mod && e.key.toLowerCase() === 'x') {
@@ -106,7 +106,7 @@ export function useShortcuts() {
           return
         }
         e.preventDefault()
-        setClipboard(collectClip(store.getState(), ids))
+        setClipboardStamped(collectClip(store.getState(), ids))
         store.getState().trashCards(ids)
         ui.clearSelection()
         return

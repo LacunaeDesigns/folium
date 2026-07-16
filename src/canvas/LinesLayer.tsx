@@ -237,6 +237,11 @@ export function LinesLayer({
     store.getState().updateLine(lineId, { [which]: end } as Partial<Line>)
   }
 
+  // the browser/OS aborted the gesture (e.g. losing capture without a normal
+  // pointerup) — reset without committing, so the line doesn't stay rendered
+  // at the dragged position until the same handle is dragged again
+  const onEndPointerCancel = () => setEndDrag(null)
+
   const onMidPointerDown = (line: Line, a: Pt, b: Pt) => (e: React.PointerEvent) => {
     e.stopPropagation()
     const el = e.currentTarget as Element
@@ -262,6 +267,9 @@ export function LinesLayer({
     setMidDrag(null)
     store.getState().updateLine(cur.lineId, { curve: cur.curve })
   }
+
+  // same recovery as onEndPointerCancel, for the curve-midpoint drag
+  const onMidPointerCancel = () => setMidDrag(null)
 
   const translateEnd = (end: LineEnd, dx: number, dy: number): LineEnd => {
     if ('cardId' in end) return end
@@ -305,6 +313,9 @@ export function LinesLayer({
     setBodyDrag(null)
     store.getState().updateLine(cur.lineId, { from: cur.from, to: cur.to })
   }
+
+  // same recovery as onEndPointerCancel, for the whole-line body drag
+  const onBodyPointerCancel = () => setBodyDrag(null)
 
   const renderLine = (line: Line) => {
     const dragging = endDrag?.lineId === line.id ? endDrag : null
@@ -352,6 +363,7 @@ export function LinesLayer({
           onPointerDown={onBodyPointerDown(line)}
           onPointerMove={onBodyPointerMove}
           onPointerUp={onBodyPointerUp}
+          onPointerCancel={onBodyPointerCancel}
           onDoubleClick={(e) => {
             e.stopPropagation()
             setLabelEdit(line.id)
@@ -385,6 +397,7 @@ export function LinesLayer({
               onPointerDown={onEndPointerDown(line, 'from')}
               onPointerMove={onEndPointerMove}
               onPointerUp={onEndPointerUp}
+              onPointerCancel={onEndPointerCancel}
             />
             <circle
               className="line-end"
@@ -394,6 +407,7 @@ export function LinesLayer({
               onPointerDown={onEndPointerDown(line, 'to')}
               onPointerMove={onEndPointerMove}
               onPointerUp={onEndPointerUp}
+              onPointerCancel={onEndPointerCancel}
             />
             {!line.elbow && (
               <circle
@@ -404,6 +418,7 @@ export function LinesLayer({
                 onPointerDown={onMidPointerDown(line, a, b)}
                 onPointerMove={onMidPointerMove}
                 onPointerUp={onMidPointerUp}
+                onPointerCancel={onMidPointerCancel}
               />
             )}
           </>

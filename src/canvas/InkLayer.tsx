@@ -158,6 +158,10 @@ export function InkLayer({
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        // the OS/browser aborted the gesture (e.g. a pen/touch interruption) —
+        // commit the in-progress stroke exactly as a normal pointerup would,
+        // so it's preserved instead of silently discarded by the next stroke
+        onPointerCancel={onPointerUp}
       >
         <svg className="lines-layer" style={{ overflow: 'visible' }}>
           <g transform={`translate(${view.pan.x} ${view.pan.y}) scale(${view.zoom})`}>

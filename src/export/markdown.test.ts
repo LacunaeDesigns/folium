@@ -22,6 +22,60 @@ describe('tiptapToMarkdown', () => {
     expect(md).toContain('## Title')
     expect(md).toContain('plain **bold**')
   })
+
+  it('renders a horizontalRule as a --- line, blank-line separated from neighboring paragraphs', () => {
+    const doc = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'above' }] },
+        { type: 'horizontalRule' },
+        { type: 'paragraph', content: [{ type: 'text', text: 'below' }] },
+      ],
+    }
+    const md = tiptapToMarkdown(doc)
+    expect(md).toBe('above\n\n---\n\nbelow')
+  })
+
+  it('renders a codeBlock as a fenced block tagged with its language, preserving code text verbatim', () => {
+    const doc = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'before' }] },
+        {
+          type: 'codeBlock',
+          attrs: { language: 'ts' },
+          // marks here prove the fence uses raw text, not the inline-mark pipeline
+          content: [{ type: 'text', text: 'const x = 1 * 2', marks: [{ type: 'bold' }] }],
+        },
+        { type: 'paragraph', content: [{ type: 'text', text: 'after' }] },
+      ],
+    }
+    const md = tiptapToMarkdown(doc)
+    expect(md).toBe('before\n\n```ts\nconst x = 1 * 2\n```\n\nafter')
+  })
+
+  it('falls back to a plain fence for a codeBlock with no language attr', () => {
+    const doc = {
+      type: 'doc',
+      content: [{ type: 'codeBlock', content: [{ type: 'text', text: 'plain code' }] }],
+    }
+    const md = tiptapToMarkdown(doc)
+    expect(md).toBe('\n```\nplain code\n```\n')
+  })
+
+  it('renders a hardBreak inside a paragraph as a markdown line break', () => {
+    const doc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'line one' }, { type: 'hardBreak' }, { type: 'text', text: 'line two' }],
+        },
+      ],
+    }
+    const md = tiptapToMarkdown(doc)
+    expect(md).toBe('line one  \nline two')
+  })
 })
 
 describe('boardToMarkdown', () => {

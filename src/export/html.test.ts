@@ -202,3 +202,34 @@ describe('buildHtmlExport sticker rendering', () => {
     expect(html).toContain('"emoji":"⭐"')
   })
 })
+
+describe('buildHtmlExport note horizontalRule rendering', () => {
+  it('renders a horizontalRule node inside a note doc as <hr>, not a silently-dropped leaf', () => {
+    const bundle = makeBundle([])
+    const note: Card = {
+      ...bundle.cards[0],
+      id: 'n1',
+      type: 'note',
+      content: {
+        kind: 'note',
+        bg: 'white',
+        doc: {
+          type: 'doc',
+          content: [
+            { type: 'paragraph', content: [{ type: 'text', text: 'above' }] },
+            { type: 'horizontalRule' },
+            { type: 'paragraph', content: [{ type: 'text', text: 'below' }] },
+          ],
+        },
+      },
+    }
+    bundle.cards.push(note)
+    const html = buildHtmlExport(bundle)
+
+    // static JS-source fragment the viewer script uses to render a horizontalRule node
+    expect(html).toContain("case 'horizontalRule'")
+    expect(html).toMatch(/<hr\s*\/?>/)
+    // the fixture's doc data must round-trip into the embedded JSON
+    expect(html).toContain('"type":"horizontalRule"')
+  })
+})

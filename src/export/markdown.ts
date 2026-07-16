@@ -4,7 +4,7 @@ import { columnCards } from '../store/selectors'
 interface TiptapNode {
   type?: string
   text?: string
-  attrs?: { level?: number; checked?: boolean }
+  attrs?: { level?: number; checked?: boolean; language?: string }
   marks?: { type: string; attrs?: { href?: string } }[]
   content?: TiptapNode[]
 }
@@ -22,7 +22,14 @@ function inline(node: TiptapNode): string {
     }
     return t
   }
+  if (node.type === 'hardBreak') return '  \n'
   return (node.content ?? []).map(inline).join('')
+}
+
+/** Raw text of a node, ignoring marks — used for code blocks so fenced code survives verbatim. */
+function rawText(node: TiptapNode): string {
+  if (node.type === 'text') return node.text ?? ''
+  return (node.content ?? []).map(rawText).join('')
 }
 
 export function tiptapToMarkdown(doc: unknown, indent = ''): string {
@@ -53,6 +60,14 @@ export function tiptapToMarkdown(doc: unknown, indent = ''): string {
       case 'blockquote':
         lines.push(indent + '> ' + inline(child))
         break
+      case 'horizontalRule':
+        lines.push('', '---', '')
+        break
+      case 'codeBlock': {
+        const lang = child.attrs?.language ?? ''
+        lines.push('', '```' + lang, rawText(child), '```', '')
+        break
+      }
       default: {
         const text = inline(child)
         if (text) lines.push(indent + text)

@@ -62,6 +62,7 @@ h1.title{font-family:'Fraunces',Georgia,serif;font-size:22px;color:var(--ink);wi
 .note ul,.note ol{padding-left:20px;margin:0 0 6px}
 .note mark{background:var(--yellow)}
 .note blockquote{border-left:3px solid var(--border);padding-left:10px;color:var(--soft)}
+.note hr{border:none;border-top:1px solid var(--border);margin:8px 0}
 .note .task{list-style:none;padding-left:2px}.note .task li{display:flex;gap:7px}
 .bgc-dark{color:#f0efec}
 .todo{padding:10px 12px}.todo .tt{font-weight:600;margin-bottom:4px}
@@ -187,6 +188,7 @@ function renderDoc(node){
     case 'taskItem': return '<li>'+((node.attrs&&node.attrs.checked)?'☑':'☐')+' <div>'+kids+'</div></li>';
     case 'blockquote': return '<blockquote>'+kids+'</blockquote>';
     case 'codeBlock': return '<pre><code>'+kids+'</code></pre>';
+    case 'horizontalRule': return '<hr>';
     case 'hardBreak': return '<br>';
     default: return kids;
   }

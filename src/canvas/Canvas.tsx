@@ -641,7 +641,7 @@ export function Canvas({ boardId }: { boardId: string }) {
 
   const editInk = (cardId: string) => {
     const card = store.getState().cards[cardId]
-    if (!card || card.content.kind !== 'ink') return
+    if (!card || card.content.kind !== 'ink' || card.locked) return
     // card.content.strokes are in card-local coordinates; InkLayer draws in world
     // coordinates, so translate by the card's position on the way in — this is the
     // exact inverse of the `points.map(... - minX ...)` rebase finalize() does on the
@@ -875,7 +875,7 @@ export function Canvas({ boardId }: { boardId: string }) {
                   <div className="menu-sep" />
                 </>
               )}
-              {type === 'ink' && (
+              {type === 'ink' && !card?.locked && (
                 <>
                   <button className="menu-item" onClick={menuAction(() => editInk(cardId))}>
                     <Icon name="draw" size={15} /> Edit ink

@@ -77,7 +77,12 @@ export function InkLayer({
         : strokesRef.current
     if (!all.length) {
       // erased every stroke of an existing card down to nothing: the card goes too
-      if (editSession) store.getState().trashCards([editSession.cardId])
+      // (skip if the card got locked mid-session — matches resizeCard/moveCards/
+      // trashCards's own internal `locked` gate, checked here as the actual mutation
+      // choke point rather than trusting every caller to have checked it already)
+      if (editSession && !store.getState().cards[editSession.cardId]?.locked) {
+        store.getState().trashCards([editSession.cardId])
+      }
       return
     }
     let minX = Infinity,
@@ -104,16 +109,27 @@ export function InkLayer({
       points: s.points.map((v, i) => (i % 2 === 0 ? v - minX : v - minY)),
     }))
     if (editSession) {
-      // one single set() call = one undo entry for the whole append/erase session,
-      // regardless of how many strokes were drawn or erased along the way (those all
-      // happened in local React state above, never touching the store until now)
-      store.getState().updateCard(editSession.cardId, {
-        x: minX,
-        y: minY,
-        w: natW,
-        h: natH,
-        content: { kind: 'ink', strokes: rebased, natW, natH },
-      } as never)
+      // updateCard has no `locked` gate of its own (unlike resizeCard/moveCards/
+      // trashCards) — check here, at the actual mutation choke point, rather than
+      // trusting the caller (editInk already refuses to open a locked card's edit
+      // session, but a session already open when a card gets locked elsewhere
+      // shouldn't be able to save on top of that)
+      if (!store.getState().cards[editSession.cardId]?.locked) {
+        // one single set() call = one undo entry for the whole append/erase session,
+        // regardless of how many strokes were drawn or erased along the way (those all
+        // happened in local React state above, never touching the store until now).
+        // Note: unlike addCard/moveCards, this doesn't recompute frameId — an edit that
+        // shifts the bounding box across a frame boundary won't update frame membership
+        // (containingFrameId is store.ts-private; low-probability enough not to plumb
+        // it out for this)
+        store.getState().updateCard(editSession.cardId, {
+          x: minX,
+          y: minY,
+          w: natW,
+          h: natH,
+          content: { kind: 'ink', strokes: rebased, natW, natH },
+        } as never)
+      }
     } else {
       const st = store.getState()
       const id = st.addCard(boardId, 'ink', {

@@ -155,9 +155,14 @@ be missing features.
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE) — free to use, study, modify and share
-for any noncommercial purpose (personal use, education, research, nonprofits).
-Commercial use or redistribution requires a separate license from the author.
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0) — free to use,
+study, modify and share. Derivative works must stay under the AGPL, and if you
+run a modified version as a network service you must offer its source to your
+users. Copyright © 2026 LacunaeDesigns.
+
+Want to use Folium outside the AGPL's copyleft terms — for example in a
+closed-source or commercial product? Contact the author about a separate
+commercial license.
 
 ## Contributing
 

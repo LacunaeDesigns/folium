@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "A local-first freeform canvas for notes, boards and visual thinking.",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "AGPL-3.0-only",
   "repository": "github:LacunaeDesigns/folium",
   "author": "LacunaeDesigns",
   "scripts": {

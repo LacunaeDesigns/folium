@@ -28,7 +28,7 @@ talk through the approach before you put the work in.
 
 ## Licensing of contributions
 
-The project is licensed under [PolyForm Noncommercial 1.0.0](LICENSE). By
+The project is licensed under the [GNU AGPL-3.0](LICENSE). By
 submitting a contribution you agree that it is your own work, that it is
 licensed to the project under the same terms, and that the maintainer may
 relicense the project (including your contribution) under other terms — for

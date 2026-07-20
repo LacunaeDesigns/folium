@@ -1,6 +1,6 @@
 # Folium — project instructions
 
-Local-first freeform board/canvas app (React 18 + TypeScript, Vite 8, PWA). Single developer, public repo (github.com/LacunaeDesigns/folium) under **PolyForm Noncommercial 1.0.0** — don't vendor code with incompatible licenses; contribution/relicense terms are in CONTRIBUTING.md. Targets Chrome/Edge only (File System Access API, PWA); Firefox/Safari untested.
+Local-first freeform board/canvas app (React 18 + TypeScript, Vite 8, PWA). Single developer, public repo (github.com/LacunaeDesigns/folium) under **AGPL-3.0-only** (relicensed from PolyForm Noncommercial 2026-07-20) — vendored code must be AGPL-compatible; contribution/relicense terms are in CONTRIBUTING.md. Targets Chrome/Edge only (File System Access API, PWA); Firefox/Safari untested.
 
 ## Commands
 
